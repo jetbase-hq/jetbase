@@ -10,7 +10,7 @@ requires-python = ">=3.9"
 dependencies = []
 
 [project.scripts]
-jetbase = "jetbase.main:main"
+jetbase = "jetbase.cli.main:main"
 
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]
