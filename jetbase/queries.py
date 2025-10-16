@@ -1,0 +1,23 @@
+from sqlalchemy import TextClause, text
+
+LATEST_VERSION_QUERY: TextClause = text("""
+    SELECT 
+        version 
+    FROM 
+        jetbase_migrations
+    ORDER BY 
+        created_at DESC
+    LIMIT 1
+""")
+
+CREATE_MIGRATIONS_TABLE_STMT: TextClause = text("""
+CREATE TABLE IF NOT EXISTS jetbase_migrations (
+    version VARCHAR(255) PRIMARY KEY,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+""")
+
+INSERT_VERSION_STMT: TextClause = text("""
+INSERT INTO jetbase_migrations (version) 
+VALUES (:version)
+""")
