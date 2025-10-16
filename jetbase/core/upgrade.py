@@ -10,6 +10,15 @@ from jetbase.core.version import get_versions
 
 
 def upgrade() -> None:
+    """
+    Run database migrations by applying all pending SQL migration files.
+    Executes migration files in order starting from the last applied version,
+    updating the migrations tracking table after each successful migration.
+
+    Returns:
+        None
+    """
+
     create_migrations_table()
     latest_version: str = get_last_updated_version()
     all_versions = get_versions(
