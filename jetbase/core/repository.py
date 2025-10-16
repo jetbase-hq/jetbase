@@ -1,11 +1,11 @@
-from sqlalchemy import create_engine, Engine, Result, text
+from sqlalchemy import Engine, Result, create_engine, text
 
+from jetbase.config import get_sqlalchemy_url
 from jetbase.queries import (
     CREATE_MIGRATIONS_TABLE_STMT,
-    LATEST_VERSION_QUERY,
     INSERT_VERSION_STMT,
+    LATEST_VERSION_QUERY,
 )
-from jetbase.config import get_sqlalchemy_url
 
 
 def get_last_updated_version() -> str | None:

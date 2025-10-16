@@ -1,10 +1,11 @@
+import os
+import tempfile
+
 from jetbase.core.version import (
-    _get_version_key_from_filename,
     _convert_version_tuple_to_str,
+    _get_version_key_from_filename,
     get_versions,
 )
-import tempfile
-import os
 
 
 def test_get_version_key_from_filename():

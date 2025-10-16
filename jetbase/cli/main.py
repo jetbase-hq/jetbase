@@ -1,6 +1,7 @@
 import argparse
-from jetbase.core.upgrade import upgrade
+
 from jetbase.core.initialize import initilize_jetbase
+from jetbase.core.upgrade import upgrade
 
 
 def main() -> None:

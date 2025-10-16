@@ -1,4 +1,4 @@
-from sqlalchemy import text, TextClause
+from sqlalchemy import TextClause, text
 
 LATEST_VERSION_QUERY: TextClause = text("""
     SELECT 

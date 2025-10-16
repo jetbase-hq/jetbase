@@ -1,5 +1,6 @@
 from pathlib import Path
-from jetbase.constants import MIGRATIONS_DIR, CONFIG_FILE, CONFIG_FILE_CONTENT, BASE_DIR
+
+from jetbase.constants import BASE_DIR, CONFIG_FILE, CONFIG_FILE_CONTENT, MIGRATIONS_DIR
 
 
 def create_directory_structure(base_path: str) -> None:

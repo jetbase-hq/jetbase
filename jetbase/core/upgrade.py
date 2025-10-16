@@ -1,11 +1,12 @@
 import os
+
+from jetbase.core.file_parser import parse_sql_file
 from jetbase.core.repository import (
-    get_last_updated_version,
     create_migrations_table,
+    get_last_updated_version,
     run_migration,
 )
 from jetbase.core.version import get_versions
-from jetbase.core.file_parser import parse_sql_file
 
 
 def upgrade() -> None:

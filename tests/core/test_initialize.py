@@ -1,4 +1,4 @@
-from jetbase.constants import BASE_DIR, MIGRATIONS_DIR, CONFIG_FILE, CONFIG_FILE_CONTENT
+from jetbase.constants import BASE_DIR, CONFIG_FILE, CONFIG_FILE_CONTENT, MIGRATIONS_DIR
 from jetbase.core.initialize import create_directory_structure
 
 

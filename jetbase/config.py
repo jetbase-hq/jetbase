@@ -1,7 +1,8 @@
-from jetbase.constants import CONFIG_FILE
 import importlib.util
 import os
 from typing import Any
+
+from jetbase.constants import CONFIG_FILE
 
 
 def get_sqlalchemy_url(filename: str = CONFIG_FILE) -> str:
