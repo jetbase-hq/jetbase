@@ -1,0 +1,14 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.1
+    hooks:
+      - id: ruff-check
+        args: ["--select", "I", "--fix"]
+      - id: ruff-format
+
+  - repo: https://github.com/facebook/pyrefly-pre-commit
+    rev: 0.0.1
+    hooks:
+      - id: pyrefly-typecheck-system
+        name: Pyrefly
+        pass_filenames: false
