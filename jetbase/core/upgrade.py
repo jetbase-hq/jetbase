@@ -20,7 +20,7 @@ def upgrade() -> None:
     """
 
     create_migrations_table()
-    latest_version: str = get_last_updated_version()
+    latest_version: str | None = get_last_updated_version()
     all_versions = get_versions(
         directory=os.path.join(os.getcwd(), "migrations"),
         version_to_start_from=latest_version,

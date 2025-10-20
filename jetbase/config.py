@@ -1,7 +1,8 @@
 import importlib.util
+import importlib.machinery
+from importlib import ModuleType
 import os
 from typing import Any
-
 from jetbase.constants import CONFIG_FILE
 
 
@@ -16,11 +17,15 @@ def get_sqlalchemy_url(filename: str = CONFIG_FILE) -> str:
         The sqlalchemy_url from the config file, or None if not found
     """
     config_path: str = os.path.join(os.getcwd(), filename)
-    spec: importlib.machinery.ModuleSpec = importlib.util.spec_from_file_location(
-        "config", config_path
+    spec: importlib.machinery.ModuleSpec | None = (
+        importlib.util.spec_from_file_location("config", config_path)
     )
-    config: importlib.types.ModuleType = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(config)
+
+    assert spec is not None
+    assert spec.loader is not None
+
+    config: ModuleType = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module=config)
 
     raw_sqlalchemy_url: Any | None = getattr(config, "sqlalchemy_url", None)
 
