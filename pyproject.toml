@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "jaz", email = "jaz.allibhai@gmail.com" }
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = []
 
 [project.scripts]
@@ -15,3 +15,9 @@ jetbase = "jetbase.cli.main:main"
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[dependency-groups]
+dev = [
+    "pyrefly>=0.38.2",
+    "ruff>=0.14.2",
+]
