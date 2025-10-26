@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  pull_request:
+    paths:
+      - "my_package/**" # only run when code inside my_package changes
+      - ".github/workflows/ci-pr.yml" # rerun if this workflow changes
+      - "pyproject.toml" # rerun if deps/config change
+      - "uv.lock" # rerun if lockfile changes
+  workflow_dispatch: {}
+jobs:
+  uv-example:
+    name: python
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: ".python-version"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      - name: Ruff linter
+        run: uv run ruff check jetbase tests
+
+      - name: Ruff formatter
+        run: uv run ruff format jetbase tests --check
