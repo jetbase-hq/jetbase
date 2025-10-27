@@ -27,6 +27,9 @@ jobs:
       - name: Install dependencies
         run: uv sync --dev
 
+      - name: Pyrefly type checker
+        run: uv run pyrefly check
+
       - name: Ruff linter
         run: uv run ruff check jetbase tests
 
