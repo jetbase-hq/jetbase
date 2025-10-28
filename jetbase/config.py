@@ -1,8 +1,11 @@
-import importlib.util
 import importlib.machinery
-from importlib import ModuleType
+import importlib.util
 import os
+
+# from importlib import ModuleType
+from types import ModuleType
 from typing import Any
+
 from jetbase.constants import CONFIG_FILE
 
 

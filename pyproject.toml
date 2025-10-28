@@ -23,6 +23,7 @@ packages = ["jetbase"]
 
 [dependency-groups]
 dev = [
+    "psycopg2-binary>=2.9.11",
     "pyrefly>=0.38.2",
     "pytest>=8.4.2",
     "ruff>=0.14.2",
