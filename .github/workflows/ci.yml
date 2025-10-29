@@ -35,6 +35,26 @@ jobs:
       - name: Ruff formatter
         run: uv run ruff format jetbase tests --check
 
+  unit-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      - name: Run unit tests
+        run: uv run pytest tests/core/ -v
+
   integration-tests:
     runs-on: ubuntu-latest
 
