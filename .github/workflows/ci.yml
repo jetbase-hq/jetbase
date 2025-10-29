@@ -9,8 +9,7 @@ on:
       - "uv.lock" # rerun if lockfile changes
   workflow_dispatch: {}
 jobs:
-  uv-example:
-    name: python
+  lint-type-format-checks:
     runs-on: ubuntu-latest
 
     steps:
@@ -35,3 +34,46 @@ jobs:
 
       - name: Ruff formatter
         run: uv run ruff format jetbase tests --check
+
+  integration-tests:
+    runs-on: ubuntu-latest
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      - name: Run jetbase
+        working-directory: tests/test_integration/jetbase
+        run: uv run jetbase upgrade
+
+      - name: Run integration tests
+        working-directory: tests/test_integration
+        run: uv run pytest
