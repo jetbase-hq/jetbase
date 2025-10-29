@@ -8,7 +8,6 @@ from sqlalchemy.orm import sessionmaker
 @pytest.fixture
 def db_session():
     """Create a database session for testing."""
-    # Update with your actual database connection string
     DATABASE_URL: str = os.getenv(
         "DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/test_db"
     )
