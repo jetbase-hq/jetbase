@@ -1,10 +1,13 @@
 from sqlalchemy import Engine, Result, create_engine, text
 
 from jetbase.config import get_sqlalchemy_url
+from jetbase.enums import MigrationOperationType
 from jetbase.queries import (
     CREATE_MIGRATIONS_TABLE_STMT,
+    DELETE_VERSION_STMT,
     INSERT_VERSION_STMT,
     LATEST_VERSION_QUERY,
+    LATEST_VERSIONS_QUERY,
 )
 
 
@@ -40,7 +43,9 @@ def create_migrations_table() -> None:
         connection.execute(statement=CREATE_MIGRATIONS_TABLE_STMT)
 
 
-def run_migration(sql_statements: list[str], version: str) -> None:
+def run_migration(
+    sql_statements: list[str], version: str, migration_operation: MigrationOperationType
+) -> None:
     """
     Execute a database migration by running SQL statements and recording the migration version.
     Args:
@@ -54,6 +59,34 @@ def run_migration(sql_statements: list[str], version: str) -> None:
     with engine.begin() as connection:
         for statement in sql_statements:
             connection.execute(text(statement))
-        connection.execute(
-            statement=INSERT_VERSION_STMT, parameters={"version": version}
+
+        if migration_operation == MigrationOperationType.UPGRADE:
+            connection.execute(
+                statement=INSERT_VERSION_STMT, parameters={"version": version}
+            )
+        elif migration_operation == MigrationOperationType.ROLLBACK:
+            connection.execute(
+                statement=DELETE_VERSION_STMT, parameters={"version": version}
+            )
+
+
+def get_latest_versions(limit: int) -> list[str]:
+    """
+    Retrieve the latest N migration versions from the database.
+    Args:
+        limit (int): The number of latest versions to retrieve
+    Returns:
+        list[str]: A list of the latest migration version strings
+    """
+
+    engine: Engine = create_engine(url=get_sqlalchemy_url())
+    latest_versions: list[str] = []
+
+    with engine.begin() as connection:
+        result: Result[tuple[str]] = connection.execute(
+            statement=LATEST_VERSIONS_QUERY,
+            parameters={"limit": limit},
         )
+        latest_versions: list[str] = [row[0] for row in result.fetchall()]
+
+    return latest_versions

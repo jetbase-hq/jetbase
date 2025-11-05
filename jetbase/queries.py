@@ -21,3 +21,18 @@ INSERT_VERSION_STMT: TextClause = text("""
 INSERT INTO jetbase_migrations (version) 
 VALUES (:version)
 """)
+
+DELETE_VERSION_STMT: TextClause = text("""
+DELETE FROM jetbase_migrations 
+WHERE version = :version
+""")
+
+LATEST_VERSIONS_QUERY: TextClause = text("""
+    SELECT 
+        version 
+    FROM 
+        jetbase_migrations
+    ORDER BY 
+        created_at DESC
+    LIMIT :limit
+""")
