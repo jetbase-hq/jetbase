@@ -90,10 +90,18 @@ jobs:
       - name: Install dependencies
         run: uv sync --dev
 
-      - name: Run jetbase
+      - name: Run jetbase upgrade
         working-directory: tests/test_integration/jetbase
         run: uv run jetbase upgrade
 
-      - name: Run integration tests
-        working-directory: tests/test_integration
+      - name: Run upgrade integration test
+        working-directory: tests/test_integration/test_upgrade.py
+        run: uv run pytest
+
+      - name: Run jetbase upgrade
+        working-directory: tests/test_integration/jetbase
+        run: uv run jetbase rollback
+
+      - name: Run rollback integration test
+        working-directory: tests/test_integration/test_rollback.py
         run: uv run pytest
