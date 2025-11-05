@@ -1,5 +1,6 @@
 import tempfile
 from pathlib import Path
+from typing import Generator
 
 import pytest
 
@@ -8,12 +9,12 @@ from jetbase.core.file_parser import parse_rollback_statements, parse_upgrade_st
 
 class TestParseUpgradeStatements:
     @pytest.fixture
-    def temp_dir(self):
+    def temp_dir(self) -> Generator[str, None, None]:
         """Create a temporary directory for testing."""
         with tempfile.TemporaryDirectory() as temp_dir:
             yield temp_dir
 
-    def test_parse_upgrade_statements_single_statement(self, temp_dir):
+    def test_parse_upgrade_statements_single_statement(self, temp_dir: str) -> None:
         """Test parsing a file with a single upgrade statement."""
         sql_content = "CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100));"
         sql_file = Path(temp_dir) / "test.sql"
@@ -23,7 +24,7 @@ class TestParseUpgradeStatements:
         assert len(result) == 1
         assert result[0] == "CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100))"
 
-    def test_parse_upgrade_statements_multiple_statements(self, temp_dir):
+    def test_parse_upgrade_statements_multiple_statements(self, temp_dir: str) -> None:
         """Test parsing a file with multiple upgrade statements."""
         sql_content = """
         CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100));
@@ -39,7 +40,7 @@ class TestParseUpgradeStatements:
         assert result[1] == "INSERT INTO users (id, name) VALUES (1, 'Alice')"
         assert result[2] == "INSERT INTO users (id, name) VALUES (2, 'Bob')"
 
-    def test_parse_upgrade_statements_multi_line(self, temp_dir):
+    def test_parse_upgrade_statements_multi_line(self, temp_dir: str) -> None:
         """Test parsing multi-line SQL statements."""
         sql_content = """
         CREATE TABLE users (
@@ -67,7 +68,7 @@ class TestParseUpgradeStatements:
             == "INSERT INTO users (id, name, email) VALUES (1, 'Alice', 'alice@example.com')"
         )
 
-    def test_parse_upgrade_statements_with_comments(self, temp_dir):
+    def test_parse_upgrade_statements_with_comments(self, temp_dir: str) -> None:
         """Test parsing upgrade statements with comments."""
         sql_content = """
         -- Create users table
@@ -88,7 +89,7 @@ class TestParseUpgradeStatements:
         assert result[1] == "INSERT INTO users (id, name) VALUES (1, 'Alice')"
         assert result[2] == "INSERT INTO users (id, name) VALUES (2, 'Bob')"
 
-    def test_parse_upgrade_statements_stops_at_rollback(self, temp_dir):
+    def test_parse_upgrade_statements_stops_at_rollback(self, temp_dir: str) -> None:
         """Test that parsing stops when encountering rollback marker."""
         sql_content = """
         CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100));
@@ -105,7 +106,9 @@ class TestParseUpgradeStatements:
         assert result[0] == "CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100))"
         assert result[1] == "INSERT INTO users (id, name) VALUES (1, 'Alice')"
 
-    def test_parse_upgrade_statements_with_rollback_statements(self, temp_dir):
+    def test_parse_upgrade_statements_with_rollback_statements(
+        self, temp_dir: str
+    ) -> None:
         """Test that upgrade parsing ignores statements under rollback marker."""
         sql_content = """
         CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100));
@@ -124,7 +127,9 @@ class TestParseUpgradeStatements:
         assert result[1] == "INSERT INTO users (id, name) VALUES (1, 'Alice')"
         # Rollback statements should not be included
 
-    def test_parse_upgrade_statements_rollback_case_insensitive(self, temp_dir):
+    def test_parse_upgrade_statements_rollback_case_insensitive(
+        self, temp_dir: str
+    ) -> None:
         """Test that rollback marker is case insensitive."""
         sql_content = """
         CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100));
@@ -139,7 +144,7 @@ class TestParseUpgradeStatements:
         assert len(result) == 1
         assert result[0] == "CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100))"
 
-    def test_parse_upgrade_statements_rollback_with_spaces(self, temp_dir):
+    def test_parse_upgrade_statements_rollback_with_spaces(self, temp_dir: str) -> None:
         """Test rollback marker with extra spaces."""
         sql_content = """
         CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100));
@@ -154,7 +159,7 @@ class TestParseUpgradeStatements:
         assert len(result) == 1
         assert result[0] == "CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100))"
 
-    def test_parse_upgrade_statements_empty_file(self, temp_dir):
+    def test_parse_upgrade_statements_empty_file(self, temp_dir: str) -> None:
         """Test parsing an empty file."""
         sql_file = Path(temp_dir) / "empty.sql"
         sql_file.write_text("")
@@ -162,7 +167,7 @@ class TestParseUpgradeStatements:
 
         assert result == []
 
-    def test_parse_upgrade_statements_only_comments(self, temp_dir):
+    def test_parse_upgrade_statements_only_comments(self, temp_dir: str) -> None:
         """Test parsing a file with only comments."""
         sql_content = """
         -- This is a comment
@@ -175,7 +180,7 @@ class TestParseUpgradeStatements:
 
         assert result == []
 
-    def test_parse_upgrade_statements_no_semicolon(self, temp_dir):
+    def test_parse_upgrade_statements_no_semicolon(self, temp_dir: str) -> None:
         """Test parsing statements without semicolons (should be ignored)."""
         sql_content = """
         CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100))
@@ -191,7 +196,7 @@ class TestParseUpgradeStatements:
             == "CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100)) INSERT INTO users (id, name) VALUES (1, 'Alice')"
         )
 
-    def test_parse_upgrade_statements_mixed_empty_lines(self, temp_dir):
+    def test_parse_upgrade_statements_mixed_empty_lines(self, temp_dir: str) -> None:
         """Test parsing with mixed empty lines and statements."""
         sql_content = """
         
@@ -211,7 +216,7 @@ class TestParseUpgradeStatements:
         assert result[0] == "CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100))"
         assert result[1] == "INSERT INTO users (id, name) VALUES (1, 'Alice')"
 
-    def test_parse_upgrade_statements_only_rollback_marker(self, temp_dir):
+    def test_parse_upgrade_statements_only_rollback_marker(self, temp_dir: str) -> None:
         """Test parsing a file with only rollback marker."""
         sql_content = "-- rollback"
         sql_file = Path(temp_dir) / "test.sql"
@@ -223,12 +228,12 @@ class TestParseUpgradeStatements:
 
 class TestParseRollbackStatements:
     @pytest.fixture
-    def temp_dir(self):
+    def temp_dir(self) -> Generator[str, None, None]:
         """Create a temporary directory for testing."""
         with tempfile.TemporaryDirectory() as temp_dir:
             yield temp_dir
 
-    def test_parse_rollback_statements_basic(self, temp_dir):
+    def test_parse_rollback_statements_basic(self, temp_dir: str) -> None:
         """Test parsing basic rollback statements."""
         sql_content = """
         CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100));
@@ -246,7 +251,7 @@ class TestParseRollbackStatements:
         assert result[0] == "DELETE FROM users WHERE id = 1"
         assert result[1] == "DROP TABLE users"
 
-    def test_parse_rollback_statements_multi_line(self, temp_dir):
+    def test_parse_rollback_statements_multi_line(self, temp_dir: str) -> None:
         """Test parsing multi-line rollback statements."""
         sql_content = """
         CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100));
@@ -265,7 +270,7 @@ class TestParseRollbackStatements:
         assert result[0] == "DELETE FROM users WHERE id = 1"
         assert result[1] == "DROP TABLE IF EXISTS users"
 
-    def test_parse_rollback_statements_with_comments(self, temp_dir):
+    def test_parse_rollback_statements_with_comments(self, temp_dir: str) -> None:
         """Test parsing rollback statements with comments."""
         sql_content = """
         CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100));
@@ -284,7 +289,7 @@ class TestParseRollbackStatements:
         assert result[0] == "DELETE FROM users WHERE id = 1"
         assert result[1] == "DROP TABLE users"
 
-    def test_parse_rollback_statements_case_insensitive(self, temp_dir):
+    def test_parse_rollback_statements_case_insensitive(self, temp_dir: str) -> None:
         """Test rollback marker is case insensitive."""
         sql_content = """
         CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100));
@@ -299,7 +304,7 @@ class TestParseRollbackStatements:
         assert len(result) == 1
         assert result[0] == "DROP TABLE users"
 
-    def test_parse_rollback_statements_with_spaces(self, temp_dir):
+    def test_parse_rollback_statements_with_spaces(self, temp_dir: str) -> None:
         """Test rollback marker with extra spaces."""
         sql_content = """
         CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100));
@@ -314,7 +319,7 @@ class TestParseRollbackStatements:
         assert len(result) == 1
         assert result[0] == "DROP TABLE users"
 
-    def test_parse_rollback_statements_no_rollback_section(self, temp_dir):
+    def test_parse_rollback_statements_no_rollback_section(self, temp_dir: str) -> None:
         """Test parsing file with no rollback section."""
         sql_content = """
         CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100));
@@ -326,7 +331,7 @@ class TestParseRollbackStatements:
 
         assert result == []
 
-    def test_parse_rollback_statements_empty_rollback(self, temp_dir):
+    def test_parse_rollback_statements_empty_rollback(self, temp_dir: str) -> None:
         """Test parsing file with empty rollback section."""
         sql_content = """
         CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100));
@@ -340,7 +345,9 @@ class TestParseRollbackStatements:
 
         assert result == []
 
-    def test_parse_rollback_statements_only_rollback_marker(self, temp_dir):
+    def test_parse_rollback_statements_only_rollback_marker(
+        self, temp_dir: str
+    ) -> None:
         """Test parsing file with only rollback marker."""
         sql_content = "-- rollback"
         sql_file = Path(temp_dir) / "test.sql"
@@ -349,7 +356,7 @@ class TestParseRollbackStatements:
 
         assert result == []
 
-    def test_parse_rollback_statements_no_semicolon(self, temp_dir):
+    def test_parse_rollback_statements_no_semicolon(self, temp_dir: str) -> None:
         """Test rollback statements without semicolons are ignored."""
         sql_content = """
         CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100));
@@ -365,7 +372,7 @@ class TestParseRollbackStatements:
         assert len(result) == 1
         assert result[0] == "DROP TABLE users DELETE FROM another_table"
 
-    def test_parse_rollback_statements_mixed_empty_lines(self, temp_dir):
+    def test_parse_rollback_statements_mixed_empty_lines(self, temp_dir: str) -> None:
         """Test rollback parsing with mixed empty lines."""
         sql_content = """
         CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100));
@@ -388,7 +395,7 @@ class TestParseRollbackStatements:
         assert result[0] == "DELETE FROM users WHERE id = 1"
         assert result[1] == "DROP TABLE users"
 
-    def test_parse_rollback_statements_empty_file(self, temp_dir):
+    def test_parse_rollback_statements_empty_file(self, temp_dir: str) -> None:
         """Test parsing an empty file for rollback statements."""
         sql_file = Path(temp_dir) / "empty.sql"
         sql_file.write_text("")
@@ -396,7 +403,7 @@ class TestParseRollbackStatements:
 
         assert result == []
 
-    def test_parse_rollback_statements_complex_scenario(self, temp_dir):
+    def test_parse_rollback_statements_complex_scenario(self, temp_dir: str) -> None:
         """Test complex scenario with multiple upgrade and rollback statements."""
         sql_content = """
         -- Create initial schema
