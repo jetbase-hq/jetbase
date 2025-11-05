@@ -21,8 +21,8 @@ def db_session():
     session.close()
 
 
-def test_query_all_users(db_session):
-    """Test that queries all users and asserts count is 3."""
+def test_query_all_users_after_rollback(db_session):
+    """Test that queries all users and asserts count."""
     result = db_session.execute(text("SELECT * FROM users"))
     users = result.fetchall()
 

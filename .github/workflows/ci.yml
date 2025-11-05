@@ -3,7 +3,7 @@ name: CI
 on:
   pull_request:
     paths:
-      - "my_package/**" # only run when code inside my_package changes
+      - "jetbase/**" # only run when code inside my_package changes
       - ".github/workflows/ci-pr.yml" # rerun if this workflow changes
       - "pyproject.toml" # rerun if deps/config change
       - "uv.lock" # rerun if lockfile changes
@@ -90,10 +90,18 @@ jobs:
       - name: Install dependencies
         run: uv sync --dev
 
-      - name: Run jetbase
+      - name: Run jetbase upgrade
         working-directory: tests/test_integration/jetbase
         run: uv run jetbase upgrade
 
-      - name: Run integration tests
+      - name: Run upgrade integration test
         working-directory: tests/test_integration
-        run: uv run pytest
+        run: uv run pytest test_upgrade.py
+
+      - name: Run jetbase rollback
+        working-directory: tests/test_integration/jetbase
+        run: uv run jetbase rollback
+
+      - name: Run rollback integration test
+        working-directory: tests/test_integration
+        run: uv run pytest test_rollback.py

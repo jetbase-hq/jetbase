@@ -72,7 +72,9 @@ def convert_version_to_tuple(version: str) -> tuple[str, ...]:
 
 
 def get_versions(
-    directory: str, version_to_start_from: str | None = None
+    directory: str,
+    version_to_start_from: str | None = None,
+    end_version: str | None = None,
 ) -> dict[str, str]:
     """
     Retrieves SQL files from the specified directory and organizes them by version.
@@ -83,6 +85,8 @@ def get_versions(
         directory: The directory path to search for SQL files
         version_to_start_from: Optional version string to filter results, only returning
                               versions greater than this value
+        end_version: Optional version string to filter results, only returning
+                     versions less than this value
     Returns:
         A dictionary mapping version strings to file paths, sorted by version number
     Example:
@@ -98,8 +102,11 @@ def get_versions(
                 version_tuple: tuple[str, ...] = convert_version_to_tuple(
                     version=version
                 )
+                if end_version:
+                    if version_tuple > convert_version_to_tuple(version=end_version):
+                        continue
                 if version_to_start_from:
-                    if version_tuple > convert_version_to_tuple(
+                    if version_tuple >= convert_version_to_tuple(
                         version=version_to_start_from
                     ):
                         version_to_filepath_dict[
