@@ -1,23 +1,33 @@
-import argparse
+import typer
 
-from jetbase.core.initialize import initilize_jetbase
-from jetbase.core.rollback import rollback
-from jetbase.core.upgrade import upgrade
+from jetbase.core.initialize import initilize_cmd
+from jetbase.core.rollback import rollback_cmd
+from jetbase.core.upgrade import upgrade_cmd
+
+app = typer.Typer(help="Jetbase CLI")
+
+
+@app.command()
+def init():
+    """Initialize jetbase in current directory"""
+    initilize_cmd()
+
+
+@app.command()
+def upgrade():
+    """Execute pending migrations"""
+    upgrade_cmd()
+
+
+@app.command()
+def rollback():
+    """Rollback migration(s)"""
+    rollback_cmd()
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Jetbase CLI")
+    app()
 
-    subparsers = parser.add_subparsers(dest="command", help="Available commands")
-    subparsers.add_parser("init", help="Initialize jetbase in current directory")
-    subparsers.add_parser("upgrade", help="Execute pending migrations")
-    subparsers.add_parser("rollback", help="Rollback migration(s)")
 
-    args = parser.parse_args()
-
-    if args.command == "init":
-        initilize_jetbase()
-    elif args.command == "upgrade":
-        upgrade()
-    elif args.command == "rollback":
-        rollback()
+if __name__ == "__main__":
+    main()

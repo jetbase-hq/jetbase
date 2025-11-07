@@ -29,5 +29,5 @@ def create_directory_structure(base_path: str) -> None:
     print(f"Initialized Jetbase project in {Path(base_path).absolute()}")
 
 
-def initilize_jetbase() -> None:
+def initilize_cmd() -> None:
     create_directory_structure(base_path=BASE_DIR)
