@@ -6,8 +6,7 @@ from jetbase.core.version import get_versions
 from jetbase.enums import MigrationOperationType
 
 
-# build this for when there will be an option on how far to rollback
-def rollback() -> None:
+def rollback_cmd() -> None:
     number_of_migrations_to_rollback: int = 1
     latest_migration_versions: list[str] = get_latest_versions(
         limit=number_of_migrations_to_rollback

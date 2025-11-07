@@ -10,7 +10,7 @@ from jetbase.core.version import get_versions
 from jetbase.enums import MigrationOperationType
 
 
-def upgrade() -> None:
+def upgrade_cmd() -> None:
     """
     Run database migrations by applying all pending SQL migration files.
     Executes migration files in order starting from the last applied version,
