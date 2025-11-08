@@ -58,3 +58,12 @@ def test_get_versions():
             "1.2.0": file1,
         }
         assert versions == expected_versions
+
+        versions = get_versions(
+            directory=temp_dir, version_to_start_from="1.2.0", end_version="2.0.0"
+        )
+        expected_versions = {
+            "1.2.0": file1,
+            "2.0.0": file3,
+        }
+        assert versions == expected_versions

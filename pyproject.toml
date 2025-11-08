@@ -1,6 +1,6 @@
 [project]
 name = "jetbase"
-version = "0.2.1"
+version = "0.2.2"
 description = "Jetbase is a Python database migration tool"
 readme = "README.md"
 authors = [
@@ -28,4 +28,10 @@ dev = [
     "pyrefly>=0.38.2",
     "pytest>=8.4.2",
     "ruff>=0.14.2",
+]
+
+[tool.pytest.ini_options]
+markers = [
+    "basic: basic rollback tests",
+    "count: tests for rollback count param", 
 ]
