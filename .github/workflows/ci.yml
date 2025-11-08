@@ -104,4 +104,8 @@ jobs:
 
       - name: Run rollback integration test
         working-directory: tests/test_integration
-        run: uv run pytest test_rollback.py
+        run: uv run pytest -m "count"
+
+      - name: Run rollback integration test
+        working-directory: tests/test_integration
+        run: uv run pytest -m "basic"

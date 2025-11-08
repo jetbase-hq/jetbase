@@ -21,9 +21,19 @@ def db_session():
     session.close()
 
 
-def test_query_all_users_after_rollback(db_session):
+@pytest.mark.basic
+def test_rollback(db_session):
     """Test that queries all users and asserts count."""
     result = db_session.execute(text("SELECT * FROM users"))
     users = result.fetchall()
 
     assert len(users) == 3, f"Expected 3 users, but got {len(users)}"
+
+
+@pytest.mark.count
+def test_rollback_multiple_migrations(db_session):
+    """Test that queries all users and asserts count."""
+    result = db_session.execute(text("SELECT * FROM users"))
+    users = result.fetchall()
+
+    assert len(users) == 4, f"Expected 4 users, but got {len(users)}"
