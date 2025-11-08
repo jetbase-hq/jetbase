@@ -109,6 +109,7 @@ def get_latest_versions_by_starting_version(
 
     engine: Engine = create_engine(url=get_sqlalchemy_url())
     latest_versions: list[str] = []
+    starting_version = starting_version[1:]
 
     with engine.begin() as connection:
         version_exists_result: Result[tuple[int]] = connection.execute(
@@ -124,7 +125,7 @@ def get_latest_versions_by_starting_version(
 
         latest_versions_result: Result[tuple[str]] = connection.execute(
             statement=LATEST_VERSIONS_BY_STARTING_VERSION_QUERY,
-            parameters={"starting_version": starting_version[1:]},
+            parameters={"starting_version": starting_version},
         )
         latest_versions: list[str] = [
             row[0] for row in latest_versions_result.fetchall()
