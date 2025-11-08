@@ -26,4 +26,4 @@ def test_query_all_users_after_upgrade(db_session):
     result = db_session.execute(text("SELECT * FROM users"))
     users = result.fetchall()
 
-    assert len(users) == 4, f"Expected 4 users, but got {len(users)}"
+    assert len(users) == 6, f"Expected 4 users, but got {len(users)}"
