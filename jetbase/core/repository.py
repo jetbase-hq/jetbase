@@ -110,8 +110,6 @@ def get_latest_versions_by_starting_version(
     engine: Engine = create_engine(url=get_sqlalchemy_url())
     latest_versions: list[str] = []
 
-    # figure out what happens when starting version isnt in db
-    # maybe need to query to see if version exists first???
     with engine.begin() as connection:
         version_exists_result: Result[tuple[int]] = connection.execute(
             statement=CHECK_IF_VERSION_EXISTS_QUERY,
