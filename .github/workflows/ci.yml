@@ -98,13 +98,17 @@ jobs:
         working-directory: tests/test_integration
         run: uv run pytest test_upgrade.py
 
-      - name: Run jetbase rollback
+      - name: Run jetbase rollback with count param
         working-directory: tests/test_integration/jetbase
-        run: uv run jetbase rollback
+        run: uv run jetbase rollback -c 2
 
       - name: Run rollback integration test
         working-directory: tests/test_integration
         run: uv run pytest -m "count"
+
+      - name: Run jetbase rollback
+        working-directory: tests/test_integration/jetbase
+        run: uv run jetbase rollback
 
       - name: Run rollback integration test
         working-directory: tests/test_integration
