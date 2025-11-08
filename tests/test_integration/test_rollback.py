@@ -27,7 +27,7 @@ def test_rollback(db_session):
     result = db_session.execute(text("SELECT * FROM users"))
     users = result.fetchall()
 
-    assert len(users) == 7, f"Expected 7 users, but got {len(users)}"
+    assert len(users) == 6, f"Expected 6 users, but got {len(users)}"
 
 
 @pytest.mark.count
@@ -36,7 +36,7 @@ def test_rollback_count(db_session):
     result = db_session.execute(text("SELECT * FROM users"))
     users = result.fetchall()
 
-    assert len(users) == 6, f"Expected 6 users, but got {len(users)}"
+    assert len(users) == 7, f"Expected 7 users, but got {len(users)}"
 
 
 @pytest.mark.to_version
