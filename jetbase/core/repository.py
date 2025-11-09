@@ -3,10 +3,12 @@ from sqlalchemy import Engine, Result, create_engine, text
 from jetbase.config import get_sqlalchemy_url
 from jetbase.enums import MigrationOperationType
 from jetbase.queries import (
+    CHECK_IF_VERSION_EXISTS_QUERY,
     CREATE_MIGRATIONS_TABLE_STMT,
     DELETE_VERSION_STMT,
     INSERT_VERSION_STMT,
     LATEST_VERSION_QUERY,
+    LATEST_VERSIONS_BY_STARTING_VERSION_QUERY,
     LATEST_VERSIONS_QUERY,
 )
 
@@ -88,5 +90,45 @@ def get_latest_versions(limit: int) -> list[str]:
             parameters={"limit": limit},
         )
         latest_versions: list[str] = [row[0] for row in result.fetchall()]
+
+    return latest_versions
+
+
+def get_latest_versions_by_starting_version(
+    starting_version: str,
+) -> list[str]:
+    """
+    Retrieve the latest N migration versions from the database,
+    starting from a specific version.
+    Args:
+        starting_version (str): The version to start retrieving from
+        limit (int): The number of latest versions to retrieve
+    Returns:
+        list[str]: A list of the latest migration version strings
+    """
+
+    engine: Engine = create_engine(url=get_sqlalchemy_url())
+    latest_versions: list[str] = []
+    starting_version = starting_version[1:]
+
+    with engine.begin() as connection:
+        version_exists_result: Result[tuple[int]] = connection.execute(
+            statement=CHECK_IF_VERSION_EXISTS_QUERY,
+            parameters={"version": starting_version},
+        )
+        version_exists: int = version_exists_result.scalar_one()
+
+        if version_exists == 0:
+            raise ValueError(
+                f"'{starting_version}' has not been applied yet or does not exist."
+            )
+
+        latest_versions_result: Result[tuple[str]] = connection.execute(
+            statement=LATEST_VERSIONS_BY_STARTING_VERSION_QUERY,
+            parameters={"starting_version": starting_version},
+        )
+        latest_versions: list[str] = [
+            row[0] for row in latest_versions_result.fetchall()
+        ]
 
     return latest_versions

@@ -36,3 +36,24 @@ LATEST_VERSIONS_QUERY: TextClause = text("""
         created_at DESC
     LIMIT :limit
 """)
+
+LATEST_VERSIONS_BY_STARTING_VERSION_QUERY: TextClause = text("""
+    SELECT
+        version
+    FROM
+        jetbase_migrations
+    WHERE created_at > 
+        (select created_at from jetbase_migrations 
+            where version = :starting_version)
+    ORDER BY 
+        created_at DESC
+""")
+
+CHECK_IF_VERSION_EXISTS_QUERY: TextClause = text("""
+    SELECT 
+        COUNT(*)
+    FROM 
+        jetbase_migrations
+    WHERE 
+        version = :version
+""")

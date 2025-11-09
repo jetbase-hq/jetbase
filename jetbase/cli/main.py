@@ -22,11 +22,14 @@ def upgrade():
 @app.command()
 def rollback(
     count: int = typer.Option(
-        1, "--count", "-c", help="Number of migrations to rollback"
+        None, "--count", "-c", help="Number of migrations to rollback"
+    ),
+    to_version: str | None = typer.Option(
+        None, "--to", help="Rollback to a specific version"
     ),
 ):
     """Rollback migration(s)"""
-    rollback_cmd(count=count)
+    rollback_cmd(count=count, to_version=to_version)
 
 
 def main() -> None:
