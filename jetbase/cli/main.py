@@ -25,7 +25,7 @@ def rollback(
         None, "--count", "-c", help="Number of migrations to rollback"
     ),
     to_version: str | None = typer.Option(
-        None, "--to", help="Rollback to a specific version"
+        None, "--to-version", "-t", help="Rollback to a specific version"
     ),
 ):
     """Rollback migration(s)"""
