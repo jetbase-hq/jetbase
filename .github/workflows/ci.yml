@@ -116,7 +116,7 @@ jobs:
 
       - name: Run jetbase rollback with --to param
         working-directory: tests/test_integration/jetbase
-        run: uv run jetbase rollback --to V2
+        run: uv run jetbase rollback --to-version V2
 
       - name: Run rollback to_version integration test
         working-directory: tests/test_integration
