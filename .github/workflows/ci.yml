@@ -95,37 +95,37 @@ jobs:
         run: uv run jetbase upgrade --count 2
 
       - name: Run upgrade count test
-        working-directory: tests/test_integration/test_upgrade.py
-        run: uv run pytest -m "count"
+        working-directory: tests/test_integration
+        run: uv run pytest -m "count" test_upgrade.py
 
       - name: Run jetbase upgrade
         working-directory: tests/test_integration/jetbase
         run: uv run jetbase upgrade
 
       - name: Run upgrade test
-        working-directory: tests/test_integration/test_upgrade.py
-        run: uv run pytest -m "basic"
+        working-directory: tests/test_integration
+        run: uv run pytest -m "basic" test_upgrade.py
 
       - name: Run jetbase rollback with --count param
         working-directory: tests/test_integration/jetbase
         run: uv run jetbase rollback -c 2
 
       - name: Run rollback count test
-        working-directory: tests/test_integration/test_rollback.py
-        run: uv run pytest -m "count"
+        working-directory: tests/test_integration
+        run: uv run pytest -m "count" test_rollback.py
 
       - name: Run jetbase rollback
         working-directory: tests/test_integration/jetbase
         run: uv run jetbase rollback
 
       - name: Run rollback basic test
-        working-directory: tests/test_integration/test_rollback.py
-        run: uv run pytest -m "basic"
+        working-directory: tests/test_integration
+        run: uv run pytest -m "basic" test_rollback.py
 
       - name: Run jetbase rollback with --to param
         working-directory: tests/test_integration/jetbase
         run: uv run jetbase rollback --to-version V2
 
       - name: Run rollback to_version integration test
-        working-directory: tests/test_integration/test_rollback.py
-        run: uv run pytest -m "to_version"
+        working-directory: tests/test_integration
+        run: uv run pytest -m "to_version" test_rollback.py
