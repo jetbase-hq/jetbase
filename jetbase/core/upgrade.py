@@ -10,7 +10,7 @@ from jetbase.core.version import get_versions
 from jetbase.enums import MigrationOperationType
 
 
-def upgrade_cmd() -> None:
+def upgrade_cmd(count: int | None = None) -> None:
     """
     Run database migrations by applying all pending SQL migration files.
     Executes migration files in order starting from the last applied version,
@@ -26,6 +26,9 @@ def upgrade_cmd() -> None:
         directory=os.path.join(os.getcwd(), "migrations"),
         version_to_start_from=latest_version,
     )
+
+    if count is not None:
+        all_versions = dict(list(all_versions.items())[:count])
 
     for version, file_path in all_versions.items():
         sql_statements: list[str] = parse_upgrade_statements(file_path=file_path)

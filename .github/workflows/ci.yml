@@ -90,20 +90,28 @@ jobs:
       - name: Install dependencies
         run: uv sync --dev
 
+      - name: Run jetbase upgrade with --count param
+        working-directory: tests/test_integration/jetbase
+        run: uv run jetbase upgrade --count 2
+
+      - name: Run upgrade count test
+        working-directory: tests/test_integration/test_upgrade.py
+        run: uv run pytest -m "count"
+
       - name: Run jetbase upgrade
         working-directory: tests/test_integration/jetbase
         run: uv run jetbase upgrade
 
       - name: Run upgrade test
-        working-directory: tests/test_integration
-        run: uv run pytest test_upgrade.py
+        working-directory: tests/test_integration/test_upgrade.py
+        run: uv run pytest -m "basic"
 
       - name: Run jetbase rollback with --count param
         working-directory: tests/test_integration/jetbase
         run: uv run jetbase rollback -c 2
 
       - name: Run rollback count test
-        working-directory: tests/test_integration
+        working-directory: tests/test_integration/test_rollback.py
         run: uv run pytest -m "count"
 
       - name: Run jetbase rollback
@@ -111,7 +119,7 @@ jobs:
         run: uv run jetbase rollback
 
       - name: Run rollback basic test
-        working-directory: tests/test_integration
+        working-directory: tests/test_integration/test_rollback.py
         run: uv run pytest -m "basic"
 
       - name: Run jetbase rollback with --to param
@@ -119,5 +127,5 @@ jobs:
         run: uv run jetbase rollback --to-version V2
 
       - name: Run rollback to_version integration test
-        working-directory: tests/test_integration
+        working-directory: tests/test_integration/test_rollback.py
         run: uv run pytest -m "to_version"
