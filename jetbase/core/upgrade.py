@@ -28,6 +28,9 @@ def upgrade_cmd(count: int | None = None) -> None:
         version_to_start_from=latest_version,
     )
 
+    if latest_version is not None:
+        all_versions = dict(list(all_versions.items())[1:])
+
     if count is not None:
         all_versions = dict(list(all_versions.items())[:count])
 

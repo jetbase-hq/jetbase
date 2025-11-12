@@ -106,7 +106,7 @@ def get_versions(
                     if version_tuple > convert_version_to_tuple(version=end_version):
                         continue
                 if version_to_start_from:
-                    if version_tuple > convert_version_to_tuple(
+                    if version_tuple >= convert_version_to_tuple(
                         version=version_to_start_from
                     ):
                         version_to_filepath_dict[
