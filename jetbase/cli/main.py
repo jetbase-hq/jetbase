@@ -14,9 +14,13 @@ def init():
 
 
 @app.command()
-def upgrade():
+def upgrade(
+    count: int = typer.Option(
+        None, "--count", "-c", help="Number of migrations to apply"
+    ),
+):
     """Execute pending migrations"""
-    upgrade_cmd()
+    upgrade_cmd(count=count)
 
 
 @app.command()
