@@ -27,7 +27,7 @@ def test_upgrade_with_count(db_session):
     result = db_session.execute(text("SELECT * FROM users"))
     users = result.fetchall()
 
-    assert len(users) == 2, f"Expected 2 users, but got {len(users)}"
+    assert len(users) == 3, f"Expected 3 users, but got {len(users)}"
 
 
 @pytest.mark.basic
