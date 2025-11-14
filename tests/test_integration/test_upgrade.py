@@ -30,7 +30,7 @@ def test_upgrade_with_count(db_session):
     assert len(users) == 3, f"Expected 3 users, but got {len(users)}"
 
 
-@pytest.mark.count
+@pytest.mark.to_version
 def test_upgrade_to_version(db_session):
     """Test that queries all users and asserts count."""
     result = db_session.execute(text("SELECT * FROM users"))
