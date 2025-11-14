@@ -18,9 +18,14 @@ def upgrade(
     count: int = typer.Option(
         None, "--count", "-c", help="Number of migrations to apply"
     ),
+    to_version: str | None = typer.Option(
+        None, "--to-version", "-t", help="Rollback to a specific version"
+    ),
 ):
     """Execute pending migrations"""
-    upgrade_cmd(count=count)
+    upgrade_cmd(
+        count=count, to_version=to_version.replace("_", ".") if to_version else None
+    )
 
 
 @app.command()
@@ -33,7 +38,9 @@ def rollback(
     ),
 ):
     """Rollback migration(s)"""
-    rollback_cmd(count=count, to_version=to_version)
+    rollback_cmd(
+        count=count, to_version=to_version.replace("_", ".") if to_version else None
+    )
 
 
 def main() -> None:
