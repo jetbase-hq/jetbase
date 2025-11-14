@@ -24,7 +24,7 @@ def rollback_cmd(count: int | None = None, to_version: str | None = None) -> Non
         latest_migration_versions = get_latest_versions(limit=count)
     elif to_version:
         latest_migration_versions = get_latest_versions_by_starting_version(
-            starting_version=to_version.replace("_", ".")
+            starting_version=to_version
         )
 
     if not latest_migration_versions:

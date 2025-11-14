@@ -10,7 +10,7 @@ from jetbase.core.version import get_versions
 from jetbase.enums import MigrationOperationType
 
 
-def upgrade_cmd(count: int | None = None) -> None:
+def upgrade_cmd(count: int | None = None, to_version: str | None = None) -> None:
     """
     Run database migrations by applying all pending SQL migration files.
     Executes migration files in order starting from the last applied version,
@@ -20,6 +20,12 @@ def upgrade_cmd(count: int | None = None) -> None:
         None
     """
 
+    if count is not None and to_version is not None:
+        raise ValueError(
+            "Cannot specify both 'count' and 'to_version' for upgrade. "
+            "Select only one, or do not specify either to run all pending migrations."
+        )
+
     create_migrations_table()
     latest_version: str | None = get_last_updated_version()
 
@@ -28,11 +34,22 @@ def upgrade_cmd(count: int | None = None) -> None:
         version_to_start_from=latest_version,
     )
 
-    if latest_version is not None:
+    if latest_version:
         all_versions = dict(list(all_versions.items())[1:])
 
-    if count is not None:
+    if count:
         all_versions = dict(list(all_versions.items())[:count])
+    elif to_version:
+        if all_versions.get(to_version) is None:
+            raise ValueError(
+                f"The specified to_version '{to_version}' does not exist among pending migrations."
+            )
+        all_versions_list = []
+        for file_version, file_path in all_versions.items():
+            all_versions_list.append((file_version, file_path))
+            if file_version == to_version:
+                break
+        all_versions = dict(all_versions_list)
 
     for version, file_path in all_versions.items():
         sql_statements: list[str] = parse_upgrade_statements(file_path=file_path)
