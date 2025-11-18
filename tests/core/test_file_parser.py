@@ -4,7 +4,14 @@ from typing import Generator
 
 import pytest
 
-from jetbase.core.file_parser import parse_rollback_statements, parse_upgrade_statements
+from jetbase.core.file_parser import (
+    _get_description_from_filename,
+    _get_version_from_filename,
+    _is_valid_version,
+    is_valid_filename,
+    parse_rollback_statements,
+    parse_upgrade_statements,
+)
 
 
 class TestParseUpgradeStatements:
@@ -428,3 +435,66 @@ class TestParseRollbackStatements:
         assert result[0] == "DELETE FROM users WHERE id IN (1, 2)"
         assert result[1] == "DROP INDEX idx_users_name"
         assert result[2] == "DROP TABLE users"
+
+    def test_is_valid_filename(self) -> None:
+        """Test validation of migration filenames."""
+        assert is_valid_filename("V1__initial_setup.sql") is True
+        assert is_valid_filename("V1_2__add_feature.sql") is True
+        assert is_valid_filename("V1.2.3__fix_bug.sql") is True
+        assert is_valid_filename("1__missing_v_prefix.sql") is False
+        assert is_valid_filename("V1-add_feature.sql") is False
+        assert is_valid_filename("V1__no_sql_extension.txt") is False
+        assert is_valid_filename("V__no_version.sql") is False
+        assert is_valid_filename("V1..2__description.sql") is False
+        assert is_valid_filename("V1._2__description.sql") is False
+        assert is_valid_filename("V1.__description.sql") is False
+        assert is_valid_filename("V1_2_3__description.SQL") is False
+        assert is_valid_filename("V1_.2__ .sql") is False
+        assert is_valid_filename("V__description.sql") is False
+        assert is_valid_filename("V.sql") is False
+        assert is_valid_filename("V1_2_3__.sql") is False
+        assert is_valid_filename("V1_2_3__   .sql") is False
+
+    def test_is_valid_version(self) -> None:
+        """Test validation of version strings."""
+        assert _is_valid_version("1") is True
+        assert _is_valid_version("1.0") is True
+        assert _is_valid_version("1.0.0") is True
+        assert _is_valid_version("10.2.3") is True
+        assert _is_valid_version("0.1") is True
+        assert _is_valid_version("0.0.1") is True
+        assert _is_valid_version("1..2") is False
+        assert _is_valid_version("1.2.") is False
+        assert _is_valid_version(".1.2") is False
+        assert _is_valid_version("1.2.a") is False
+        assert _is_valid_version("a.b.c") is False
+        assert _is_valid_version("") is False
+        assert _is_valid_version("1_2_3") is True
+
+    def test_get_version_from_filename(self) -> None:
+        """Test extraction of version from migration filenames."""
+        assert _get_version_from_filename("V1__initial_setup.sql") == "1"
+        assert _get_version_from_filename("V1_2__add_feature.sql") == "1_2"
+        assert _get_version_from_filename("V1.2.3__fix_bug.sql") == "1.2.3"
+        assert (
+            _get_version_from_filename("V10_20_30__complex_version.sql") == "10_20_30"
+        )
+        assert _get_version_from_filename("Vhello__leading_zero.sql") == "hello"
+        assert _get_version_from_filename("V0_1__.sql") == "0_1"
+
+    def test_get_description_from_filename(self) -> None:
+        """Test extraction of description from migration filenames."""
+        assert (
+            _get_description_from_filename("V1__initial_setup.sql") == "initial_setup"
+        )
+        assert _get_description_from_filename("V1_2__add_feature.sql") == "add_feature"
+        assert _get_description_from_filename("V1.2.3__fix_bug.sql") == "fix_bug"
+        assert (
+            _get_description_from_filename("V10_20_30__complex_version.sql")
+            == "complex_version"
+        )
+        assert (
+            _get_description_from_filename("Vhello__leading_zero.sql") == "leading_zero"
+        )
+        assert _get_description_from_filename("V0_1__.sql") == ""
+        assert _get_description_from_filename("V0_1__    .sql") == ""

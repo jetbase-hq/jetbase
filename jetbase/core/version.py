@@ -1,5 +1,7 @@
 import os
 
+from jetbase.core.file_parser import is_valid_filename
+
 
 def _get_version_key_from_filename(filename: str) -> str:
     """
@@ -95,10 +97,10 @@ def get_versions(
     """
     version_to_filepath_dict: dict[str, str] = {}
     for root, _, files in os.walk(directory):
-        for file in files:
-            if file.endswith(".sql"):
-                file_path: str = os.path.join(root, file)
-                version: str = _get_version_key_from_filename(filename=file)
+        for filename in files:
+            if is_valid_filename(filename=filename):
+                file_path: str = os.path.join(root, filename)
+                version: str = _get_version_key_from_filename(filename=filename)
                 version_tuple: tuple[str, ...] = convert_version_to_tuple(
                     version=version
                 )
