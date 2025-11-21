@@ -21,7 +21,7 @@ def db_session():
     session.close()
 
 
-@pytest.mark.basic
+@pytest.mark.dry_run
 def test_dry_run(db_session):
     """Test that queries all users and asserts count."""
     result = db_session.execute(text("SELECT * FROM users"))
