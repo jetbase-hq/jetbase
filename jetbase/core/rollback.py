@@ -1,5 +1,6 @@
 import os
 
+from jetbase.core.dry_run import process_dry_run
 from jetbase.core.file_parser import parse_rollback_statements
 from jetbase.core.repository import (
     get_latest_versions,
@@ -10,7 +11,9 @@ from jetbase.core.version import get_versions
 from jetbase.enums import MigrationOperationType
 
 
-def rollback_cmd(count: int | None = None, to_version: str | None = None) -> None:
+def rollback_cmd(
+    count: int | None = None, to_version: str | None = None, dry_run: bool = False
+) -> None:
     if count is not None and to_version is not None:
         raise ValueError(
             "Cannot specify both 'count' and 'to_version' for rollback. "
@@ -38,13 +41,20 @@ def rollback_cmd(count: int | None = None, to_version: str | None = None) -> Non
 
     versions_to_rollback: dict[str, str] = dict(reversed(versions_to_rollback.items()))
 
-    for version, file_path in versions_to_rollback.items():
-        sql_statements: list[str] = parse_rollback_statements(file_path=file_path)
-        run_migration(
-            sql_statements=sql_statements,
-            version=version,
+    if not dry_run:
+        for version, file_path in versions_to_rollback.items():
+            sql_statements: list[str] = parse_rollback_statements(file_path=file_path)
+            run_migration(
+                sql_statements=sql_statements,
+                version=version,
+                migration_operation=MigrationOperationType.ROLLBACK,
+            )
+            filename: str = os.path.basename(file_path)
+
+            print(f"Rollback applied successfully: {filename}")
+
+    else:
+        process_dry_run(
+            version_to_filepath=versions_to_rollback,
             migration_operation=MigrationOperationType.ROLLBACK,
         )
-        filename: str = os.path.basename(file_path)
-
-        print(f"Rollback applied successfully: {filename}")

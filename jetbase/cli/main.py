@@ -21,10 +21,15 @@ def upgrade(
     to_version: str | None = typer.Option(
         None, "--to-version", "-t", help="Rollback to a specific version"
     ),
+    dry_run: bool = typer.Option(
+        False, "--dry-run", "-d", help="Simulate the upgrade without making changes"
+    ),
 ):
     """Execute pending migrations"""
     upgrade_cmd(
-        count=count, to_version=to_version.replace("_", ".") if to_version else None
+        count=count,
+        to_version=to_version.replace("_", ".") if to_version else None,
+        dry_run=dry_run,
     )
 
 
@@ -36,10 +41,15 @@ def rollback(
     to_version: str | None = typer.Option(
         None, "--to-version", "-t", help="Rollback to a specific version"
     ),
+    dry_run: bool = typer.Option(
+        False, "--dry-run", "-d", help="Simulate the upgrade without making changes"
+    ),
 ):
     """Rollback migration(s)"""
     rollback_cmd(
-        count=count, to_version=to_version.replace("_", ".") if to_version else None
+        count=count,
+        to_version=to_version.replace("_", ".") if to_version else None,
+        dry_run=dry_run,
     )
 
 

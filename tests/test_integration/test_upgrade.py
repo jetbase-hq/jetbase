@@ -21,6 +21,19 @@ def db_session():
     session.close()
 
 
+@pytest.mark.dry_run
+def test_upgrade_dry_run(db_session):
+    """Test that queries all users and asserts count."""
+    result = db_session.execute(
+        text(
+            "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'users')"
+        )
+    )
+    table_exists = result.scalar()
+
+    assert not table_exists, "Expected users table to not exist, but it does"
+
+
 @pytest.mark.count
 def test_upgrade_with_count(db_session):
     """Test that queries all users and asserts count."""
