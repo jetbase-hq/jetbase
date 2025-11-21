@@ -1,5 +1,4 @@
 import os
-from ast import Not
 
 from jetbase.core.file_parser import parse_rollback_statements, parse_upgrade_statements
 from jetbase.enums import MigrationOperationType
