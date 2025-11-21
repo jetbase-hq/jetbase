@@ -90,6 +90,14 @@ jobs:
       - name: Install dependencies
         run: uv sync --dev
 
+      - name: Run jetbase upgrade with --dry-run param
+        working-directory: tests/test_integration/jetbase
+        run: uv run jetbase upgrade --dry-run
+
+      - name: Run upgrade dry-run test
+        working-directory: tests/test_integration
+        run: uv run pytest -m "dry_run" test_upgrade.py
+
       - name: Run jetbase upgrade with --count param
         working-directory: tests/test_integration/jetbase
         run: uv run jetbase upgrade --count 2
@@ -113,6 +121,14 @@ jobs:
       - name: Run upgrade basic test
         working-directory: tests/test_integration
         run: uv run pytest -m "basic" test_upgrade.py
+
+      - name: Run jetbase rollback with --dry-run param
+        working-directory: tests/test_integration/jetbase
+        run: uv run jetbase rollback --dry-run
+
+      - name: Run rollback dry-run test
+        working-directory: tests/test_integration
+        run: uv run pytest -m "dry_run" test_rollback.py
 
       - name: Run jetbase rollback with --count param
         working-directory: tests/test_integration/jetbase

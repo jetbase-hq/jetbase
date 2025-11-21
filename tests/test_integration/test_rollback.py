@@ -22,6 +22,15 @@ def db_session():
 
 
 @pytest.mark.basic
+def test_dry_run(db_session):
+    """Test that queries all users and asserts count."""
+    result = db_session.execute(text("SELECT * FROM users"))
+    users = result.fetchall()
+
+    assert len(users) == 9, f"Expected 9 users, but got {len(users)}"
+
+
+@pytest.mark.basic
 def test_rollback(db_session):
     """Test that queries all users and asserts count."""
     result = db_session.execute(text("SELECT * FROM users"))

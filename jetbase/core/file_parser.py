@@ -3,26 +3,32 @@ import re
 from jetbase.enums import MigrationOperationType
 
 
-def parse_upgrade_statements(file_path: str) -> list[str]:
+def parse_upgrade_statements(file_path: str, dry_run: bool = False) -> list[str]:
     statements = []
     current_statement = []
 
     with open(file_path, "r") as file:
         for line in file:
-            line = line.strip()
+            if not dry_run:
+                line = line.strip()
+            else:
+                line = line.rstrip()
 
             if (
-                line.startswith("--")
+                line.strip().startswith("--")
                 and line[2:].strip().lower() == MigrationOperationType.ROLLBACK.value
             ):
                 break
 
-            if not line or line.startswith("--"):
+            if not line or line.strip().startswith("--"):
                 continue
             current_statement.append(line)
 
-            if line.endswith(";"):
-                statement = " ".join(current_statement)
+            if line.strip().endswith(";"):
+                if not dry_run:
+                    statement = " ".join(current_statement)
+                else:
+                    statement = "\n".join(current_statement)
                 statement = statement.rstrip(";").strip()
                 if statement:
                     statements.append(statement)
@@ -31,18 +37,21 @@ def parse_upgrade_statements(file_path: str) -> list[str]:
     return statements
 
 
-def parse_rollback_statements(file_path: str) -> list[str]:
+def parse_rollback_statements(file_path: str, dry_run: bool = False) -> list[str]:
     statements = []
     current_statement = []
     in_rollback_section = False
 
     with open(file_path, "r") as file:
         for line in file:
-            line = line.strip()
+            if not dry_run:
+                line = line.strip()
+            else:
+                line = line.rstrip()
 
             if not in_rollback_section:
                 if (
-                    line.startswith("--")
+                    line.strip().startswith("--")
                     and line[2:].strip().lower()
                     == MigrationOperationType.ROLLBACK.value
                 ):
@@ -51,12 +60,15 @@ def parse_rollback_statements(file_path: str) -> list[str]:
                     continue
 
             if in_rollback_section:
-                if not line or line.startswith("--"):
+                if not line or line.strip().startswith("--"):
                     continue
                 current_statement.append(line)
 
-                if line.endswith(";"):
-                    statement = " ".join(current_statement)
+                if line.strip().endswith(";"):
+                    if not dry_run:
+                        statement = " ".join(current_statement)
+                    else:
+                        statement = "\n".join(current_statement)
                     statement = statement.rstrip(";").strip()
                     if statement:
                         statements.append(statement)
