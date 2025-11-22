@@ -5,6 +5,7 @@ from jetbase.core.file_parser import parse_rollback_statements
 from jetbase.core.repository import (
     get_latest_versions,
     get_latest_versions_by_starting_version,
+    migrations_table_exists,
     run_migration,
 )
 from jetbase.core.version import get_versions
@@ -14,6 +15,11 @@ from jetbase.enums import MigrationOperationType
 def rollback_cmd(
     count: int | None = None, to_version: str | None = None, dry_run: bool = False
 ) -> None:
+    table_exists: bool = migrations_table_exists()
+    if not table_exists:
+        print("No migrations have been applied; nothing to rollback.")
+        return
+
     if count is not None and to_version is not None:
         raise ValueError(
             "Cannot specify both 'count' and 'to_version' for rollback. "
@@ -31,7 +37,8 @@ def rollback_cmd(
         )
 
     if not latest_migration_versions:
-        raise RuntimeError("No migrations have been applied; cannot perform rollback.")
+        print("No migrations have been applied; nothing to rollback.")
+        return
 
     versions_to_rollback: dict[str, str] = get_versions(
         directory=os.path.join(os.getcwd(), "migrations"),

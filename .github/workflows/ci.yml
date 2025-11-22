@@ -90,6 +90,10 @@ jobs:
       - name: Install dependencies
         run: uv sync --dev
 
+      - name: Run jetbase rollback with no migrations table created
+        working-directory: tests/test_integration/jetbase
+        run: uv run jetbase rollback
+
       - name: Run jetbase upgrade with --dry-run param
         working-directory: tests/test_integration/jetbase
         run: uv run jetbase upgrade --dry-run

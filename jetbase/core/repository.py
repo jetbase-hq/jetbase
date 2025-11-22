@@ -3,6 +3,7 @@ from sqlalchemy import Engine, Result, create_engine, text
 from jetbase.config import get_sqlalchemy_url
 from jetbase.enums import MigrationOperationType
 from jetbase.queries import (
+    CHECK_IF_MIGRATIONS_TABLE_EXISTS_QUERY,
     CHECK_IF_VERSION_EXISTS_QUERY,
     CREATE_MIGRATIONS_TABLE_STMT,
     DELETE_VERSION_STMT,
@@ -132,3 +133,21 @@ def get_latest_versions_by_starting_version(
         ]
 
     return latest_versions
+
+
+def migrations_table_exists() -> bool:
+    """
+    Check if the jetbase_migrations table exists in the database.
+    Returns:
+        bool: True if the jetbase_migrations table exists, False otherwise.
+    """
+
+    engine: Engine = create_engine(url=get_sqlalchemy_url())
+
+    with engine.begin() as connection:
+        result: Result[tuple[bool]] = connection.execute(
+            statement=CHECK_IF_MIGRATIONS_TABLE_EXISTS_QUERY
+        )
+        table_exists: bool = result.scalar_one()
+
+    return table_exists

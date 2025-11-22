@@ -57,3 +57,13 @@ CHECK_IF_VERSION_EXISTS_QUERY: TextClause = text("""
     WHERE 
         version = :version
 """)
+
+
+CHECK_IF_MIGRATIONS_TABLE_EXISTS_QUERY: TextClause = text("""
+SELECT EXISTS (
+    SELECT 1
+    FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_name = 'jetbase_migrations'
+)
+""")
