@@ -4,7 +4,7 @@ import tempfile
 from jetbase.core.version import (
     _convert_version_tuple_to_str,
     _get_version_key_from_filename,
-    get_versions,
+    get_migration_filepaths_by_version,
 )
 
 
@@ -20,7 +20,7 @@ def test_convert_version_tuple_to_str():
     assert _convert_version_tuple_to_str(("2",)) == "2"
 
 
-def test_get_versions():
+def test_get_migration_filepaths_by_version():
     with tempfile.TemporaryDirectory() as temp_dir:
         file1 = os.path.join(temp_dir, "V1_2_0__add_feature.sql")
         file2 = os.path.join(temp_dir, "V1_0_0__initial_setup.sql")
@@ -37,7 +37,7 @@ def test_get_versions():
         with open(file4, "w") as f:
             f.write("This is not a SQL file.")
 
-        versions = get_versions(directory=temp_dir)
+        versions = get_migration_filepaths_by_version(directory=temp_dir)
         expected_versions = {
             "1.0.0": file2,
             "1.2.0": file1,
@@ -45,21 +45,25 @@ def test_get_versions():
         }
         assert versions == expected_versions
 
-        versions = get_versions(directory=temp_dir, version_to_start_from="1.2.0")
+        versions = get_migration_filepaths_by_version(
+            directory=temp_dir, version_to_start_from="1.2.0"
+        )
         expected_versions = {
             "1.2.0": file1,
             "2.0.0": file3,
         }
         assert versions == expected_versions
 
-        versions = get_versions(directory=temp_dir, end_version="1.2.0")
+        versions = get_migration_filepaths_by_version(
+            directory=temp_dir, end_version="1.2.0"
+        )
         expected_versions = {
             "1.0.0": file2,
             "1.2.0": file1,
         }
         assert versions == expected_versions
 
-        versions = get_versions(
+        versions = get_migration_filepaths_by_version(
             directory=temp_dir, version_to_start_from="1.2.0", end_version="2.0.0"
         )
         expected_versions = {

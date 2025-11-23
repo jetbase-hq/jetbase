@@ -8,7 +8,7 @@ from jetbase.core.repository import (
     migrations_table_exists,
     run_migration,
 )
-from jetbase.core.version import get_versions
+from jetbase.core.version import get_migration_filepaths_by_version
 from jetbase.enums import MigrationOperationType
 
 
@@ -40,7 +40,7 @@ def rollback_cmd(
         print("No migrations have been applied; nothing to rollback.")
         return
 
-    versions_to_rollback: dict[str, str] = get_versions(
+    versions_to_rollback: dict[str, str] = get_migration_filepaths_by_version(
         directory=os.path.join(os.getcwd(), "migrations"),
         version_to_start_from=latest_migration_versions[-1],
         end_version=latest_migration_versions[0],

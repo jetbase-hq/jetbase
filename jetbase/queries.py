@@ -13,13 +13,16 @@ LATEST_VERSION_QUERY: TextClause = text("""
 CREATE_MIGRATIONS_TABLE_STMT: TextClause = text("""
 CREATE TABLE IF NOT EXISTS jetbase_migrations (
     version VARCHAR(255) PRIMARY KEY,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    description VARCHAR(500),
+    filename VARCHAR(512),
+    order_executed INT GENERATED ALWAYS AS IDENTITY,
+    applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )
 """)
 
 INSERT_VERSION_STMT: TextClause = text("""
-INSERT INTO jetbase_migrations (version) 
-VALUES (:version)
+INSERT INTO jetbase_migrations (version, description, filename) 
+VALUES (:version, :description, :filename)
 """)
 
 DELETE_VERSION_STMT: TextClause = text("""

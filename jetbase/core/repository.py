@@ -1,6 +1,7 @@
 from sqlalchemy import Engine, Result, create_engine, text
 
 from jetbase.config import get_sqlalchemy_url
+from jetbase.core.file_parser import get_description_from_filename
 from jetbase.enums import MigrationOperationType
 from jetbase.queries import (
     CHECK_IF_MIGRATIONS_TABLE_EXISTS_QUERY,
@@ -33,7 +34,7 @@ def get_last_updated_version() -> str | None:
     return latest_version
 
 
-def create_migrations_table() -> None:
+def create_migrations_table_if_not_exists() -> None:
     """
     Creates the migrations table in the database
     if it does not already exist.
@@ -47,7 +48,10 @@ def create_migrations_table() -> None:
 
 
 def run_migration(
-    sql_statements: list[str], version: str, migration_operation: MigrationOperationType
+    sql_statements: list[str],
+    version: str,
+    migration_operation: MigrationOperationType,
+    filename: str | None = None,
 ) -> None:
     """
     Execute a database migration by running SQL statements and recording the migration version.
@@ -58,15 +62,29 @@ def run_migration(
         None
     """
 
+    if migration_operation == MigrationOperationType.UPGRADE and filename is None:
+        raise ValueError("Filename must be provided for upgrade migrations.")
+
     engine: Engine = create_engine(url=get_sqlalchemy_url())
+
     with engine.begin() as connection:
         for statement in sql_statements:
             connection.execute(text(statement))
 
         if migration_operation == MigrationOperationType.UPGRADE:
+            # Pyrefly won't recognize that filename cannot be None here
+            # even if I would add an assert statement.
+            assert filename is not None
+            description: str = get_description_from_filename(filename=filename)
             connection.execute(
-                statement=INSERT_VERSION_STMT, parameters={"version": version}
+                statement=INSERT_VERSION_STMT,
+                parameters={
+                    "version": version,
+                    "description": description,
+                    "filename": filename,
+                },
             )
+
         elif migration_operation == MigrationOperationType.ROLLBACK:
             connection.execute(
                 statement=DELETE_VERSION_STMT, parameters={"version": version}
