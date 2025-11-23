@@ -6,8 +6,6 @@ from jetbase.core.upgrade import upgrade_cmd
 
 app = typer.Typer(help="Jetbase CLI")
 
-# test to remove
-
 
 @app.command()
 def init():
