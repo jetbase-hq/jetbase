@@ -72,8 +72,6 @@ def run_migration(
             connection.execute(text(statement))
 
         if migration_operation == MigrationOperationType.UPGRADE:
-            # Pyrefly won't recognize that filename cannot be None here
-            # even if I would add an assert statement.
             assert filename is not None
             description: str = get_description_from_filename(filename=filename)
             connection.execute(
