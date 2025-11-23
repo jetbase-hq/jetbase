@@ -77,7 +77,7 @@ def parse_rollback_statements(file_path: str, dry_run: bool = False) -> list[str
     return statements
 
 
-def is_valid_filename(filename: str) -> bool:
+def is_filename_format_valid(filename: str) -> bool:
     """
     Validates if a filename follows the expected migration file naming convention.
     A valid filename must:
@@ -91,9 +91,9 @@ def is_valid_filename(filename: str) -> bool:
     Returns:
         bool: True if the filename meets all validation criteria, False otherwise.
     Example:
-        >>> is_valid_filename("V1__initial_migration.sql")
+        >>> is_valid_filename_format("V1__initial_migration.sql")
         True
-        >>> is_valid_filename("migration.sql")
+        >>> is_valid_filename_format("migration.sql")
         False
     """
     if not filename.endswith(".sql"):
@@ -102,13 +102,43 @@ def is_valid_filename(filename: str) -> bool:
         return False
     if "__" not in filename:
         return False
-    description: str = _get_description_from_filename(filename=filename)
+    description: str = _get_raw_description_from_filename(filename=filename)
     if len(description.strip()) == 0:
         return False
     raw_version: str = _get_version_from_filename(filename=filename)
     if not _is_valid_version(version=raw_version):
         return False
     return True
+
+
+def get_description_from_filename(filename: str) -> str:
+    """
+    Extract and format the description from a migration filename.
+
+    Args:
+        filename: The migration filename (e.g., "V1_2_0__add_feature.sql")
+
+    Returns:
+        str: The formatted description string (e.g., "add feature")
+    """
+
+    raw_description: str = _get_raw_description_from_filename(filename=filename)
+    formatted_description: str = raw_description.replace("_", " ")
+    return formatted_description
+
+
+def is_filename_length_valid(filename: str, max_length: int = 512) -> bool:
+    """
+    Check if the filename length is within the specified maximum length.
+
+    Args:
+        filename: The migration filename to check.
+        max_length: The maximum allowed length for the filename.
+
+    Returns:
+        bool: True if the filename length is within the maximum length, False otherwise.
+    """
+    return len(filename) <= max_length
 
 
 def _get_version_from_filename(filename: str) -> str:
@@ -126,7 +156,7 @@ def _get_version_from_filename(filename: str) -> str:
     return version
 
 
-def _get_description_from_filename(filename: str) -> str:
+def _get_raw_description_from_filename(filename: str) -> str:
     """
     Extract the description string from a migration filename.
 
