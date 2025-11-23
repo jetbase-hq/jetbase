@@ -6,7 +6,7 @@ LATEST_VERSION_QUERY: TextClause = text("""
     FROM 
         jetbase_migrations
     ORDER BY 
-        created_at DESC
+        applied_at DESC
     LIMIT 1
 """)
 
@@ -36,7 +36,7 @@ LATEST_VERSIONS_QUERY: TextClause = text("""
     FROM 
         jetbase_migrations
     ORDER BY 
-        created_at DESC
+        applied_at DESC
     LIMIT :limit
 """)
 
@@ -45,11 +45,11 @@ LATEST_VERSIONS_BY_STARTING_VERSION_QUERY: TextClause = text("""
         version
     FROM
         jetbase_migrations
-    WHERE created_at > 
-        (select created_at from jetbase_migrations 
+    WHERE applied_at > 
+        (select applied_at from jetbase_migrations 
             where version = :starting_version)
     ORDER BY 
-        created_at DESC
+        applied_at DESC
 """)
 
 CHECK_IF_VERSION_EXISTS_QUERY: TextClause = text("""
