@@ -1,6 +1,6 @@
 [project]
 name = "jetbase"
-version = "0.7.0"
+version = "0.8.0"
 description = "Jetbase is a Python database migration tool"
 readme = "README.md"
 authors = [
@@ -8,6 +8,7 @@ authors = [
 ]
 requires-python = ">=3.10"
 dependencies = [
+    "rich>=12.2.0",
     "sqlalchemy>=2.0.10",
     "typer>=0.12.3",
 ]
