@@ -94,6 +94,14 @@ jobs:
         working-directory: tests/test_integration/jetbase
         run: uv run jetbase rollback
 
+      - name: Run jetbase latest with no migrations table created
+        working-directory: tests/test_integration/jetbase
+        run: uv run jetbase latest
+
+      - name: Run jetbase history with no migrations table created
+        working-directory: tests/test_integration/jetbase
+        run: uv run jetbase history
+
       - name: Run jetbase upgrade with --dry-run param
         working-directory: tests/test_integration/jetbase
         run: uv run jetbase upgrade --dry-run
@@ -157,3 +165,11 @@ jobs:
       - name: Run rollback to_version integration test
         working-directory: tests/test_integration
         run: uv run pytest -m "to_version" test_rollback.py
+
+      - name: Run jetbase latest
+        working-directory: tests/test_integration/jetbase
+        run: uv run jetbase latest
+
+      - name: Run jetbase history
+        working-directory: tests/test_integration/jetbase
+        run: uv run jetbase history
