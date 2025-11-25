@@ -2,6 +2,7 @@ from sqlalchemy import Engine, Result, create_engine, text
 
 from jetbase.config import get_sqlalchemy_url
 from jetbase.core.file_parser import get_description_from_filename
+from jetbase.core.models import MigrationRecord
 from jetbase.enums import MigrationOperationType
 from jetbase.queries import (
     CHECK_IF_MIGRATIONS_TABLE_EXISTS_QUERY,
@@ -12,6 +13,7 @@ from jetbase.queries import (
     LATEST_VERSION_QUERY,
     LATEST_VERSIONS_BY_STARTING_VERSION_QUERY,
     LATEST_VERSIONS_QUERY,
+    MIGRATION_RECORDS_QUERY,
 )
 
 
@@ -167,3 +169,28 @@ def migrations_table_exists() -> bool:
         table_exists: bool = result.scalar_one()
 
     return table_exists
+
+
+def get_migration_records() -> list[MigrationRecord]:
+    """
+    Retrieve the full migration history from the database.
+    Returns:
+        list[MigrationRecord]: A list of MigrationRecord containing migration details.
+    """
+
+    engine: Engine = create_engine(url=get_sqlalchemy_url())
+
+    with engine.begin() as connection:
+        results: Result[tuple[str, int, str]] = connection.execute(
+            statement=MIGRATION_RECORDS_QUERY
+        )
+        migration_records: list[MigrationRecord] = [
+            MigrationRecord(
+                version=row.version,
+                order_executed=row.order_executed,
+                description=row.description,
+            )
+            for row in results.fetchall()
+        ]
+
+    return migration_records

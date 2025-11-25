@@ -70,3 +70,14 @@ SELECT EXISTS (
       AND table_name = 'jetbase_migrations'
 )
 """)
+
+MIGRATION_RECORDS_QUERY: TextClause = text("""
+    SELECT
+        version, 
+        order_executed, 
+        description  
+    FROM
+        jetbase_migrations
+    ORDER BY
+        applied_at ASC
+""")

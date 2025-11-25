@@ -1,6 +1,8 @@
 import typer
 
+from jetbase.core.history import history_cmd
 from jetbase.core.initialize import initialize_cmd
+from jetbase.core.latest import latest_cmd
 from jetbase.core.rollback import rollback_cmd
 from jetbase.core.upgrade import upgrade_cmd
 
@@ -51,6 +53,18 @@ def rollback(
         to_version=to_version.replace("_", ".") if to_version else None,
         dry_run=dry_run,
     )
+
+
+@app.command()
+def history():
+    """Show migration history"""
+    history_cmd()
+
+
+@app.command()
+def latest():
+    """Show the latest migration version"""
+    latest_cmd()
 
 
 def main() -> None:
