@@ -2,7 +2,7 @@ from rich.console import Console
 from rich.table import Table
 
 from jetbase.core.models import MigrationRecord
-from jetbase.core.repository import get_migration_records
+from jetbase.core.repository import get_migration_records, migrations_table_exists
 
 
 def history_cmd() -> None:
@@ -27,6 +27,11 @@ def history_cmd() -> None:
         >>> history_cmd()
         # Displays a formatted table with migration history
     """
+    table_exists: bool = migrations_table_exists()
+    if not table_exists:
+        print("No migrations have been applied.")
+        return None
+
     console: Console = Console()
 
     migration_records: list[MigrationRecord] = get_migration_records()
