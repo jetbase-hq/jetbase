@@ -26,6 +26,10 @@ def get_last_updated_version() -> str | None:
         str | None: The latest version string if available, None if no version was found.
     """
 
+    table_exists: bool = migrations_table_exists()
+    if not table_exists:
+        return None
+
     engine: Engine = create_engine(url=get_sqlalchemy_url())
 
     with engine.begin() as connection:
