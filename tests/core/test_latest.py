@@ -20,13 +20,10 @@ def test_latest_cmd(
     expected_output: str,
 ) -> None:
     """Test latest_cmd with different version scenarios."""
-    # Arrange
     mock_get_last_updated_version.return_value = version
 
-    # Act
     latest_cmd()
 
-    # Assert
     captured = capsys.readouterr()
     assert expected_output in captured.out
     mock_get_last_updated_version.assert_called_once()

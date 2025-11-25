@@ -27,7 +27,6 @@ def history_cmd() -> None:
         >>> history_cmd()
         # Displays a formatted table with migration history
     """
-    """Show migration history"""
     console: Console = Console()
 
     migration_records: list[MigrationRecord] = get_migration_records()
