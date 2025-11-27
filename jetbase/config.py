@@ -198,9 +198,7 @@ def _get_sqlalchemy_url_help_message() -> str:
         '   sqlalchemy_url = "sqlite:///mydb.sqlite"\n\n'
         "2. Environment variable:\n"
         '   export JETBASE_SQLALCHEMY_URL="postgresql://user:pass@localhost/dbname"\n\n'
-        "3. jetbase/jetbase.toml file:\n"
-        '   sqlalchemy_url = "mysql://user:pass@localhost/dbname"\n\n'
-        "4. pyproject.toml file:\n"
+        "3. pyproject.toml file:\n"
         "   [tool.jetbase]\n"
         '   sqlalchemy_url = "postgresql://user:pass@localhost/dbname"\n\n'
     )
