@@ -9,7 +9,7 @@ def create_directory_structure(base_path: str) -> None:
 
     This function creates:
     - A migrations directory
-    - A config file with default content
+    - A config.py file with default content
 
     After creating the structure, it prints a confirmation message.
 
