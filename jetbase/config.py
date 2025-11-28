@@ -21,7 +21,7 @@ def get_sqlalchemy_url() -> str:
     4. pyproject.toml file
 
     Returns:
-        The sqlalchemy_url from the first available source
+        str: The sqlalchemy_url from the first available source
 
     Raises:
         ValueError: If no valid SQLAlchemy URL is found in any source
