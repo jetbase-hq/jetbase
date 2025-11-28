@@ -5,6 +5,7 @@ from jetbase.core.file_parser import get_description_from_filename
 from jetbase.core.models import MigrationRecord
 from jetbase.enums import MigrationOperationType
 from jetbase.queries import (
+    CHECK_IF_LOCK_TABLE_EXISTS_QUERY,
     CHECK_IF_MIGRATIONS_TABLE_EXISTS_QUERY,
     CHECK_IF_VERSION_EXISTS_QUERY,
     CREATE_MIGRATIONS_TABLE_STMT,
@@ -198,3 +199,21 @@ def get_migration_records() -> list[MigrationRecord]:
         ]
 
     return migration_records
+
+
+def lock_table_exists() -> bool:
+    """
+    Check if the jetbase_lock table exists in the database.
+    Returns:
+        bool: True if the jetbase_lock table exists, False otherwise.
+    """
+
+    engine: Engine = create_engine(url=get_sqlalchemy_url())
+
+    with engine.begin() as connection:
+        result: Result[tuple[bool]] = connection.execute(
+            statement=CHECK_IF_LOCK_TABLE_EXISTS_QUERY
+        )
+        table_exists: bool = result.scalar_one()
+
+    return table_exists

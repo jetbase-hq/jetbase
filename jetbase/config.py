@@ -30,17 +30,14 @@ def get_sqlalchemy_url() -> str:
 
     sqlalchemy_url = _get_sqlalchemy_url_from_config_py()
     if sqlalchemy_url:
-        print(f"Using SQLAlchemy URL from {CONFIG_FILE}: {sqlalchemy_url}")
         return sqlalchemy_url
 
     sqlalchemy_url = _get_sqlalchemy_url_from_env_var()
     if sqlalchemy_url:
-        print(f"Using SQLAlchemy URL from environment variable: {sqlalchemy_url}")
         return sqlalchemy_url
 
     sqlalchemy_url = _get_sqlalchemy_url_from_jetbase_toml()
     if sqlalchemy_url:
-        print(f"Using SQLAlchemy URL from jetbase.toml: {sqlalchemy_url}")
         return sqlalchemy_url
 
     pyproject_dir: Path | None = _find_pyproject_toml()
@@ -49,7 +46,6 @@ def get_sqlalchemy_url() -> str:
             filepath=pyproject_dir / "pyproject.toml"
         )
         if sqlalchemy_url:
-            print(f"Using SQLAlchemy URL from pyproject.toml: {sqlalchemy_url}")
             return sqlalchemy_url
 
     raise ValueError(_get_sqlalchemy_url_help_message())

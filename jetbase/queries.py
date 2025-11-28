@@ -71,6 +71,16 @@ SELECT EXISTS (
 )
 """)
 
+CHECK_IF_LOCK_TABLE_EXISTS_QUERY: TextClause = text("""
+SELECT EXISTS (
+    SELECT 1
+    FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_name = 'jetbase_lock'
+)
+""")
+
+
 MIGRATION_RECORDS_QUERY: TextClause = text("""
     SELECT
         version, 
@@ -80,4 +90,51 @@ MIGRATION_RECORDS_QUERY: TextClause = text("""
         jetbase_migrations
     ORDER BY
         applied_at ASC
+""")
+
+
+CREATE_LOCK_TABLE_STMT: TextClause = text("""
+CREATE TABLE IF NOT EXISTS jetbase_lock (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    is_locked BOOLEAN NOT NULL DEFAULT FALSE,
+    locked_at TIMESTAMP,
+    process_id VARCHAR(36)
+)
+""")
+
+INITIALIZE_LOCK_RECORD_STMT: TextClause = text("""
+INSERT INTO jetbase_lock (id, is_locked)
+SELECT 1, FALSE
+WHERE NOT EXISTS (SELECT 1 FROM jetbase_lock WHERE id = 1)
+""")
+
+
+CHECK_LOCK_STATUS_STMT: TextClause = text("""
+SELECT is_locked, locked_at
+FROM jetbase_lock
+WHERE id = 1
+""")
+
+ACQUIRE_LOCK_STMT: TextClause = text("""
+UPDATE jetbase_lock
+SET is_locked = TRUE,
+    locked_at = :locked_at,
+    process_id = :process_id
+WHERE id = 1 AND is_locked = FALSE
+""")
+
+RELEASE_LOCK_STMT: TextClause = text("""
+UPDATE jetbase_lock
+SET is_locked = FALSE,
+    locked_at = NULL,
+    process_id = NULL
+WHERE id = 1 AND process_id = :process_id
+""")
+
+FORCE_UNLOCK_STMT: TextClause = text("""
+UPDATE jetbase_lock
+SET is_locked = FALSE,
+    locked_at = NULL,
+    process_id = NULL
+WHERE id = 1
 """)

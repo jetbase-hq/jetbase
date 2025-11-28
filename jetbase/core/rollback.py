@@ -2,10 +2,14 @@ import os
 
 from jetbase.core.dry_run import process_dry_run
 from jetbase.core.file_parser import parse_rollback_statements
+from jetbase.core.lock import (
+    create_lock_table_if_not_exists,
+    migration_lock,
+)
 from jetbase.core.repository import (
+    create_migrations_table_if_not_exists,
     get_latest_versions,
     get_latest_versions_by_starting_version,
-    migrations_table_exists,
     run_migration,
 )
 from jetbase.core.version import get_migration_filepaths_by_version
@@ -15,10 +19,8 @@ from jetbase.enums import MigrationOperationType
 def rollback_cmd(
     count: int | None = None, to_version: str | None = None, dry_run: bool = False
 ) -> None:
-    table_exists: bool = migrations_table_exists()
-    if not table_exists:
-        print("No migrations have been applied; nothing to rollback.")
-        return
+    create_migrations_table_if_not_exists()
+    create_lock_table_if_not_exists()
 
     if count is not None and to_version is not None:
         raise ValueError(
@@ -49,16 +51,19 @@ def rollback_cmd(
     versions_to_rollback: dict[str, str] = dict(reversed(versions_to_rollback.items()))
 
     if not dry_run:
-        for version, file_path in versions_to_rollback.items():
-            sql_statements: list[str] = parse_rollback_statements(file_path=file_path)
-            run_migration(
-                sql_statements=sql_statements,
-                version=version,
-                migration_operation=MigrationOperationType.ROLLBACK,
-            )
-            filename: str = os.path.basename(file_path)
+        with migration_lock():
+            for version, file_path in versions_to_rollback.items():
+                sql_statements: list[str] = parse_rollback_statements(
+                    file_path=file_path
+                )
+                run_migration(
+                    sql_statements=sql_statements,
+                    version=version,
+                    migration_operation=MigrationOperationType.ROLLBACK,
+                )
+                filename: str = os.path.basename(file_path)
 
-            print(f"Rollback applied successfully: {filename}")
+                print(f"Rollback applied successfully: {filename}")
 
     else:
         process_dry_run(

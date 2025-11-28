@@ -2,6 +2,7 @@ import os
 
 from jetbase.core.dry_run import process_dry_run
 from jetbase.core.file_parser import parse_upgrade_statements
+from jetbase.core.lock import create_lock_table_if_not_exists, migration_lock
 from jetbase.core.repository import (
     create_migrations_table_if_not_exists,
     get_last_updated_version,
@@ -30,6 +31,8 @@ def upgrade_cmd(
         )
 
     create_migrations_table_if_not_exists()
+    create_lock_table_if_not_exists()
+
     latest_version: str | None = get_last_updated_version()
 
     all_versions: dict[str, str] = get_migration_filepaths_by_version(
@@ -55,18 +58,21 @@ def upgrade_cmd(
         all_versions = dict(all_versions_list)
 
     if not dry_run:
-        for version, file_path in all_versions.items():
-            sql_statements: list[str] = parse_upgrade_statements(file_path=file_path)
-            filename: str = os.path.basename(file_path)
+        with migration_lock():
+            for version, file_path in all_versions.items():
+                sql_statements: list[str] = parse_upgrade_statements(
+                    file_path=file_path
+                )
+                filename: str = os.path.basename(file_path)
 
-            run_migration(
-                sql_statements=sql_statements,
-                version=version,
-                migration_operation=MigrationOperationType.UPGRADE,
-                filename=filename,
-            )
+                run_migration(
+                    sql_statements=sql_statements,
+                    version=version,
+                    migration_operation=MigrationOperationType.UPGRADE,
+                    filename=filename,
+                )
 
-            print(f"Migration applied successfully: {filename}")
+                print(f"Migration applied successfully: {filename}")
 
     else:
         process_dry_run(
