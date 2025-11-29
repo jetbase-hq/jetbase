@@ -51,8 +51,7 @@ def acquire_lock() -> str:
             },
         )
 
-        if result.rowcount == 0:
-            # Lock is already held, get info about who holds it
+        if result.rowcount == 0:  # already locked``
             raise RuntimeError(
                 "Migration lock is already held by another process.\n\n"
                 "If you are completely sure that no other migrations are running, "
@@ -102,7 +101,7 @@ def migration_lock() -> Generator[None, None, None]:
 
 def force_unlock_cmd() -> None:
     """
-    Command to forcibly release the migration lock.
+    Command to forcibly unlock the migration lock.
     """
     if not lock_table_exists() or not migrations_table_exists():
         print("Unlock successful.")

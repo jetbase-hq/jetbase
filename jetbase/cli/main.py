@@ -70,7 +70,8 @@ def latest():
 
 @app.command()
 def unlock():
-    """Unlock the migration lock to allow migrations to run again.
+    """
+    Unlock the migration lock to allow migrations to run again.
 
     WARNING: Only use this if you're certain no migration is currently running.
     Unlocking then running a migration during an active migration can cause database corruption.
@@ -81,7 +82,6 @@ def unlock():
 @app.command()
 def check_lock() -> None:
     """Checks if the database is currently locked for migrations or not."""
-
     check_lock_cmd()
 
 
