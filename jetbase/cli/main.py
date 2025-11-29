@@ -3,6 +3,7 @@ import typer
 from jetbase.core.history import history_cmd
 from jetbase.core.initialize import initialize_cmd
 from jetbase.core.latest import latest_cmd
+from jetbase.core.lock import check_lock_cmd, force_unlock_cmd
 from jetbase.core.rollback import rollback_cmd
 from jetbase.core.upgrade import upgrade_cmd
 
@@ -65,6 +66,23 @@ def history():
 def latest():
     """Show the latest migration version"""
     latest_cmd()
+
+
+@app.command()
+def unlock():
+    """
+    Unlock the migration lock to allow migrations to run again.
+
+    WARNING: Only use this if you're certain no migration is currently running.
+    Unlocking then running a migration during an active migration can cause database corruption.
+    """
+    force_unlock_cmd()
+
+
+@app.command()
+def check_lock() -> None:
+    """Checks if the database is currently locked for migrations or not."""
+    check_lock_cmd()
 
 
 def main() -> None:
