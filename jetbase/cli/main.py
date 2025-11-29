@@ -69,7 +69,7 @@ def latest():
 
 
 @app.command()
-def unlock():
+def force_unlock():
     """
     Unlock the migration lock to allow migrations to run again.
 
