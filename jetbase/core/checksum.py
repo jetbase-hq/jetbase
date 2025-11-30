@@ -2,7 +2,6 @@ import hashlib
 import os
 
 from jetbase.core.file_parser import parse_upgrade_statements
-from jetbase.core.version import convert_version_tuple_to_version
 from jetbase.exceptions import (
     DuplicateMigrationVersionError,
     MigrationChecksumMismatchError,
