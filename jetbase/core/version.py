@@ -1,6 +1,11 @@
 import os
 
 from jetbase.core.file_parser import is_filename_format_valid, is_filename_length_valid
+from jetbase.exceptions import (
+    DuplicateMigrationVersionError,
+    InvalidMigrationFilenameError,
+    MigrationFilenameTooLongError,
+)
 
 
 def _get_version_key_from_filename(filename: str) -> str:
@@ -39,7 +44,7 @@ def _get_version_key_from_filename(filename: str) -> str:
     return version.replace("_", ".")
 
 
-def _convert_version_tuple_to_str(version_tuple: tuple[str, ...]) -> str:
+def convert_version_tuple_to_version(version_tuple: tuple[str, ...]) -> str:
     """
     Convert a version tuple to a string representation.
 
@@ -97,8 +102,9 @@ def get_migration_filepaths_by_version(
             sorted in ascending order by version number.
 
     Raises:
-        ValueError: If a filename doesn't match the required format or exceeds
-            the maximum length of 512 characters.
+        InvalidMigrationFilenameError: If a filename doesn't match the required format.
+        MigrationFilenameTooLongError: If a filename exceeds the maximum length of 512 characters.
+        DuplicateMigrationVersionError: If duplicate migration versions are detected.
 
     Example:
         >>> get_migration_filepaths_by_version('/path/to/migrations')
@@ -108,26 +114,27 @@ def get_migration_filepaths_by_version(
         {'1.2.0': '/path/to/migrations/V1_2_0__add_users.sql'}
     """
     version_to_filepath_dict: dict[str, str] = {}
+    seen_versions: set[tuple[str, ...]] = set()
 
     for root, _, files in os.walk(directory):
         for filename in files:
             if filename.endswith(".sql") and not is_filename_format_valid(
                 filename=filename
             ):
-                raise ValueError(
-                    f"Invalid migration filename format: {filename}. "
+                raise InvalidMigrationFilenameError(
+                    f"Invalid migration filename format: {filename}.\n"
                     "Filenames must start with 'V', followed by the version number, "
-                    "two underscores '__', a description, and end with '.sql'. "
+                    "two underscores '__', a description, and end with '.sql'.\n"
                     "V<version_number>__<my_description>.sql. "
-                    "Examples: 'V1_2_0__add_new_table.sql' or 'V1.2.0__add_new_table.sql'"
+                    "Examples: 'V1_2_0__add_new_table.sql' or 'V1.2.0__add_new_table.sql'\n"
                 )
 
             if filename.endswith(".sql") and not is_filename_length_valid(
                 filename=filename
             ):
-                raise ValueError(
-                    f"Migration filename too long: {filename}. "
-                    f"Filename is currently {len(filename)} characters. "
+                raise MigrationFilenameTooLongError(
+                    f"Migration filename too long: {filename}.\n"
+                    f"Filename is currently {len(filename)} characters.\n"
                     "Filenames must not exceed 512 characters."
                 )
 
@@ -138,6 +145,14 @@ def get_migration_filepaths_by_version(
                     version=version
                 )
 
+                if version_tuple in seen_versions:
+                    raise DuplicateMigrationVersionError(
+                        f"Duplicate migration version detected: {version_tuple} in file {filename}.\n"
+                        "Each migration version must be unique.\n"
+                        "Please rename the file to have a unique version."
+                    )
+                seen_versions.add(version_tuple)
+
                 if end_version:
                     if version_tuple > convert_version_to_tuple(version=end_version):
                         continue
@@ -147,12 +162,14 @@ def get_migration_filepaths_by_version(
                         version=version_to_start_from
                     ):
                         version_to_filepath_dict[
-                            _convert_version_tuple_to_str(version_tuple=version_tuple)
+                            convert_version_tuple_to_version(
+                                version_tuple=version_tuple
+                            )
                         ] = file_path
 
                 else:
                     version_to_filepath_dict[
-                        _convert_version_tuple_to_str(version_tuple=version_tuple)
+                        convert_version_tuple_to_version(version_tuple=version_tuple)
                     ] = file_path
 
     ordered_version_to_filepath_dict: dict[str, str] = {

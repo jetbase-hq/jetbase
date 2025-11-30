@@ -1,6 +1,7 @@
 from sqlalchemy import Engine, Result, create_engine, text
 
 from jetbase.config import get_sqlalchemy_url
+from jetbase.core.checksum import calculate_checksum
 from jetbase.core.file_parser import get_description_from_filename
 from jetbase.core.models import MigrationRecord
 from jetbase.enums import MigrationOperationType
@@ -10,6 +11,7 @@ from jetbase.queries import (
     CHECK_IF_VERSION_EXISTS_QUERY,
     CREATE_MIGRATIONS_TABLE_STMT,
     DELETE_VERSION_STMT,
+    GET_VERSION_CHECKSUMS_QUERY,
     INSERT_VERSION_STMT,
     LATEST_VERSION_QUERY,
     LATEST_VERSIONS_BY_STARTING_VERSION_QUERY,
@@ -80,13 +82,17 @@ def run_migration(
 
         if migration_operation == MigrationOperationType.UPGRADE:
             assert filename is not None
+
             description: str = get_description_from_filename(filename=filename)
+            checksum: str = calculate_checksum(sql_statements=sql_statements)
+
             connection.execute(
                 statement=INSERT_VERSION_STMT,
                 parameters={
                     "version": version,
                     "description": description,
                     "filename": filename,
+                    "checksum": checksum,
                 },
             )
 
@@ -217,3 +223,41 @@ def lock_table_exists() -> bool:
         table_exists: bool = result.scalar_one()
 
     return table_exists
+
+
+def get_checksums_by_version() -> list[tuple[str, str]]:
+    """
+    Retrieve all migration versions along with their corresponding checksums from the database.
+    Returns:
+        tuple[str, str]: A tuple containing migration version and its checksum.
+    """
+
+    engine: Engine = create_engine(url=get_sqlalchemy_url())
+
+    with engine.begin() as connection:
+        results: Result[tuple[str, str]] = connection.execute(
+            statement=GET_VERSION_CHECKSUMS_QUERY
+        )
+        versions_and_checksums: list[tuple[str, str]] = [
+            (row.version, row.checksum) for row in results.fetchall()
+        ]
+
+    return versions_and_checksums
+
+
+def get_migrated_versions() -> list[str]:
+    """
+    Retrieve all migrated versions from the database.
+    Returns:
+        list[str]: A list of migrated version strings.
+    """
+
+    engine: Engine = create_engine(url=get_sqlalchemy_url())
+
+    with engine.begin() as connection:
+        results: Result[tuple[str]] = connection.execute(
+            statement=GET_VERSION_CHECKSUMS_QUERY
+        )
+        migrated_versions: list[str] = [row.version for row in results.fetchall()]
+
+    return migrated_versions

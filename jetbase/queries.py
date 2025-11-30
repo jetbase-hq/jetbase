@@ -16,13 +16,14 @@ CREATE TABLE IF NOT EXISTS jetbase_migrations (
     description VARCHAR(500),
     filename VARCHAR(512),
     order_executed INT GENERATED ALWAYS AS IDENTITY,
-    applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    checksum VARCHAR(64)
 )
 """)
 
 INSERT_VERSION_STMT: TextClause = text("""
-INSERT INTO jetbase_migrations (version, description, filename) 
-VALUES (:version, :description, :filename)
+INSERT INTO jetbase_migrations (version, description, filename, checksum) 
+VALUES (:version, :description, :filename, :checksum)
 """)
 
 DELETE_VERSION_STMT: TextClause = text("""
@@ -137,4 +138,14 @@ SET is_locked = FALSE,
     locked_at = NULL,
     process_id = NULL
 WHERE id = 1
+""")
+
+
+GET_VERSION_CHECKSUMS_QUERY: TextClause = text("""
+    SELECT 
+        version, checksum
+    FROM 
+        jetbase_migrations
+    ORDER BY 
+        order_executed ASC
 """)

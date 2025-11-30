@@ -2,8 +2,8 @@ import os
 import tempfile
 
 from jetbase.core.version import (
-    _convert_version_tuple_to_str,
     _get_version_key_from_filename,
+    convert_version_tuple_to_version,
     get_migration_filepaths_by_version,
 )
 
@@ -15,9 +15,9 @@ def test_get_version_key_from_filename():
     assert _get_version_key_from_filename("V2_1.5__another_mixed.sql") == "2.1.5"
 
 
-def test_convert_version_tuple_to_str():
-    assert _convert_version_tuple_to_str(("1", "2", "3")) == "1.2.3"
-    assert _convert_version_tuple_to_str(("2",)) == "2"
+def test_convert_version_tuple_to_version():
+    assert convert_version_tuple_to_version(("1", "2", "3")) == "1.2.3"
+    assert convert_version_tuple_to_version(("2",)) == "2"
 
 
 def test_get_migration_filepaths_by_version():
