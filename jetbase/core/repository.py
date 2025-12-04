@@ -2,6 +2,8 @@ from sqlalchemy import Engine, Result, create_engine, text
 
 from jetbase.config import get_sqlalchemy_url
 from jetbase.core.checksum import calculate_checksum
+
+# from jetbase.core.utils import calculate_checksum
 from jetbase.core.file_parser import get_description_from_filename
 from jetbase.core.models import MigrationRecord
 from jetbase.enums import MigrationOperationType
@@ -17,6 +19,7 @@ from jetbase.queries import (
     LATEST_VERSIONS_BY_STARTING_VERSION_QUERY,
     LATEST_VERSIONS_QUERY,
     MIGRATION_RECORDS_QUERY,
+    REPAIR_MIGRATION_CHECKSUM_STMT,
 )
 
 
@@ -261,3 +264,14 @@ def get_migrated_versions() -> list[str]:
         migrated_versions: list[str] = [row.version for row in results.fetchall()]
 
     return migrated_versions
+
+
+def update_migration_checksums(versions_and_checksums: list[tuple[str, str]]) -> None:
+    engine: Engine = create_engine(url=get_sqlalchemy_url())
+
+    with engine.begin() as connection:
+        for version, checksum in versions_and_checksums:
+            connection.execute(
+                statement=REPAIR_MIGRATION_CHECKSUM_STMT,
+                parameters={"version": version, "checksum": checksum},
+            )
