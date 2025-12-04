@@ -2,8 +2,6 @@ from sqlalchemy import Engine, Result, create_engine, text
 
 from jetbase.config import get_sqlalchemy_url
 from jetbase.core.checksum import calculate_checksum
-
-# from jetbase.core.utils import calculate_checksum
 from jetbase.core.file_parser import get_description_from_filename
 from jetbase.core.models import MigrationRecord
 from jetbase.enums import MigrationOperationType

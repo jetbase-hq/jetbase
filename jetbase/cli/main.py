@@ -1,6 +1,5 @@
 import typer
 
-# from jetbase.core.checksum import repair_checksums_cmd
 from jetbase.core.checksum_cmd import repair_checksums_cmd
 from jetbase.core.history import history_cmd
 from jetbase.core.initialize import initialize_cmd
