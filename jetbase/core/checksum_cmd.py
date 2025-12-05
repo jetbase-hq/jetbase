@@ -40,8 +40,7 @@ def repair_checksums_cmd() -> None:
         sql_statements: list[str] = parse_upgrade_statements(file_path=filepath)
         checksum: str = calculate_checksum(sql_statements=sql_statements)
 
-        # this should never be hit because of the validation check
-        # but keeping it in temporarily
+        # this should never be hit because of the validation check above
         if file_version != migrated_versions_and_checksums[index][0]:
             raise MigrationVersionMismatchError(
                 f"Version mismatch: expected {migrated_versions_and_checksums[index][0]}, found {file_version}."
