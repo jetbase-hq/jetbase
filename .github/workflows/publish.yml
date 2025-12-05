@@ -6,7 +6,7 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    if: github.actor == 'jaz-alli'
+    if: github.actor == 'jaz-alli' && startsWith(github.ref, 'refs/tags/')
 
     permissions:
       id-token: write

@@ -21,12 +21,16 @@ from jetbase.enums import MigrationOperationType
 
 
 def upgrade_cmd(
-    count: int | None = None, to_version: str | None = None, dry_run: bool = False
+    count: int | None = None,
+    to_version: str | None = None,
+    dry_run: bool = False,
+    skip_checksum_validation: bool = False,
+    skip_file_validation: bool = False,
 ) -> None:
     """
     Run database migrations by applying all pending SQL migration files.
-    Executes migration files in order starting from the last applied version,
-    updating the migrations tracking table after each successful migration.
+    Executes migration files in order starting from the last migrated version + 1,
+    updating the jetbase_migrations table after each successful migration.
 
     Returns:
         None
@@ -44,7 +48,11 @@ def upgrade_cmd(
     latest_migrated_version: str | None = get_last_updated_version()
 
     if latest_migrated_version:
-        run_upgrade_validations(latest_migrated_version=latest_migrated_version)
+        run_upgrade_validations(
+            latest_migrated_version=latest_migrated_version,
+            skip_checksum_validation=skip_checksum_validation,
+            skip_file_validation=skip_file_validation,
+        )
 
     all_versions: dict[str, str] = get_migration_filepaths_by_version(
         directory=os.path.join(os.getcwd(), "migrations"),
@@ -92,7 +100,11 @@ def upgrade_cmd(
         )
 
 
-def run_upgrade_validations(latest_migrated_version: str) -> None:
+def run_upgrade_validations(
+    latest_migrated_version: str,
+    skip_checksum_validation: bool = False,
+    skip_file_validation: bool = False,
+) -> None:
     """
     Run validations on migration files before performing upgrade.
     """
@@ -106,24 +118,28 @@ def run_upgrade_validations(latest_migrated_version: str) -> None:
         current_migration_filepaths_by_version=migration_filepaths_by_version
     )
 
-    migrated_versions: list[str] = get_migrated_versions()
+    if not skip_file_validation:
+        migrated_versions: list[str] = get_migrated_versions()
 
-    validate_migrated_versions_in_current_migration_files(
-        migrated_versions=migrated_versions,
-        current_migration_filepaths_by_version=migration_filepaths_by_version,
-    )
+        validate_migrated_versions_in_current_migration_files(
+            migrated_versions=migrated_versions,
+            current_migration_filepaths_by_version=migration_filepaths_by_version,
+        )
 
-    validate_no_new_migration_files_with_lower_version_than_latest_migration(
-        current_migration_filepaths_by_version=migration_filepaths_by_version,
-        migrated_versions=migrated_versions,
-        latest_migrated_version=latest_migrated_version,
-    )
+        validate_no_new_migration_files_with_lower_version_than_latest_migration(
+            current_migration_filepaths_by_version=migration_filepaths_by_version,
+            migrated_versions=migrated_versions,
+            latest_migrated_version=latest_migrated_version,
+        )
 
-    migrated_filepaths_by_version: dict[str, str] = get_migration_filepaths_by_version(
-        directory=migrations_directory, end_version=latest_migrated_version
-    )
+        migrated_filepaths_by_version: dict[str, str] = (
+            get_migration_filepaths_by_version(
+                directory=migrations_directory, end_version=latest_migrated_version
+            )
+        )
 
-    validate_current_migration_files_match_checksums(
-        migrated_filepaths_by_version=migrated_filepaths_by_version,
-        migrated_versions_and_checksums=get_checksums_by_version(),
-    )
+        if not skip_checksum_validation:
+            validate_current_migration_files_match_checksums(
+                migrated_filepaths_by_version=migrated_filepaths_by_version,
+                migrated_versions_and_checksums=get_checksums_by_version(),
+            )

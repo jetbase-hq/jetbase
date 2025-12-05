@@ -149,3 +149,10 @@ GET_VERSION_CHECKSUMS_QUERY: TextClause = text("""
     ORDER BY 
         order_executed ASC
 """)
+
+
+REPAIR_MIGRATION_CHECKSUM_STMT: TextClause = text("""
+UPDATE jetbase_migrations
+SET checksum = :checksum
+WHERE version = :version
+""")

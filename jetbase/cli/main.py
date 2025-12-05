@@ -1,5 +1,6 @@
 import typer
 
+from jetbase.core.checksum_cmd import repair_checksums_cmd
 from jetbase.core.history import history_cmd
 from jetbase.core.initialize import initialize_cmd
 from jetbase.core.latest import latest_cmd
@@ -27,12 +28,24 @@ def upgrade(
     dry_run: bool = typer.Option(
         False, "--dry-run", "-d", help="Simulate the upgrade without making changes"
     ),
+    skip_checksum_validation: bool = typer.Option(
+        False,
+        "--skip-checksum-validation",
+        help="Skip checksum validation when running migrations",
+    ),
+    skip_file_validation: bool = typer.Option(
+        False,
+        "--skip-file-validation",
+        help="Skip file version validation when running migrations",
+    ),
 ):
     """Execute pending migrations"""
     upgrade_cmd(
         count=count,
         to_version=to_version.replace("_", ".") if to_version else None,
         dry_run=dry_run,
+        skip_checksum_validation=skip_checksum_validation,
+        skip_file_validation=skip_file_validation,
     )
 
 
@@ -83,6 +96,12 @@ def force_unlock():
 def check_lock() -> None:
     """Checks if the database is currently locked for migrations or not."""
     check_lock_cmd()
+
+
+@app.command()
+def repair_checksums() -> None:
+    """Repair migration checksums."""
+    repair_checksums_cmd()
 
 
 def main() -> None:

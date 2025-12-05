@@ -147,8 +147,8 @@ def get_migration_filepaths_by_version(
 
                 if version_tuple in seen_versions:
                     raise DuplicateMigrationVersionError(
-                        f"Duplicate migration version detected: {version_tuple} in file {filename}.\n"
-                        "Each migration version must be unique.\n"
+                        f"Duplicate migration version detected: {convert_version_tuple_to_version(version_tuple)}.\n"
+                        "Each file must have a unique version.\n"
                         "Please rename the file to have a unique version."
                     )
                 seen_versions.add(version_tuple)

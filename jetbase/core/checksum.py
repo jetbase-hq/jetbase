@@ -137,7 +137,8 @@ def validate_no_duplicate_migration_file_versions(
     for file_version in current_migration_filepaths_by_version.keys():
         if file_version in seen_versions:
             raise DuplicateMigrationVersionError(
-                f"Duplicate migration file version detected: {file_version}. "
-                "Each migration file must have a unique version."
+                f"Duplicate migration version detected: {file_version}.\n"
+                "Each file must have a unique version.\n"
+                "Please rename the file to have a unique version."
             )
         seen_versions.add(file_version)
