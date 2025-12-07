@@ -1,3 +1,4 @@
+import datetime as dt
 from dataclasses import dataclass
 
 
@@ -6,3 +7,5 @@ class MigrationRecord:
     version: str
     order_executed: int
     description: str
+    applied_at: dt.datetime
+    migration_type: str
