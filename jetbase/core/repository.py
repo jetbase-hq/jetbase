@@ -235,6 +235,8 @@ def get_migration_records() -> list[MigrationRecord]:
                 version=row.version,
                 order_executed=row.order_executed,
                 description=row.description,
+                applied_at=row.applied_at,
+                migration_type=row.migration_type,
             )
             for row in results.fetchall()
         ]

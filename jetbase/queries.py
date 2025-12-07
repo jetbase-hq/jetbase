@@ -97,7 +97,9 @@ MIGRATION_RECORDS_QUERY: TextClause = text("""
     SELECT
         version, 
         order_executed, 
-        description  
+        description,
+        applied_at,
+        migration_type  
     FROM
         jetbase_migrations
     ORDER BY
