@@ -104,6 +104,23 @@ def repair_checksums() -> None:
     repair_checksums_cmd()
 
 
+@app.command()
+def checksum_audit(
+    fix: bool = typer.Option(
+        False,
+        "--fix",
+        "-f",
+        help="Fix any detected checksum mismatches by updating the stored checksum to match any changes in its corresponding migration file",
+    ),
+) -> None:
+    """Audit migration checksums without making changes."""
+
+    if fix:
+        repair_checksums_cmd(audit_only=False)
+    else:
+        repair_checksums_cmd(audit_only=True)
+
+
 def main() -> None:
     app()
 

@@ -14,7 +14,7 @@ from jetbase.exceptions import (
 )
 
 
-def repair_checksums_cmd() -> None:
+def repair_checksums_cmd(audit_only: bool = False) -> None:
     migrated_versions_and_checksums: list[tuple[str, str]] = get_checksums_by_version()
     if not migrated_versions_and_checksums:
         print("No migrations have been applied; nothing to repair.")
@@ -55,8 +55,15 @@ def repair_checksums_cmd() -> None:
             )
 
     if not versions_and_checksums_to_repair:
-        print("All migration checksums are already valid; nothing to repair.")
+        print("All migration checksums are already valid - no drift detected.")
         return
+
+    if audit_only:
+        print("\nJETBASE - Checksum Audit Report")
+        print("----------------------------------------")
+        print("Changes detected in the following files:")
+        for file_version, _ in versions_and_checksums_to_repair:
+            print(f" - {file_version}")
 
     with migration_lock():
         update_migration_checksums(
