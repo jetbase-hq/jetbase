@@ -185,7 +185,7 @@ def get_latest_versions_by_starting_version(
 
         if version_exists == 0:
             raise VersionNotFoundError(
-                f"'{starting_version}' has not been applied yet or does not exist."
+                f"Version '{starting_version}' has not been applied yet or does not exist."
             )
 
         latest_versions_result: Result[tuple[str]] = connection.execute(
