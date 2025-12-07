@@ -42,7 +42,6 @@ def process_dry_run(
                     file_path=filepath, dry_run=True
                 )
                 filename: str = os.path.basename(filepath)
-                # num_sql_statements: int = len(sql_statements)
 
                 print_migration_preview(
                     filename=filename, sql_statements=sql_statements
