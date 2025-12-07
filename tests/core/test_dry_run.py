@@ -6,7 +6,7 @@ from unittest.mock import patch
 import pytest
 
 from jetbase.core.dry_run import process_dry_run
-from jetbase.enums import MigrationOperationType
+from jetbase.enums import MigrationDirectionType
 
 
 class TestProcessDryRunStatementCount:
@@ -24,7 +24,7 @@ class TestProcessDryRunStatementCount:
         with patch("jetbase.core.dry_run.parse_upgrade_statements") as mock_parse:
             mock_parse.return_value = []
 
-            migration_operation: MigrationOperationType = MigrationOperationType.UPGRADE
+            migration_operation: MigrationDirectionType = MigrationDirectionType.UPGRADE
 
             process_dry_run(version_to_filepath, migration_operation)
 
@@ -39,7 +39,10 @@ class TestProcessDryRunStatementCount:
         with patch("jetbase.core.dry_run.parse_upgrade_statements") as mock_parse:
             mock_parse.return_value = ["CREATE TABLE users (id INT PRIMARY KEY)"]
 
-            process_dry_run(version_to_filepath, MigrationOperationType.UPGRADE)
+            process_dry_run(
+                version_to_filepath=version_to_filepath,
+                migration_operation=MigrationDirectionType.UPGRADE,
+            )
 
             captured = capsys.readouterr()
             assert "(1 statement)" in captured.out
@@ -59,7 +62,7 @@ class TestProcessDryRunStatementCount:
         with patch("jetbase.core.dry_run.parse_upgrade_statements") as mock_parse:
             mock_parse.return_value = statements
 
-            process_dry_run(version_to_filepath, MigrationOperationType.UPGRADE)
+            process_dry_run(version_to_filepath, MigrationDirectionType.UPGRADE)
 
             captured = capsys.readouterr()
             assert "(4 statements)" in captured.out
@@ -74,7 +77,7 @@ class TestProcessDryRunStatementCount:
         with patch("jetbase.core.dry_run.parse_rollback_statements") as mock_parse:
             mock_parse.return_value = rollback_statements
 
-            process_dry_run(version_to_filepath, MigrationOperationType.ROLLBACK)
+            process_dry_run(version_to_filepath, MigrationDirectionType.ROLLBACK)
 
             captured = capsys.readouterr()
             assert "(2 statements)" in captured.out
@@ -105,7 +108,7 @@ class TestProcessDryRunStatementCount:
         with patch("jetbase.core.dry_run.parse_upgrade_statements") as mock_parse:
             mock_parse.side_effect = mock_parse_side_effect
 
-            process_dry_run(version_to_filepath, MigrationOperationType.UPGRADE)
+            process_dry_run(version_to_filepath, MigrationDirectionType.UPGRADE)
 
             captured = capsys.readouterr()
             assert "(1 statement)" in captured.out  # V1 file
@@ -123,7 +126,7 @@ class TestProcessDryRunStatementCount:
         with patch("jetbase.core.dry_run.parse_upgrade_statements") as mock_parse:
             mock_parse.return_value = statements
 
-            process_dry_run(version_to_filepath, MigrationOperationType.UPGRADE)
+            process_dry_run(version_to_filepath, MigrationDirectionType.UPGRADE)
 
             captured = capsys.readouterr()
             assert "(15 statements)" in captured.out

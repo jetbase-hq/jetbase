@@ -1,10 +1,14 @@
 from sqlalchemy import TextClause, text
 
-LATEST_VERSION_QUERY: TextClause = text("""
+from jetbase.enums import MigrationType
+
+LATEST_VERSION_QUERY: TextClause = text(f"""
     SELECT 
         version 
     FROM 
         jetbase_migrations
+    WHERE
+        migration_type = '{MigrationType.VERSIONED.value}'
     ORDER BY 
         applied_at DESC
     LIMIT 1
@@ -12,54 +16,60 @@ LATEST_VERSION_QUERY: TextClause = text("""
 
 CREATE_MIGRATIONS_TABLE_STMT: TextClause = text("""
 CREATE TABLE IF NOT EXISTS jetbase_migrations (
-    version VARCHAR(255) PRIMARY KEY,
-    description VARCHAR(500),
-    filename VARCHAR(512),
-    order_executed INT GENERATED ALWAYS AS IDENTITY,
-    applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    checksum VARCHAR(64)
+    order_executed INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    version VARCHAR(255),
+    description VARCHAR(500) NOT NULL,
+    filename VARCHAR(512) NOT NULL,
+    migration_type VARCHAR(32) NOT NULL,
+    applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    checksum VARCHAR(64) NOT NULL
 )
 """)
 
 INSERT_VERSION_STMT: TextClause = text("""
-INSERT INTO jetbase_migrations (version, description, filename, checksum) 
-VALUES (:version, :description, :filename, :checksum)
+INSERT INTO jetbase_migrations (version, description, filename, migration_type, checksum) 
+VALUES (:version, :description, :filename, :migration_type, :checksum)
 """)
 
-DELETE_VERSION_STMT: TextClause = text("""
+DELETE_VERSION_STMT: TextClause = text(f"""
 DELETE FROM jetbase_migrations 
 WHERE version = :version
+AND migration_type = '{MigrationType.VERSIONED.value}'
 """)
 
-LATEST_VERSIONS_QUERY: TextClause = text("""
+LATEST_VERSIONS_QUERY: TextClause = text(f"""
     SELECT 
         version 
     FROM 
         jetbase_migrations
+    WHERE
+        migration_type = '{MigrationType.VERSIONED.value}'
     ORDER BY 
         applied_at DESC
     LIMIT :limit
 """)
 
-LATEST_VERSIONS_BY_STARTING_VERSION_QUERY: TextClause = text("""
+LATEST_VERSIONS_BY_STARTING_VERSION_QUERY: TextClause = text(f"""
     SELECT
         version
     FROM
         jetbase_migrations
     WHERE applied_at > 
         (select applied_at from jetbase_migrations 
-            where version = :starting_version)
+            where version = :starting_version AND migration_type = '{MigrationType.VERSIONED.value}')
     ORDER BY 
         applied_at DESC
 """)
 
-CHECK_IF_VERSION_EXISTS_QUERY: TextClause = text("""
+CHECK_IF_VERSION_EXISTS_QUERY: TextClause = text(f"""
     SELECT 
         COUNT(*)
     FROM 
         jetbase_migrations
     WHERE 
         version = :version
+    AND
+        migration_type = '{MigrationType.VERSIONED.value}'
 """)
 
 
@@ -141,18 +151,52 @@ WHERE id = 1
 """)
 
 
-GET_VERSION_CHECKSUMS_QUERY: TextClause = text("""
+GET_VERSION_CHECKSUMS_QUERY: TextClause = text(f"""
     SELECT 
         version, checksum
     FROM 
         jetbase_migrations
+    WHERE
+        migration_type = '{MigrationType.VERSIONED.value}'
     ORDER BY 
         order_executed ASC
 """)
 
 
-REPAIR_MIGRATION_CHECKSUM_STMT: TextClause = text("""
+REPAIR_MIGRATION_CHECKSUM_STMT: TextClause = text(f"""
 UPDATE jetbase_migrations
 SET checksum = :checksum
 WHERE version = :version
+AND migration_type = '{MigrationType.VERSIONED.value}'
+""")
+
+GET_REPEATABLE_ON_CHANGE_MIGRATIONS_QUERY: TextClause = text(f"""
+    SELECT 
+        filename, checksum
+    FROM 
+        jetbase_migrations
+    WHERE
+        migration_type = '{MigrationType.REPEATABLE_ON_CHANGE.value}'
+    ORDER BY 
+        filename ASC
+        """)
+
+
+GET_REPEATABLE_ALWAYS_MIGRATIONS_QUERY: TextClause = text(f"""
+    SELECT 
+        filename
+    FROM 
+        jetbase_migrations
+    WHERE
+        migration_type = '{MigrationType.REPEATABLE_ALWAYS.value}'
+    ORDER BY 
+        filename ASC
+        """)
+
+UPDATE_REPEATABLE_MIGRATION_STMT: TextClause = text("""
+UPDATE jetbase_migrations
+SET checksum = :checksum,
+    applied_at = CURRENT_TIMESTAMP
+WHERE filename = :filename
+AND migration_type = :migration_type
 """)
