@@ -57,6 +57,7 @@ LATEST_VERSIONS_BY_STARTING_VERSION_QUERY: TextClause = text(f"""
     WHERE applied_at > 
         (select applied_at from jetbase_migrations 
             where version = :starting_version AND migration_type = '{MigrationType.VERSIONED.value}')
+    AND migration_type = '{MigrationType.VERSIONED.value}'
     ORDER BY 
         applied_at DESC
 """)

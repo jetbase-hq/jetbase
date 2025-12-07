@@ -14,6 +14,7 @@ from jetbase.core.repository import (
 )
 from jetbase.core.version import get_migration_filepaths_by_version
 from jetbase.enums import MigrationDirectionType
+from jetbase.exceptions import VersionNotFoundError
 
 
 def rollback_cmd(
@@ -39,7 +40,7 @@ def rollback_cmd(
         )
 
     if not latest_migration_versions:
-        print("No migrations have been applied; nothing to rollback.")
+        print("Nothing to rollback.")
         return
 
     versions_to_rollback: dict[str, str] = get_migration_filepaths_by_version(
@@ -47,6 +48,12 @@ def rollback_cmd(
         version_to_start_from=latest_migration_versions[-1],
         end_version=latest_migration_versions[0],
     )
+
+    for version in latest_migration_versions:
+        if version not in list(versions_to_rollback.keys()):
+            raise VersionNotFoundError(
+                f"Migration file for version {version} not found; cannot proceed with rollback."
+            )
 
     versions_to_rollback: dict[str, str] = dict(reversed(versions_to_rollback.items()))
 
