@@ -139,38 +139,43 @@ def get_migration_filepaths_by_version(
                 )
 
             if is_filename_format_valid(filename=filename):
-                file_path: str = os.path.join(root, filename)
-                version: str = _get_version_key_from_filename(filename=filename)
-                version_tuple: tuple[str, ...] = convert_version_to_tuple(
-                    version=version
-                )
-
-                if version_tuple in seen_versions:
-                    raise DuplicateMigrationVersionError(
-                        f"Duplicate migration version detected: {convert_version_tuple_to_version(version_tuple)}.\n"
-                        "Each file must have a unique version.\n"
-                        "Please rename the file to have a unique version."
+                if filename.startswith("V"):
+                    file_path: str = os.path.join(root, filename)
+                    version: str = _get_version_key_from_filename(filename=filename)
+                    version_tuple: tuple[str, ...] = convert_version_to_tuple(
+                        version=version
                     )
-                seen_versions.add(version_tuple)
 
-                if end_version:
-                    if version_tuple > convert_version_to_tuple(version=end_version):
-                        continue
+                    if version_tuple in seen_versions:
+                        raise DuplicateMigrationVersionError(
+                            f"Duplicate migration version detected: {convert_version_tuple_to_version(version_tuple)}.\n"
+                            "Each file must have a unique version.\n"
+                            "Please rename the file to have a unique version."
+                        )
+                    seen_versions.add(version_tuple)
 
-                if version_to_start_from:
-                    if version_tuple >= convert_version_to_tuple(
-                        version=version_to_start_from
-                    ):
+                    if end_version:
+                        if version_tuple > convert_version_to_tuple(
+                            version=end_version
+                        ):
+                            continue
+
+                    if version_to_start_from:
+                        if version_tuple >= convert_version_to_tuple(
+                            version=version_to_start_from
+                        ):
+                            version_to_filepath_dict[
+                                convert_version_tuple_to_version(
+                                    version_tuple=version_tuple
+                                )
+                            ] = file_path
+
+                    else:
                         version_to_filepath_dict[
                             convert_version_tuple_to_version(
                                 version_tuple=version_tuple
                             )
                         ] = file_path
-
-                else:
-                    version_to_filepath_dict[
-                        convert_version_tuple_to_version(version_tuple=version_tuple)
-                    ] = file_path
 
     ordered_version_to_filepath_dict: dict[str, str] = {
         version: version_to_filepath_dict[version]

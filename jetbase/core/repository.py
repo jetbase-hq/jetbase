@@ -1,16 +1,25 @@
+import os
+
 from sqlalchemy import Engine, Result, create_engine, text
 
 from jetbase.config import get_sqlalchemy_url
 from jetbase.core.checksum import calculate_checksum
-from jetbase.core.file_parser import get_description_from_filename
+from jetbase.core.file_parser import (
+    get_description_from_filename,
+    parse_upgrade_statements,
+    validate_filename_format,
+)
 from jetbase.core.models import MigrationRecord
-from jetbase.enums import MigrationOperationType
+from jetbase.enums import MigrationDirectionType, MigrationType
+from jetbase.exceptions import VersionNotFoundError
 from jetbase.queries import (
     CHECK_IF_LOCK_TABLE_EXISTS_QUERY,
     CHECK_IF_MIGRATIONS_TABLE_EXISTS_QUERY,
     CHECK_IF_VERSION_EXISTS_QUERY,
     CREATE_MIGRATIONS_TABLE_STMT,
     DELETE_VERSION_STMT,
+    GET_REPEATABLE_ALWAYS_MIGRATIONS_QUERY,
+    GET_REPEATABLE_ON_CHANGE_MIGRATIONS_QUERY,
     GET_VERSION_CHECKSUMS_QUERY,
     INSERT_VERSION_STMT,
     LATEST_VERSION_QUERY,
@@ -18,6 +27,7 @@ from jetbase.queries import (
     LATEST_VERSIONS_QUERY,
     MIGRATION_RECORDS_QUERY,
     REPAIR_MIGRATION_CHECKSUM_STMT,
+    UPDATE_REPEATABLE_MIGRATION_STMT,
 )
 
 
@@ -59,9 +69,10 @@ def create_migrations_table_if_not_exists() -> None:
 
 def run_migration(
     sql_statements: list[str],
-    version: str,
-    migration_operation: MigrationOperationType,
-    filename: str | None = None,
+    version: str | None,
+    migration_operation: MigrationDirectionType,
+    filename: str,
+    migration_type: MigrationType = MigrationType.VERSIONED,
 ) -> None:
     """
     Execute a database migration by running SQL statements and recording the migration version.
@@ -72,7 +83,7 @@ def run_migration(
         None
     """
 
-    if migration_operation == MigrationOperationType.UPGRADE and filename is None:
+    if migration_operation == MigrationDirectionType.UPGRADE and filename is None:
         raise ValueError("Filename must be provided for upgrade migrations.")
 
     engine: Engine = create_engine(url=get_sqlalchemy_url())
@@ -81,7 +92,7 @@ def run_migration(
         for statement in sql_statements:
             connection.execute(text(statement))
 
-        if migration_operation == MigrationOperationType.UPGRADE:
+        if migration_operation == MigrationDirectionType.UPGRADE:
             assert filename is not None
 
             description: str = get_description_from_filename(filename=filename)
@@ -93,14 +104,37 @@ def run_migration(
                     "version": version,
                     "description": description,
                     "filename": filename,
+                    "migration_type": migration_type.value,
                     "checksum": checksum,
                 },
             )
 
-        elif migration_operation == MigrationOperationType.ROLLBACK:
+        elif migration_operation == MigrationDirectionType.ROLLBACK:
             connection.execute(
                 statement=DELETE_VERSION_STMT, parameters={"version": version}
             )
+
+
+def run_update_repeatable_migration(
+    sql_statements: list[str],
+    filename: str,
+    migration_type: MigrationType,
+) -> None:
+    checksum: str = calculate_checksum(sql_statements=sql_statements)
+    engine: Engine = create_engine(url=get_sqlalchemy_url())
+
+    with engine.begin() as connection:
+        for statement in sql_statements:
+            connection.execute(text(statement))
+
+        connection.execute(
+            statement=UPDATE_REPEATABLE_MIGRATION_STMT,
+            parameters={
+                "checksum": checksum,
+                "filename": filename,
+                "migration_type": migration_type.value,
+            },
+        )
 
 
 def get_latest_versions(limit: int) -> list[str]:
@@ -150,7 +184,7 @@ def get_latest_versions_by_starting_version(
         version_exists: int = version_exists_result.scalar_one()
 
         if version_exists == 0:
-            raise ValueError(
+            raise VersionNotFoundError(
                 f"'{starting_version}' has not been applied yet or does not exist."
             )
 
@@ -273,3 +307,70 @@ def update_migration_checksums(versions_and_checksums: list[tuple[str, str]]) ->
                 statement=REPAIR_MIGRATION_CHECKSUM_STMT,
                 parameters={"version": version, "checksum": checksum},
             )
+
+
+def get_repeatable_always_filepaths(directory: str) -> list[str]:
+    repeatable_always_filepaths: list[str] = []
+    for root, _, files in os.walk(directory):
+        for filename in files:
+            validate_filename_format(filename=filename)
+            if filename.startswith("RA__"):
+                filepath: str = os.path.join(root, filename)
+                repeatable_always_filepaths.append(filepath)
+
+    repeatable_always_filepaths.sort()
+    return repeatable_always_filepaths
+
+
+def get_repeatable_on_change_filepaths(
+    directory: str, changed_only: bool = False
+) -> list[str]:
+    repeatable_on_change_filepaths: list[str] = []
+    for root, _, files in os.walk(directory):
+        for filename in files:
+            validate_filename_format(filename=filename)
+            if filename.startswith("RC__"):
+                filepath: str = os.path.join(root, filename)
+                repeatable_on_change_filepaths.append(filepath)
+
+    if repeatable_on_change_filepaths and changed_only:
+        existing_on_change_migrations: dict[str, str] = (
+            get_existing_on_change_filenames_to_checksums()
+        )
+
+        for filepath in repeatable_on_change_filepaths.copy():
+            filename: str = os.path.basename(filepath)
+            sql_statements: list[str] = parse_upgrade_statements(file_path=filepath)
+            checksum: str = calculate_checksum(sql_statements=sql_statements)
+
+            if existing_on_change_migrations.get(filename) == checksum:
+                repeatable_on_change_filepaths.remove(filepath)
+
+    repeatable_on_change_filepaths.sort()
+    return repeatable_on_change_filepaths
+
+
+def get_existing_on_change_filenames_to_checksums() -> dict[str, str]:
+    engine: Engine = create_engine(url=get_sqlalchemy_url())
+
+    with engine.begin() as connection:
+        results: Result[tuple[str, str]] = connection.execute(
+            statement=GET_REPEATABLE_ON_CHANGE_MIGRATIONS_QUERY,
+        )
+        migration_filenames_to_checksums: dict[str, str] = {
+            row.filename: row.checksum for row in results.fetchall()
+        }
+
+    return migration_filenames_to_checksums
+
+
+def get_existing_repeatable_always_migration_filenames() -> set[str]:
+    engine: Engine = create_engine(url=get_sqlalchemy_url())
+
+    with engine.begin() as connection:
+        results: Result[tuple[str]] = connection.execute(
+            statement=GET_REPEATABLE_ALWAYS_MIGRATIONS_QUERY,
+        )
+        migration_filenames: set[str] = {row.filename for row in results.fetchall()}
+
+    return migration_filenames

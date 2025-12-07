@@ -32,3 +32,9 @@ class MigrationVersionMismatchError(Exception):
     """Raised when migration file versions don't match expected sequence."""
 
     pass
+
+
+class VersionNotFoundError(Exception):
+    """Raised when attempting to rollback to a version that doesn't exist or hasn't been applied."""
+
+    pass

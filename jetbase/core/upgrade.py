@@ -12,12 +12,16 @@ from jetbase.core.lock import create_lock_table_if_not_exists, migration_lock
 from jetbase.core.repository import (
     create_migrations_table_if_not_exists,
     get_checksums_by_version,
+    get_existing_repeatable_always_migration_filenames,
     get_last_updated_version,
     get_migrated_versions,
+    get_repeatable_always_filepaths,
+    get_repeatable_on_change_filepaths,
     run_migration,
+    run_update_repeatable_migration,
 )
 from jetbase.core.version import get_migration_filepaths_by_version
-from jetbase.enums import MigrationOperationType
+from jetbase.enums import MigrationDirectionType, MigrationType
 
 
 def upgrade_cmd(
@@ -76,6 +80,23 @@ def upgrade_cmd(
                 break
         all_versions = dict(all_versions_list)
 
+    repeatable_always_filepaths: list[str] = get_repeatable_always_filepaths(
+        directory=os.path.join(os.getcwd(), "migrations")
+    )
+    existing_repeatable_always_filenames: set[str] = (
+        get_existing_repeatable_always_migration_filenames()
+    )
+
+    repeatable_on_change_filepaths: list[str] = get_repeatable_on_change_filepaths(
+        directory=os.path.join(os.getcwd(), "migrations"),
+        changed_only=True,
+    )
+    existing_repeatable_on_change_filenames: list[str] = (
+        get_repeatable_on_change_filepaths(
+            directory=os.path.join(os.getcwd(), "migrations"),
+        )
+    )
+
     if not dry_run:
         with migration_lock():
             for version, file_path in all_versions.items():
@@ -87,16 +108,66 @@ def upgrade_cmd(
                 run_migration(
                     sql_statements=sql_statements,
                     version=version,
-                    migration_operation=MigrationOperationType.UPGRADE,
+                    migration_operation=MigrationDirectionType.UPGRADE,
                     filename=filename,
                 )
 
                 print(f"Migration applied successfully: {filename}")
 
+            if repeatable_always_filepaths:
+                for filepath in repeatable_always_filepaths:
+                    sql_statements: list[str] = parse_upgrade_statements(
+                        file_path=filepath
+                    )
+                    filename: str = os.path.basename(filepath)
+
+                    if filename in existing_repeatable_always_filenames:
+                        run_update_repeatable_migration(
+                            sql_statements=sql_statements,
+                            filename=filename,
+                            migration_type=MigrationType.REPEATABLE_ALWAYS,
+                        )
+                        print(f"Migration applied successfully: {filename}")
+                    else:
+                        run_migration(
+                            sql_statements=sql_statements,
+                            version=None,
+                            migration_operation=MigrationDirectionType.UPGRADE,
+                            filename=filename,
+                            migration_type=MigrationType.REPEATABLE_ALWAYS,
+                        )
+                        print(f"Migration applied successfully: {filename}")
+
+            if repeatable_on_change_filepaths:
+                for filepath in repeatable_on_change_filepaths:
+                    sql_statements: list[str] = parse_upgrade_statements(
+                        file_path=filepath
+                    )
+                    filename: str = os.path.basename(filepath)
+
+                    if filename in existing_repeatable_on_change_filenames:
+                        # update migration
+                        run_update_repeatable_migration(
+                            sql_statements=sql_statements,
+                            filename=filename,
+                            migration_type=MigrationType.REPEATABLE_ON_CHANGE,
+                        )
+                        print(f"Migration applied successfully: {filename}")
+                    else:
+                        run_migration(
+                            sql_statements=sql_statements,
+                            version=None,
+                            migration_operation=MigrationDirectionType.UPGRADE,
+                            filename=filename,
+                            migration_type=MigrationType.REPEATABLE_ON_CHANGE,
+                        )
+                        print(f"Migration applied successfully: {filename}")
     else:
         process_dry_run(
             version_to_filepath=all_versions,
-            migration_operation=MigrationOperationType.UPGRADE,
+            migration_operation=MigrationDirectionType.UPGRADE,
+            repeatable_always_filepaths=repeatable_always_filepaths,
+            repeatable_on_change_filepaths=repeatable_on_change_filepaths,
         )
 
 

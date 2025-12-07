@@ -13,7 +13,7 @@ from jetbase.core.repository import (
     run_migration,
 )
 from jetbase.core.version import get_migration_filepaths_by_version
-from jetbase.enums import MigrationOperationType
+from jetbase.enums import MigrationDirectionType
 
 
 def rollback_cmd(
@@ -56,10 +56,13 @@ def rollback_cmd(
                 sql_statements: list[str] = parse_rollback_statements(
                     file_path=file_path
                 )
+                filename: str = os.path.basename(file_path)
+
                 run_migration(
                     sql_statements=sql_statements,
                     version=version,
-                    migration_operation=MigrationOperationType.ROLLBACK,
+                    migration_operation=MigrationDirectionType.ROLLBACK,
+                    filename=filename,
                 )
                 filename: str = os.path.basename(file_path)
 
@@ -68,5 +71,5 @@ def rollback_cmd(
     else:
         process_dry_run(
             version_to_filepath=versions_to_rollback,
-            migration_operation=MigrationOperationType.ROLLBACK,
+            migration_operation=MigrationDirectionType.ROLLBACK,
         )
