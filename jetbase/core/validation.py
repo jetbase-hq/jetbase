@@ -19,9 +19,7 @@ def fix_files(audit_only: bool = False) -> None:
     for migrated_version in migrated_versions:
         if migrated_version not in current_migration_filepaths_by_version:
             missing_versions.append(migrated_version)
-            # raise FileNotFoundError(
-            #     f"Version {migrated_version} has been migrated but is missing from the current migration files."
-            # )
+
     if audit_only:
         if missing_versions:
             print("The following migrated versions are missing migration files:")
