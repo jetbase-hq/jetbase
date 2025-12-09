@@ -203,3 +203,10 @@ SET checksum = :checksum,
 WHERE filename = :filename
 AND migration_type = :migration_type
 """)
+
+
+DELETE_MISSING_VERSION_STMT: TextClause = text(f"""
+DELETE FROM jetbase_migrations
+WHERE version = :version
+AND migration_type = '{MigrationType.VERSIONED.value}'
+""")

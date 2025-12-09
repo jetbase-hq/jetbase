@@ -7,6 +7,7 @@ from jetbase.core.latest import latest_cmd
 from jetbase.core.lock import check_lock_cmd, force_unlock_cmd
 from jetbase.core.rollback import rollback_cmd
 from jetbase.core.upgrade import upgrade_cmd
+from jetbase.core.validation import fix_files
 
 app = typer.Typer(help="Jetbase CLI")
 
@@ -105,7 +106,7 @@ def repair_checksums() -> None:
 
 
 @app.command()
-def checksum_audit(
+def checksums_audit(
     fix: bool = typer.Option(
         False,
         "--fix",
@@ -119,6 +120,26 @@ def checksum_audit(
         repair_checksums_cmd(audit_only=False)
     else:
         repair_checksums_cmd(audit_only=True)
+
+
+@app.command()
+def files_audit(
+    fix: bool = typer.Option(
+        False,
+        "--fix",
+        "-f",
+        help="Fix any detected checksum mismatches by updating the stored checksum to match any changes in its corresponding migration file",
+    ),
+) -> None:
+    if fix:
+        fix_files(audit_only=False)
+    else:
+        fix_files(audit_only=True)
+
+
+@app.command()
+def repair_files() -> None:
+    fix_files(audit_only=False)
 
 
 def main() -> None:
