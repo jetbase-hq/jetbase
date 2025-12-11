@@ -1,11 +1,13 @@
 import typer
 
 from jetbase.core.checksum_cmd import repair_checksums_cmd
+from jetbase.core.generate import generate_new_migration_file_cmd
 from jetbase.core.history import history_cmd
 from jetbase.core.initialize import initialize_cmd
 from jetbase.core.latest import latest_cmd
 from jetbase.core.lock import check_lock_cmd, force_unlock_cmd
 from jetbase.core.rollback import rollback_cmd
+from jetbase.core.status import status_cmd
 from jetbase.core.upgrade import upgrade_cmd
 from jetbase.core.validation import fix_files
 
@@ -106,6 +108,13 @@ def repair_checksums() -> None:
 
 
 @app.command()
+def repair() -> None:
+    """Repair migration files and versions."""
+    fix_files(audit_only=False)
+    repair_checksums_cmd(audit_only=False)
+
+
+@app.command()
 def checksums_audit(
     fix: bool = typer.Option(
         False,
@@ -140,6 +149,18 @@ def files_audit(
 @app.command()
 def repair_files() -> None:
     fix_files(audit_only=False)
+
+
+@app.command()
+def status() -> None:
+    status_cmd()
+
+
+@app.command()
+def generate(
+    description: str = typer.Argument(..., help="Description of the migration"),
+) -> None:
+    generate_new_migration_file_cmd(description=description)
 
 
 def main() -> None:

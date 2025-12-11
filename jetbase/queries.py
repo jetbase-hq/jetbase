@@ -98,6 +98,7 @@ MIGRATION_RECORDS_QUERY: TextClause = text("""
         version, 
         order_executed, 
         description,
+        filename,
         applied_at,
         migration_type  
     FROM
