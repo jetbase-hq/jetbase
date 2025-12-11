@@ -17,6 +17,7 @@ from jetbase.queries import (
     CHECK_IF_MIGRATIONS_TABLE_EXISTS_QUERY,
     CHECK_IF_VERSION_EXISTS_QUERY,
     CREATE_MIGRATIONS_TABLE_STMT,
+    DELETE_MISSING_VERSION_STMT,
     DELETE_VERSION_STMT,
     GET_REPEATABLE_ALWAYS_MIGRATIONS_QUERY,
     GET_REPEATABLE_ON_CHANGE_MIGRATIONS_QUERY,
@@ -235,6 +236,7 @@ def get_migration_records() -> list[MigrationRecord]:
                 version=row.version,
                 order_executed=row.order_executed,
                 description=row.description,
+                filename=row.filename,
                 applied_at=row.applied_at,
                 migration_type=row.migration_type,
             )
@@ -376,3 +378,14 @@ def get_existing_repeatable_always_migration_filenames() -> set[str]:
         migration_filenames: set[str] = {row.filename for row in results.fetchall()}
 
     return migration_filenames
+
+
+def delete_missing_versions(versions: list[str]) -> None:
+    engine: Engine = create_engine(url=get_sqlalchemy_url())
+
+    with engine.begin() as connection:
+        for version in versions:
+            connection.execute(
+                statement=DELETE_MISSING_VERSION_STMT,
+                parameters={"version": version},
+            )

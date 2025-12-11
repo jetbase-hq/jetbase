@@ -192,15 +192,15 @@ def run_upgrade_validations(
     if not skip_file_validation:
         migrated_versions: list[str] = get_migrated_versions()
 
-        validate_migrated_versions_in_current_migration_files(
-            migrated_versions=migrated_versions,
-            current_migration_filepaths_by_version=migration_filepaths_by_version,
-        )
-
         validate_no_new_migration_files_with_lower_version_than_latest_migration(
             current_migration_filepaths_by_version=migration_filepaths_by_version,
             migrated_versions=migrated_versions,
             latest_migrated_version=latest_migrated_version,
+        )
+
+        validate_migrated_versions_in_current_migration_files(
+            migrated_versions=migrated_versions,
+            current_migration_filepaths_by_version=migration_filepaths_by_version,
         )
 
         migrated_filepaths_by_version: dict[str, str] = (

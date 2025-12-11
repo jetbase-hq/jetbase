@@ -98,6 +98,7 @@ MIGRATION_RECORDS_QUERY: TextClause = text("""
         version, 
         order_executed, 
         description,
+        filename,
         applied_at,
         migration_type  
     FROM
@@ -202,4 +203,11 @@ SET checksum = :checksum,
     applied_at = CURRENT_TIMESTAMP
 WHERE filename = :filename
 AND migration_type = :migration_type
+""")
+
+
+DELETE_MISSING_VERSION_STMT: TextClause = text(f"""
+DELETE FROM jetbase_migrations
+WHERE version = :version
+AND migration_type = '{MigrationType.VERSIONED.value}'
 """)
