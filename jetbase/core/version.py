@@ -46,40 +46,6 @@ def _get_version_key_from_filename(filename: str) -> str:
     return version.replace("_", ".")
 
 
-def convert_version_tuple_to_version(version_tuple: tuple[str, ...]) -> str:
-    """
-    Convert a version tuple to a string representation.
-
-    Args:
-        version_tuple (tuple[str, ...]): A tuple containing version components as strings.
-
-    Returns:
-        str: A string representation of the version, with components joined by periods.
-
-    Example:
-        >>> _convert_version_tuple_to_str(('1', '2', '3'))
-        '1.2.3'
-    """
-    return ".".join(version_tuple)
-
-
-def convert_version_to_tuple(version: str) -> tuple[str, ...]:
-    """
-    Convert a version string to a tuple of version components.
-
-    Args:
-        version_str (str): A version string with components separated by periods.
-
-    Returns:
-        tuple[str, ...]: A tuple containing the version components as strings.
-
-    Example:
-        >>> convert_version_to_tuple("1.2.3")
-        ('1', '2', '3')
-    """
-    return tuple(version.split("."))
-
-
 def get_migration_filepaths_by_version(
     directory: str,
     version_to_start_from: str | None = None,
