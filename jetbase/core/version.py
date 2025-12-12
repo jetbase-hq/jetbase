@@ -1,5 +1,7 @@
 import os
 
+from packaging.version import parse as parse_version
+
 from jetbase.core.file_parser import is_filename_format_valid, is_filename_length_valid
 from jetbase.exceptions import (
     DuplicateMigrationVersionError,
@@ -44,40 +46,6 @@ def _get_version_key_from_filename(filename: str) -> str:
     return version.replace("_", ".")
 
 
-def convert_version_tuple_to_version(version_tuple: tuple[str, ...]) -> str:
-    """
-    Convert a version tuple to a string representation.
-
-    Args:
-        version_tuple (tuple[str, ...]): A tuple containing version components as strings.
-
-    Returns:
-        str: A string representation of the version, with components joined by periods.
-
-    Example:
-        >>> _convert_version_tuple_to_str(('1', '2', '3'))
-        '1.2.3'
-    """
-    return ".".join(version_tuple)
-
-
-def convert_version_to_tuple(version: str) -> tuple[str, ...]:
-    """
-    Convert a version string to a tuple of version components.
-
-    Args:
-        version_str (str): A version string with components separated by periods.
-
-    Returns:
-        tuple[str, ...]: A tuple containing the version components as strings.
-
-    Example:
-        >>> convert_version_to_tuple("1.2.3")
-        ('1', '2', '3')
-    """
-    return tuple(version.split("."))
-
-
 def get_migration_filepaths_by_version(
     directory: str,
     version_to_start_from: str | None = None,
@@ -114,7 +82,7 @@ def get_migration_filepaths_by_version(
         {'1.2.0': '/path/to/migrations/V1_2_0__add_users.sql'}
     """
     version_to_filepath_dict: dict[str, str] = {}
-    seen_versions: set[tuple[str, ...]] = set()
+    seen_versions: set[str] = set()
 
     for root, _, files in os.walk(directory):
         for filename in files:
@@ -141,45 +109,36 @@ def get_migration_filepaths_by_version(
             if is_filename_format_valid(filename=filename):
                 if filename.startswith("V"):
                     file_path: str = os.path.join(root, filename)
-                    version: str = _get_version_key_from_filename(filename=filename)
-                    version_tuple: tuple[str, ...] = convert_version_to_tuple(
-                        version=version
+                    file_version: str = _get_version_key_from_filename(
+                        filename=filename
                     )
 
-                    if version_tuple in seen_versions:
+                    if file_version in seen_versions:
                         raise DuplicateMigrationVersionError(
-                            f"Duplicate migration version detected: {convert_version_tuple_to_version(version_tuple)}.\n"
+                            f"Duplicate migration version detected: {file_version}.\n"
                             "Each file must have a unique version.\n"
                             "Please rename the file to have a unique version."
                         )
-                    seen_versions.add(version_tuple)
+                    seen_versions.add(file_version)
 
                     if end_version:
-                        if version_tuple > convert_version_to_tuple(
-                            version=end_version
-                        ):
+                        if parse_version(file_version) > parse_version(end_version):
                             continue
 
                     if version_to_start_from:
-                        if version_tuple >= convert_version_to_tuple(
-                            version=version_to_start_from
+                        if parse_version(file_version) >= parse_version(
+                            version_to_start_from
                         ):
-                            version_to_filepath_dict[
-                                convert_version_tuple_to_version(
-                                    version_tuple=version_tuple
-                                )
-                            ] = file_path
+                            version_to_filepath_dict[file_version] = file_path
 
                     else:
-                        version_to_filepath_dict[
-                            convert_version_tuple_to_version(
-                                version_tuple=version_tuple
-                            )
-                        ] = file_path
+                        version_to_filepath_dict[file_version] = file_path
 
-    ordered_version_to_filepath_dict: dict[str, str] = {
-        version: version_to_filepath_dict[version]
-        for version in sorted(version_to_filepath_dict.keys())
-    }
+    ordered_version_to_filepath_dict: dict[str, str] = dict(
+        sorted(
+            version_to_filepath_dict.items(),
+            key=lambda item: parse_version(item[0]),
+        )
+    )
 
     return ordered_version_to_filepath_dict
