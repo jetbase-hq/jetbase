@@ -1,5 +1,7 @@
 import os
 
+from packaging.version import parse as parse_version
+
 from jetbase.core.file_parser import is_filename_format_valid, is_filename_length_valid
 from jetbase.exceptions import (
     DuplicateMigrationVersionError,
@@ -114,7 +116,7 @@ def get_migration_filepaths_by_version(
         {'1.2.0': '/path/to/migrations/V1_2_0__add_users.sql'}
     """
     version_to_filepath_dict: dict[str, str] = {}
-    seen_versions: set[tuple[str, ...]] = set()
+    seen_versions: set[str] = set()
 
     for root, _, files in os.walk(directory):
         for filename in files:
@@ -141,45 +143,36 @@ def get_migration_filepaths_by_version(
             if is_filename_format_valid(filename=filename):
                 if filename.startswith("V"):
                     file_path: str = os.path.join(root, filename)
-                    version: str = _get_version_key_from_filename(filename=filename)
-                    version_tuple: tuple[str, ...] = convert_version_to_tuple(
-                        version=version
+                    file_version: str = _get_version_key_from_filename(
+                        filename=filename
                     )
 
-                    if version_tuple in seen_versions:
+                    if file_version in seen_versions:
                         raise DuplicateMigrationVersionError(
-                            f"Duplicate migration version detected: {convert_version_tuple_to_version(version_tuple)}.\n"
+                            f"Duplicate migration version detected: {file_version}.\n"
                             "Each file must have a unique version.\n"
                             "Please rename the file to have a unique version."
                         )
-                    seen_versions.add(version_tuple)
+                    seen_versions.add(file_version)
 
                     if end_version:
-                        if version_tuple > convert_version_to_tuple(
-                            version=end_version
-                        ):
+                        if parse_version(file_version) > parse_version(end_version):
                             continue
 
                     if version_to_start_from:
-                        if version_tuple >= convert_version_to_tuple(
-                            version=version_to_start_from
+                        if parse_version(file_version) >= parse_version(
+                            version_to_start_from
                         ):
-                            version_to_filepath_dict[
-                                convert_version_tuple_to_version(
-                                    version_tuple=version_tuple
-                                )
-                            ] = file_path
+                            version_to_filepath_dict[file_version] = file_path
 
                     else:
-                        version_to_filepath_dict[
-                            convert_version_tuple_to_version(
-                                version_tuple=version_tuple
-                            )
-                        ] = file_path
+                        version_to_filepath_dict[file_version] = file_path
 
-    ordered_version_to_filepath_dict: dict[str, str] = {
-        version: version_to_filepath_dict[version]
-        for version in sorted(version_to_filepath_dict.keys())
-    }
+    ordered_version_to_filepath_dict: dict[str, str] = dict(
+        sorted(
+            version_to_filepath_dict.items(),
+            key=lambda item: parse_version(item[0]),
+        )
+    )
 
     return ordered_version_to_filepath_dict

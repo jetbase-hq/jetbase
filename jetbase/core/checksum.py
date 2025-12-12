@@ -1,6 +1,8 @@
 import hashlib
 import os
 
+from packaging.version import parse as parse_version
+
 from jetbase.core.file_parser import parse_upgrade_statements
 from jetbase.exceptions import (
     DuplicateMigrationVersionError,
@@ -108,7 +110,7 @@ def validate_no_new_migration_files_with_lower_version_than_latest_migration(
     """
     for file_version, filepath in current_migration_filepaths_by_version.items():
         if (
-            file_version < latest_migrated_version
+            parse_version(file_version) < parse_version(latest_migrated_version)
             and file_version not in migrated_versions
         ):
             filename: str = os.path.basename(filepath)
