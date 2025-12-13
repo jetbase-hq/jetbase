@@ -1,5 +1,6 @@
 import os
 
+from jetbase.config import get_config
 from jetbase.core.checksum import (
     validate_current_migration_files_match_checksums,
     validate_migrated_versions_in_current_migration_files,
@@ -180,6 +181,9 @@ def run_upgrade_validations(
     Run validations on migration files before performing upgrade.
     """
 
+    skip_checksum_validation_config: bool = get_config().skip_checksum_validation
+    skip_file_validation_config: bool = get_config().skip_file_validation
+
     migrations_directory: str = os.path.join(os.getcwd(), "migrations")
 
     migration_filepaths_by_version: dict[str, str] = get_migration_filepaths_by_version(
@@ -189,7 +193,7 @@ def run_upgrade_validations(
         current_migration_filepaths_by_version=migration_filepaths_by_version
     )
 
-    if not skip_file_validation:
+    if not skip_file_validation and not skip_file_validation_config:
         migrated_versions: list[str] = get_migrated_versions()
 
         validate_no_new_migration_files_with_lower_version_than_latest_migration(
@@ -209,7 +213,7 @@ def run_upgrade_validations(
             )
         )
 
-        if not skip_checksum_validation:
+        if not skip_checksum_validation and not skip_checksum_validation_config:
             validate_current_migration_files_match_checksums(
                 migrated_filepaths_by_version=migrated_filepaths_by_version,
                 migrated_versions_and_checksums=get_checksums_by_version(),

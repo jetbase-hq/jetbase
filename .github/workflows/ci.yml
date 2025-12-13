@@ -59,7 +59,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+      JETBASE_SQLALCHEMY_URL: postgresql://postgres:postgres@localhost:5432/test_db
 
     services:
       postgres:

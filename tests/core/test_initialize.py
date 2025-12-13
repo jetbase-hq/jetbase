@@ -1,4 +1,4 @@
-from jetbase.constants import BASE_DIR, CONFIG_FILE, CONFIG_FILE_CONTENT, MIGRATIONS_DIR
+from jetbase.constants import BASE_DIR, ENV_FILE, ENV_FILE_CONTENT, MIGRATIONS_DIR
 from jetbase.core.initialize import create_directory_structure
 
 
@@ -11,13 +11,13 @@ def test_create_directory_structure(tmp_path, capsys) -> None:
     assert migrations_dir.exists() and migrations_dir.is_dir()
 
     # Check if config file is created
-    config_path = base_path / CONFIG_FILE
+    config_path = base_path / ENV_FILE
     assert config_path.exists() and config_path.is_file()
 
     # Check the content of the config file
     with open(config_path, "r") as f:
         content = f.read()
-    assert content == CONFIG_FILE_CONTENT
+    assert content == ENV_FILE_CONTENT
 
     assert (
         capsys.readouterr().out.strip()
