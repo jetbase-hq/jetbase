@@ -18,6 +18,21 @@ class JetbaseConfig:
     skip_checksum_validation: bool = False
     skip_file_validation: bool = False
 
+    def __post_init__(self):
+        # Validate skip_checksum_validation
+        if not isinstance(self.skip_checksum_validation, bool):
+            raise TypeError(
+                f"skip_checksum_validation must be bool, got {type(self.skip_checksum_validation).__name__}. "
+                f"Value: {self.skip_checksum_validation!r}"
+            )
+
+        # Validate skip_file_validation
+        if not isinstance(self.skip_file_validation, bool):
+            raise TypeError(
+                f"skip_file_validation must be bool, got {type(self.skip_file_validation).__name__}. "
+                f"Value: {self.skip_file_validation!r}"
+            )
+
 
 ALL_KEYS: list[str] = [
     field.name for field in JetbaseConfig.__dataclass_fields__.values()
@@ -36,7 +51,7 @@ REQUIRED_KEYS: set[str] = {
 
 def get_config(
     keys: list[str] = ALL_KEYS,
-    defaults: dict[str, Any] | None = None,
+    defaults: dict[str, Any] | None = DEFAULT_VALUES,
     required: set[str] | None = None,
 ) -> JetbaseConfig:
     """
@@ -82,7 +97,9 @@ def get_config(
         else:
             result[key] = None
 
-    return JetbaseConfig(**result)
+    config = JetbaseConfig(**result)
+    print(config)
+    return config
 
 
 def _get_config_value(key: str) -> Any | None:
