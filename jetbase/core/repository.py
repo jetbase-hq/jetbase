@@ -31,8 +31,6 @@ from jetbase.queries import (
     UPDATE_REPEATABLE_MIGRATION_STMT,
 )
 
-sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
-
 
 def get_last_updated_version() -> str | None:
     """
@@ -46,6 +44,8 @@ def get_last_updated_version() -> str | None:
     table_exists: bool = migrations_table_exists()
     if not table_exists:
         return None
+
+    sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
 
     engine: Engine = create_engine(url=sqlalchemy_url)
 
@@ -65,6 +65,7 @@ def create_migrations_table_if_not_exists() -> None:
         None
     """
 
+    sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
     engine: Engine = create_engine(url=sqlalchemy_url)
     with engine.begin() as connection:
         connection.execute(statement=CREATE_MIGRATIONS_TABLE_STMT)
@@ -89,6 +90,7 @@ def run_migration(
     if migration_operation == MigrationDirectionType.UPGRADE and filename is None:
         raise ValueError("Filename must be provided for upgrade migrations.")
 
+    sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
     engine: Engine = create_engine(url=sqlalchemy_url)
 
     with engine.begin() as connection:
@@ -124,6 +126,8 @@ def run_update_repeatable_migration(
     migration_type: MigrationType,
 ) -> None:
     checksum: str = calculate_checksum(sql_statements=sql_statements)
+
+    sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
     engine: Engine = create_engine(url=sqlalchemy_url)
 
     with engine.begin() as connection:
@@ -149,6 +153,7 @@ def get_latest_versions(limit: int) -> list[str]:
         list[str]: A list of the latest migration version strings
     """
 
+    sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
     engine: Engine = create_engine(url=sqlalchemy_url)
     latest_versions: list[str] = []
 
@@ -175,6 +180,7 @@ def get_latest_versions_by_starting_version(
         list[str]: A list of the latest migration version strings
     """
 
+    sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
     engine: Engine = create_engine(url=sqlalchemy_url)
     latest_versions: list[str] = []
     starting_version = starting_version
@@ -209,6 +215,7 @@ def migrations_table_exists() -> bool:
         bool: True if the jetbase_migrations table exists, False otherwise.
     """
 
+    sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
     engine: Engine = create_engine(url=sqlalchemy_url)
 
     with engine.begin() as connection:
@@ -227,6 +234,7 @@ def get_migration_records() -> list[MigrationRecord]:
         list[MigrationRecord]: A list of MigrationRecord containing migration details.
     """
 
+    sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
     engine: Engine = create_engine(url=sqlalchemy_url)
 
     with engine.begin() as connection:
@@ -255,6 +263,7 @@ def lock_table_exists() -> bool:
         bool: True if the jetbase_lock table exists, False otherwise.
     """
 
+    sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
     engine: Engine = create_engine(url=sqlalchemy_url)
 
     with engine.begin() as connection:
@@ -273,6 +282,7 @@ def get_checksums_by_version() -> list[tuple[str, str]]:
         tuple[str, str]: A tuple containing migration version and its checksum.
     """
 
+    sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
     engine: Engine = create_engine(url=sqlalchemy_url)
 
     with engine.begin() as connection:
@@ -293,6 +303,7 @@ def get_migrated_versions() -> list[str]:
         list[str]: A list of migrated version strings.
     """
 
+    sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
     engine: Engine = create_engine(url=sqlalchemy_url)
 
     with engine.begin() as connection:
@@ -305,6 +316,7 @@ def get_migrated_versions() -> list[str]:
 
 
 def update_migration_checksums(versions_and_checksums: list[tuple[str, str]]) -> None:
+    sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
     engine: Engine = create_engine(url=sqlalchemy_url)
 
     with engine.begin() as connection:
@@ -357,6 +369,7 @@ def get_repeatable_on_change_filepaths(
 
 
 def get_existing_on_change_filenames_to_checksums() -> dict[str, str]:
+    sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
     engine: Engine = create_engine(url=sqlalchemy_url)
 
     with engine.begin() as connection:
@@ -371,6 +384,7 @@ def get_existing_on_change_filenames_to_checksums() -> dict[str, str]:
 
 
 def get_existing_repeatable_always_migration_filenames() -> set[str]:
+    sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
     engine: Engine = create_engine(url=sqlalchemy_url)
 
     with engine.begin() as connection:
@@ -383,6 +397,7 @@ def get_existing_repeatable_always_migration_filenames() -> set[str]:
 
 
 def delete_missing_versions(versions: list[str]) -> None:
+    sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
     engine: Engine = create_engine(url=sqlalchemy_url)
 
     with engine.begin() as connection:
