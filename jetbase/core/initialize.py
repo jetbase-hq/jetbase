@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from jetbase.constants import BASE_DIR, CONFIG_FILE, CONFIG_FILE_CONTENT, MIGRATIONS_DIR
+from jetbase.constants import BASE_DIR, ENV_FILE, ENV_FILE_CONTENT, MIGRATIONS_DIR
 
 
 def create_directory_structure(base_path: str) -> None:
@@ -9,7 +9,7 @@ def create_directory_structure(base_path: str) -> None:
 
     This function creates:
     - A migrations directory
-    - A config.py file with default content
+    - An env.py file with default content
 
     After creating the structure, it prints a confirmation message.
 
@@ -22,9 +22,9 @@ def create_directory_structure(base_path: str) -> None:
     migrations_dir: Path = Path(base_path) / MIGRATIONS_DIR
     migrations_dir.mkdir(parents=True, exist_ok=True)
 
-    config_path: Path = Path(base_path) / CONFIG_FILE
+    config_path: Path = Path(base_path) / ENV_FILE
     with open(config_path, "w") as f:
-        f.write(CONFIG_FILE_CONTENT)
+        f.write(ENV_FILE_CONTENT)
 
     print(f"Initialized Jetbase project in {Path(base_path).absolute()}")
 

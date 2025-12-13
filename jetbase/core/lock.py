@@ -5,7 +5,7 @@ from typing import Generator
 
 from sqlalchemy import Engine, create_engine
 
-from jetbase.config import get_sqlalchemy_url
+from jetbase.config import get_config
 from jetbase.core.repository import lock_table_exists, migrations_table_exists
 from jetbase.queries import (
     ACQUIRE_LOCK_STMT,
@@ -16,10 +16,12 @@ from jetbase.queries import (
     RELEASE_LOCK_STMT,
 )
 
+sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
+
 
 def create_lock_table_if_not_exists() -> None:
     """Create the migrations lock table if it doesn't exist."""
-    engine: Engine = create_engine(url=get_sqlalchemy_url())
+    engine: Engine = create_engine(url=sqlalchemy_url)
 
     with engine.begin() as connection:
         connection.execute(CREATE_LOCK_TABLE_STMT)
@@ -39,7 +41,7 @@ def acquire_lock() -> str:
         RuntimeError: If lock is already held by another process
     """
     process_id = str(uuid.uuid4())
-    engine: Engine = create_engine(url=get_sqlalchemy_url())
+    engine: Engine = create_engine(url=sqlalchemy_url)
 
     with engine.begin() as connection:
         # Try to acquire lock
@@ -71,7 +73,7 @@ def release_lock(process_id: str) -> None:
     Args:
         process_id: The process ID that acquired the lock
     """
-    engine: Engine = create_engine(url=get_sqlalchemy_url())
+    engine: Engine = create_engine(url=sqlalchemy_url)
 
     with engine.begin() as connection:
         connection.execute(
@@ -106,7 +108,7 @@ def force_unlock_cmd() -> None:
     if not lock_table_exists() or not migrations_table_exists():
         print("Unlock successful.")
         return
-    engine: Engine = create_engine(url=get_sqlalchemy_url())
+    engine: Engine = create_engine(url=sqlalchemy_url)
 
     with engine.begin() as connection:
         connection.execute(FORCE_UNLOCK_STMT)
@@ -122,7 +124,7 @@ def check_lock_cmd() -> None:
         print("Status: UNLOCKED")
         return
 
-    engine: Engine = create_engine(url=get_sqlalchemy_url())
+    engine: Engine = create_engine(url=sqlalchemy_url)
 
     with engine.begin() as connection:
         result = connection.execute(CHECK_LOCK_STATUS_STMT)

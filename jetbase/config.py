@@ -1,82 +1,138 @@
 import importlib.machinery
 import importlib.util
 import os
+from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
 from typing import Any
 
 import tomli
 
-from jetbase.constants import CONFIG_FILE
+from jetbase.constants import ENV_FILE
 
 
-def get_sqlalchemy_url() -> str:
+@dataclass
+class JetbaseConfig:
+    sqlalchemy_url: str
+    postgres_schema: str | None = None
+    skip_checksum_validation: bool = False
+    skip_file_validation: bool = False
+
+
+ALL_KEYS: list[str] = [
+    field.name for field in JetbaseConfig.__dataclass_fields__.values()
+]
+
+
+DEFAULT_VALUES: dict[str, Any] = {
+    "skip_checksum_validation": False,
+    "skip_file_validation": False,
+}
+
+REQUIRED_KEYS: set[str] = {
+    "sqlalchemy_url",
+}
+
+
+def get_config(
+    keys: list[str] = ALL_KEYS,
+    defaults: dict[str, Any] | None = None,
+    required: set[str] | None = None,
+) -> JetbaseConfig:
     """
-    Load SQLAlchemy URL from various configuration sources in priority order.
+    Load configuration values from various sources in priority order.
 
-    Searches for the URL in the following order:
+    Searches for values in the following order:
     1. config.py file
-    2. JETBASE_SQLALCHEMY_URL environment variable
+    2. Environment variables (JETBASE_{KEY_IN_UPPERCASE})
     3. jetbase.toml file
     4. pyproject.toml file
 
-    Returns:
-        str: The sqlalchemy_url from the first available source
-
-    Raises:
-        ValueError: If no valid SQLAlchemy URL is found in any source
-    """
-    sqlalchemy_url: str | None = None
-
-    sqlalchemy_url = _get_sqlalchemy_url_from_config_py()
-    if sqlalchemy_url:
-        return sqlalchemy_url
-
-    sqlalchemy_url = _get_sqlalchemy_url_from_env_var()
-    if sqlalchemy_url:
-        return sqlalchemy_url
-
-    sqlalchemy_url = _get_sqlalchemy_url_from_jetbase_toml()
-    if sqlalchemy_url:
-        return sqlalchemy_url
-
-    pyproject_dir: Path | None = _find_pyproject_toml()
-    if pyproject_dir:
-        sqlalchemy_url = _get_sqlalchemy_url_from_pyproject_toml(
-            filepath=pyproject_dir / "pyproject.toml"
-        )
-        if sqlalchemy_url:
-            return sqlalchemy_url
-
-    raise ValueError(_get_sqlalchemy_url_help_message())
-
-
-def _validate_sqlalchemy_url(url: Any) -> str:
-    """
-    Validates a SQLAlchemy URL string.
-    This function checks if the provided URL is a valid string.
     Args:
-        url (Any): The SQLAlchemy URL to validate (could be any type from user config).
+        keys: List of configuration keys to retrieve
+        defaults: Optional dict of default values for keys
+        required: Optional set of keys that must be found (raises ValueError if missing)
+
     Returns:
-        str: The validated SQLAlchemy URL string.
+        dict: Dictionary with all requested configuration values
+
     Raises:
-        TypeError: If the provided URL is not a string.
+        ValueError: If a required key is not found in any source
+
+    Example:
+        config = get_config(
+            keys=["sqlalchemy_url", "postgres_schema", "enforce_checksum_validation"],
+            defaults={"enforce_checksum_validation": True},
+            required={"sqlalchemy_url"}
+        )
     """
+    defaults = defaults or {}
+    required = required or set()
+    result: dict[str, Any] = {}
 
-    if not isinstance(url, str):
-        raise TypeError(f"sqlalchemy_url must be a string, got {type(url).__name__}")
+    for key in keys:
+        value = _get_config_value(key)
 
-    return url
+        if value is not None:
+            result[key] = value
+        elif key in defaults:
+            result[key] = defaults[key]
+        elif key in required:
+            raise ValueError(_get_config_help_message(key))
+        else:
+            result[key] = None
+
+    return JetbaseConfig(**result)
 
 
-def _get_sqlalchemy_url_from_config_py(filepath: str = CONFIG_FILE) -> str | None:
+def _get_config_value(key: str) -> Any | None:
     """
-    Load the SQLAlchemy URL from the config.py file.
+    Get a single configuration value from all sources in priority order.
+
+    Args:
+        key: The configuration key to retrieve
 
     Returns:
-        str: The SQLAlchemy URL.
+        The configuration value from the first available source, or None
     """
+    # Try env.py
+    value = _get_config_from_env_py(key)
+    if value is not None:
+        return value
 
+    # Try environment variable
+    value = _get_config_from_env_var(key)
+    if value is not None:
+        return value
+
+    # Try jetbase.toml
+    value = _get_config_from_jetbase_toml(key)
+    if value is not None:
+        return value
+
+    # Try pyproject.toml
+    pyproject_dir = _find_pyproject_toml()
+    if pyproject_dir:
+        value = _get_config_from_pyproject_toml(
+            key=key, filepath=pyproject_dir / "pyproject.toml"
+        )
+        if value is not None:
+            return value
+
+    return None
+
+
+def _get_config_from_env_py(key: str, filepath: str = ENV_FILE) -> Any | None:
+    """
+    Load a configuration value from the env.py file.
+
+    Args:
+        key: The configuration key to retrieve
+        filepath: Path to the config file
+
+    Returns:
+        Any | None: The configuration value if found, otherwise None
+    """
     config_path: str = os.path.join(os.getcwd(), filepath)
 
     if not os.path.exists(config_path):
@@ -92,48 +148,54 @@ def _get_sqlalchemy_url_from_config_py(filepath: str = CONFIG_FILE) -> str | Non
     config: ModuleType = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module=config)
 
-    sqlalchemy_url: Any | None = getattr(config, "sqlalchemy_url", None)
+    config_value: Any | None = getattr(config, key, None)
 
-    return sqlalchemy_url
+    return config_value
 
 
-def _get_sqlalchemy_url_from_jetbase_toml(filepath: str = "jetbase.toml") -> str | None:
+def _get_config_from_jetbase_toml(
+    key: str, filepath: str = "jetbase.toml"
+) -> Any | None:
     """
-    Load the SQLAlchemy URL from the jetbase.toml file.
+    Load a configuration value from the jetbase.toml file.
+
+    Args:
+        key: The configuration key to retrieve
+        filepath: Path to the jetbase.toml file
 
     Returns:
-        str: The SQLAlchemy URL.
+        Any | None: The configuration value if found, otherwise None
     """
-
     if not os.path.exists(filepath):
         return None
 
     with open(filepath, "rb") as f:
         jetbase_data = tomli.load(f)
 
-    sqlalchemy_url: Any = jetbase_data.get("sqlalchemy_url", None)
+    config_value: Any = jetbase_data.get(key, None)
 
-    return sqlalchemy_url
+    return config_value
 
 
-def _get_sqlalchemy_url_from_pyproject_toml(filepath: Path) -> str | None:
+def _get_config_from_pyproject_toml(key: str, filepath: Path) -> Any | None:
     """
-    Load the SQLAlchemy URL from the pyproject.toml file.
+    Load a configuration value from the pyproject.toml file.
+
+    Args:
+        key: The configuration key to retrieve
+        filepath: Path to the pyproject.toml file
 
     Returns:
-        str: The SQLAlchemy URL.
+        Any | None: The configuration value if found, otherwise None
     """
-
     with open(filepath, "rb") as f:
         pyproject_data = tomli.load(f)
 
-        sqlalchemy_url: Any = (
-            pyproject_data.get("tool", {}).get("jetbase", {}).get("sqlalchemy_url")
-        )
-        if sqlalchemy_url is None:
+        config_value: Any = pyproject_data.get("tool", {}).get("jetbase", {}).get(key)
+        if config_value is None:
             return None
 
-    return sqlalchemy_url
+    return config_value
 
 
 def _find_pyproject_toml(start: Path | None = None) -> Path | None:
@@ -152,7 +214,6 @@ def _find_pyproject_toml(start: Path | None = None) -> Path | None:
         Path | None: The Path object pointing to the directory containing pyproject.toml
             if found, otherwise None if the file is not found before reaching the root.
     """
-
     if start is None:
         start = Path.cwd()
 
@@ -169,32 +230,49 @@ def _find_pyproject_toml(start: Path | None = None) -> Path | None:
         current = current.parent
 
 
-def _get_sqlalchemy_url_from_env_var() -> str | None:
+def _get_config_from_env_var(key: str) -> Any | None:
     """
-    Load the SQLAlchemy URL from the JETBASE_SQLALCHEMY_URL environment variable.
+    Load a configuration value from an environment variable.
+
+    The environment variable name is constructed as JETBASE_{KEY_IN_UPPERCASE}.
+
+    Args:
+        key: The configuration key to retrieve
 
     Returns:
-        str: The SQLAlchemy URL.
+        Any | None: The configuration value if found, otherwise None
     """
-    sqlalchemy_url: str | None = os.getenv("JETBASE_SQLALCHEMY_URL", None)
-    return sqlalchemy_url
+    env_var_name = f"JETBASE_{key.upper()}"
+    config_value: str | None = os.getenv(env_var_name, None)
+    if config_value:
+        if config_value.lower() == "true":
+            return True
+        if config_value.lower() == "false":
+            return False
+    return config_value
 
 
-def _get_sqlalchemy_url_help_message() -> str:
+def _get_config_help_message(key: str) -> str:
     """
-    Return a formatted help message for configuring SQLAlchemy URL.
+    Return a formatted help message for configuring a specific key.
+
+    Args:
+        key: The configuration key that was not found
 
     Returns:
         str: A multi-line help message describing the different methods
-            to configure the SQLAlchemy URL.
+            to configure the specified key.
     """
+    env_var_name = f"JETBASE_{key.upper()}"
     return (
-        "SQLAlchemy URL not found. Please configure it using one of these methods:\n\n"
-        "1. jetbase/config.py file:\n"
-        '   sqlalchemy_url = "sqlite:///mydb.sqlite"\n\n'
-        "2. Environment variable:\n"
-        '   export JETBASE_SQLALCHEMY_URL="postgresql://user:pass@localhost/dbname"\n\n'
-        "3. pyproject.toml file:\n"
-        "   [tool.jetbase]\n"
-        '   sqlalchemy_url = "postgresql://user:pass@localhost/dbname"\n\n'
+        f"Configuration '{key}' not found. Please configure it using one of these methods:\n\n"
+        f"1. jetbase/config.py file:\n"
+        f'   {key} = "your_value"\n\n'
+        f"2. Environment variable:\n"
+        f'   export {env_var_name}="your_value"\n\n'
+        f"3. jetbase.toml file:\n"
+        f'   {key} = "your_value"\n\n'
+        f"4. pyproject.toml file:\n"
+        f"   [tool.jetbase]\n"
+        f'   {key} = "your_value"\n\n'
     )
