@@ -283,7 +283,7 @@ def _get_config_help_message(key: str) -> str:
     env_var_name = f"JETBASE_{key.upper()}"
     return (
         f"Configuration '{key}' not found. Please configure it using one of these methods:\n\n"
-        f"1. jetbase/config.py file:\n"
+        f"1. jetbase/env.py file:\n"
         f'   {key} = "your_value"\n\n'
         f"2. Environment variable:\n"
         f'   export {env_var_name}="your_value"\n\n'
