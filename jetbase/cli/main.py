@@ -61,7 +61,7 @@ def rollback(
         None, "--to-version", "-t", help="Rollback to a specific version"
     ),
     dry_run: bool = typer.Option(
-        False, "--dry-run", "-d", help="Simulate the upgrade without making changes"
+        False, "--dry-run", "-d", help="Simulate the rollback without making changes"
     ),
 ):
     """Rollback migration(s)"""
