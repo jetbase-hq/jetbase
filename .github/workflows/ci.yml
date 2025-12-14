@@ -94,9 +94,9 @@ jobs:
         working-directory: tests/test_integration/jetbase
         run: uv run jetbase rollback
 
-      - name: Run jetbase latest with no migrations table created
+      - name: Run jetbase current with no migrations table created
         working-directory: tests/test_integration/jetbase
-        run: uv run jetbase latest
+        run: uv run jetbase current
 
       - name: Run jetbase history with no migrations table created
         working-directory: tests/test_integration/jetbase
@@ -166,9 +166,9 @@ jobs:
         working-directory: tests/test_integration
         run: uv run pytest -m "to_version" test_rollback.py
 
-      - name: Run jetbase latest
+      - name: Run jetbase current
         working-directory: tests/test_integration/jetbase
-        run: uv run jetbase latest
+        run: uv run jetbase current
 
       - name: Run jetbase history
         working-directory: tests/test_integration/jetbase
