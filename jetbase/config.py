@@ -98,7 +98,7 @@ def get_config(
             result[key] = None
 
     config = JetbaseConfig(**result)
-    print(config)
+    # print(config)
     return config
 
 

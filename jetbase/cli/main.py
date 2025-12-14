@@ -9,7 +9,7 @@ from jetbase.core.lock import check_lock_cmd, force_unlock_cmd
 from jetbase.core.rollback import rollback_cmd
 from jetbase.core.status import status_cmd
 from jetbase.core.upgrade import upgrade_cmd
-from jetbase.core.validation import fix_files
+from jetbase.core.validation import fix_files_cmd
 
 app = typer.Typer(help="Jetbase CLI")
 
@@ -79,13 +79,13 @@ def history():
 
 
 @app.command()
-def latest():
-    """Show the latest migration version"""
+def current():
+    """Show the latest version that has been migrated"""
     latest_cmd()
 
 
 @app.command()
-def force_unlock():
+def unlock():
     """
     Unlock the migration lock to allow migrations to run again.
 
@@ -96,26 +96,26 @@ def force_unlock():
 
 
 @app.command()
-def check_lock() -> None:
+def lock_status() -> None:
     """Checks if the database is currently locked for migrations or not."""
     check_lock_cmd()
 
 
 @app.command()
-def repair_checksums() -> None:
-    """Repair migration checksums."""
+def fix_checksums() -> None:
+    """Updates all stored checksums to their current values."""
     repair_checksums_cmd()
 
 
 @app.command()
-def repair() -> None:
+def fix() -> None:
     """Repair migration files and versions."""
-    fix_files(audit_only=False)
+    fix_files_cmd(audit_only=False)
     repair_checksums_cmd(audit_only=False)
 
 
 @app.command()
-def checksums_audit(
+def validate_checksums(
     fix: bool = typer.Option(
         False,
         "--fix",
@@ -132,34 +132,39 @@ def checksums_audit(
 
 
 @app.command()
-def files_audit(
+def validate_files(
     fix: bool = typer.Option(
         False,
         "--fix",
         "-f",
-        help="Fix any detected checksum mismatches by updating the stored checksum to match any changes in its corresponding migration file",
+        help="Fix any detected migration file issues",
     ),
 ) -> None:
+    """Check if any migration files are missing. Use --fix to clean up records of migrations whose files no longer exist."""
+
     if fix:
-        fix_files(audit_only=False)
+        fix_files_cmd(audit_only=False)
     else:
-        fix_files(audit_only=True)
+        fix_files_cmd(audit_only=True)
 
 
 @app.command()
-def repair_files() -> None:
-    fix_files(audit_only=False)
+def fix_files() -> None:
+    """Stops jetbase from tracking migrations whose files no longer exist."""
+    fix_files_cmd(audit_only=False)
 
 
 @app.command()
 def status() -> None:
+    """Display migration status: applied migrations and pending migrations."""
     status_cmd()
 
 
 @app.command()
-def generate(
+def new(
     description: str = typer.Argument(..., help="Description of the migration"),
 ) -> None:
+    """Create a new migration file with a timestamp-based version and the provided description."""
     generate_new_migration_file_cmd(description=description)
 
 

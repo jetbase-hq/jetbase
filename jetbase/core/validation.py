@@ -4,7 +4,7 @@ from jetbase.core.repository import delete_missing_versions, get_migrated_versio
 from jetbase.core.version import get_migration_filepaths_by_version
 
 
-def fix_files(audit_only: bool = False) -> None:
+def fix_files_cmd(audit_only: bool = False) -> None:
     """Fix file version validation issues."""
 
     migrated_versions: list[str] = get_migrated_versions()
