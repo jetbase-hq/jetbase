@@ -1,6 +1,6 @@
+import datetime as dt
 import uuid
 from contextlib import contextmanager
-from datetime import datetime, timezone
 from typing import Generator
 
 from sqlalchemy import Engine, create_engine
@@ -20,7 +20,11 @@ sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
 
 
 def create_lock_table_if_not_exists() -> None:
-    """Create the migrations lock table if it doesn't exist."""
+    """
+    Create the migrations lock table if it doesn't exist.
+    Returns:
+        None
+    """
     engine: Engine = create_engine(url=sqlalchemy_url)
 
     with engine.begin() as connection:
@@ -48,7 +52,7 @@ def acquire_lock() -> str:
         result = connection.execute(
             ACQUIRE_LOCK_STMT,
             {
-                "locked_at": datetime.now(timezone.utc),
+                "locked_at": dt.datetime.now(dt.timezone.utc),
                 "process_id": process_id,
             },
         )
@@ -57,9 +61,9 @@ def acquire_lock() -> str:
             raise RuntimeError(
                 "Migration lock is already held by another process.\n\n"
                 "If you are completely sure that no other migrations are running, "
-                "you can forcibly unlock using:\n"
-                "  jetbase force-unlock\n\n"
-                "WARNING: Force-unlocking then running a migration while another migration process is running may "
+                "you can unlock using:\n"
+                "  jetbase unlock\n\n"
+                "WARNING: Unlocking then running a migration while another migration process is running may "
                 "lead to database corruption."
             )
 
@@ -101,10 +105,16 @@ def migration_lock() -> Generator[None, None, None]:
             release_lock(process_id=process_id)
 
 
-def force_unlock_cmd() -> None:
+def unlock_cmd() -> None:
     """
-    Command to forcibly unlock the migration lock.
+    Unlocks the database migration lock unconditionally.
+    Use with caution. This should only be used if you are certain that no migration
+    is currently running.
+    Returns:
+    None: This function does not return a value. It prints the unlock status
+            to standard output.
     """
+
     if not lock_table_exists() or not migrations_table_exists():
         print("Unlock successful.")
         return
@@ -118,8 +128,14 @@ def force_unlock_cmd() -> None:
 
 def check_lock_cmd() -> None:
     """
-    Command to check if migrations are currently locked.
+    Check and display the current lock status of the database migration system.
+    This function queries the current lock status. It prints whether the database
+    migrations are locked or unlocked, and if locked, displays the timestamp
+    when it was locked.
+    Returns:
+        None: Prints the lock status directly to stdout.
     """
+
     if not lock_table_exists() or not migrations_table_exists():
         print("Status: UNLOCKED")
         return

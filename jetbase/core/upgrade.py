@@ -3,6 +3,7 @@ import os
 from jetbase.config import get_config
 from jetbase.core.checksum import (
     validate_current_migration_files_match_checksums,
+    validate_migrated_repeatable_versions_in_migration_files,
     validate_migrated_versions_in_current_migration_files,
     validate_no_duplicate_migration_file_versions,
     validate_no_new_migration_files_with_lower_version_than_latest_migration,
@@ -13,15 +14,20 @@ from jetbase.core.lock import create_lock_table_if_not_exists, migration_lock
 from jetbase.core.repository import (
     create_migrations_table_if_not_exists,
     get_checksums_by_version,
+    get_existing_on_change_filenames_to_checksums,
     get_existing_repeatable_always_migration_filenames,
     get_last_updated_version,
+    get_migrated_repeatable_filenames,
     get_migrated_versions,
     get_repeatable_always_filepaths,
     get_repeatable_on_change_filepaths,
     run_migration,
     run_update_repeatable_migration,
 )
-from jetbase.core.version import get_migration_filepaths_by_version
+from jetbase.core.version import (
+    get_migration_filepaths_by_version,
+    get_repeatable_filenames,
+)
 from jetbase.enums import MigrationDirectionType, MigrationType
 
 
@@ -29,6 +35,7 @@ def upgrade_cmd(
     count: int | None = None,
     to_version: str | None = None,
     dry_run: bool = False,
+    skip_validation: bool = False,
     skip_checksum_validation: bool = False,
     skip_file_validation: bool = False,
 ) -> None:
@@ -47,6 +54,10 @@ def upgrade_cmd(
             "Select only one, or do not specify either to run all pending migrations."
         )
 
+    if count:
+        if count < 1 or not isinstance(count, int):
+            raise ValueError("'count' must be a positive integer.")
+
     create_migrations_table_if_not_exists()
     create_lock_table_if_not_exists()
 
@@ -55,6 +66,7 @@ def upgrade_cmd(
     if latest_migrated_version:
         run_upgrade_validations(
             latest_migrated_version=latest_migrated_version,
+            skip_validation=skip_validation,
             skip_checksum_validation=skip_checksum_validation,
             skip_file_validation=skip_file_validation,
         )
@@ -71,7 +83,7 @@ def upgrade_cmd(
         all_versions = dict(list(all_versions.items())[:count])
     elif to_version:
         if all_versions.get(to_version) is None:
-            raise ValueError(
+            raise FileNotFoundError(
                 f"The specified to_version '{to_version}' does not exist among pending migrations."
             )
         all_versions_list = []
@@ -92,10 +104,9 @@ def upgrade_cmd(
         directory=os.path.join(os.getcwd(), "migrations"),
         changed_only=True,
     )
-    existing_repeatable_on_change_filenames: list[str] = (
-        get_repeatable_on_change_filepaths(
-            directory=os.path.join(os.getcwd(), "migrations"),
-        )
+
+    existing_repeatable_on_change_filenames: list[str] = list(
+        get_existing_on_change_filenames_to_checksums().keys()
     )
 
     if not dry_run:
@@ -174,6 +185,7 @@ def upgrade_cmd(
 
 def run_upgrade_validations(
     latest_migrated_version: str,
+    skip_validation: bool = False,
     skip_checksum_validation: bool = False,
     skip_file_validation: bool = False,
 ) -> None:
@@ -181,6 +193,7 @@ def run_upgrade_validations(
     Run validations on migration files before performing upgrade.
     """
 
+    skip_validation_config: bool = get_config().skip_validation
     skip_checksum_validation_config: bool = get_config().skip_checksum_validation
     skip_file_validation_config: bool = get_config().skip_file_validation
 
@@ -193,19 +206,25 @@ def run_upgrade_validations(
         current_migration_filepaths_by_version=migration_filepaths_by_version
     )
 
-    if not skip_file_validation and not skip_file_validation_config:
-        migrated_versions: list[str] = get_migrated_versions()
+    if not skip_validation and not skip_validation_config:
+        if not skip_file_validation and not skip_file_validation_config:
+            migrated_versions: list[str] = get_migrated_versions()
 
-        validate_no_new_migration_files_with_lower_version_than_latest_migration(
-            current_migration_filepaths_by_version=migration_filepaths_by_version,
-            migrated_versions=migrated_versions,
-            latest_migrated_version=latest_migrated_version,
-        )
+            validate_no_new_migration_files_with_lower_version_than_latest_migration(
+                current_migration_filepaths_by_version=migration_filepaths_by_version,
+                migrated_versions=migrated_versions,
+                latest_migrated_version=latest_migrated_version,
+            )
 
-        validate_migrated_versions_in_current_migration_files(
-            migrated_versions=migrated_versions,
-            current_migration_filepaths_by_version=migration_filepaths_by_version,
-        )
+            validate_migrated_versions_in_current_migration_files(
+                migrated_versions=migrated_versions,
+                current_migration_filepaths_by_version=migration_filepaths_by_version,
+            )
+
+            validate_migrated_repeatable_versions_in_migration_files(
+                migrated_repeatable_filenames=get_migrated_repeatable_filenames(),
+                all_repeatable_filenames=get_repeatable_filenames(),
+            )
 
         migrated_filepaths_by_version: dict[str, str] = (
             get_migration_filepaths_by_version(

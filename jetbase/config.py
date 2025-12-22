@@ -17,6 +17,7 @@ class JetbaseConfig:
     postgres_schema: str | None = None
     skip_checksum_validation: bool = False
     skip_file_validation: bool = False
+    skip_validation: bool = False
 
     def __post_init__(self):
         # Validate skip_checksum_validation
@@ -33,6 +34,13 @@ class JetbaseConfig:
                 f"Value: {self.skip_file_validation!r}"
             )
 
+        # Validate skip_validation
+        if not isinstance(self.skip_validation, bool):
+            raise TypeError(
+                f"skip_validation must be bool, got {type(self.skip_validation).__name__}. "
+                f"Value: {self.skip_validation!r}"
+            )
+
 
 ALL_KEYS: list[str] = [
     field.name for field in JetbaseConfig.__dataclass_fields__.values()
@@ -42,6 +50,7 @@ ALL_KEYS: list[str] = [
 DEFAULT_VALUES: dict[str, Any] = {
     "skip_checksum_validation": False,
     "skip_file_validation": False,
+    "skip_validation": False,
 }
 
 REQUIRED_KEYS: set[str] = {
@@ -98,7 +107,6 @@ def get_config(
             result[key] = None
 
     config = JetbaseConfig(**result)
-    # print(config)
     return config
 
 

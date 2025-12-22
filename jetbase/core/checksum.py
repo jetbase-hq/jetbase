@@ -5,9 +5,8 @@ from packaging.version import parse as parse_version
 
 from jetbase.core.file_parser import parse_upgrade_statements
 from jetbase.exceptions import (
+    ChecksumMismatchError,
     DuplicateMigrationVersionError,
-    MigrationChecksumMismatchError,
-    MigrationVersionMismatchError,
     OutOfOrderMigrationError,
 )
 
@@ -46,22 +45,23 @@ def validate_current_migration_files_match_checksums(
 
     Raises:
         MigrationVersionMismatchError: If version mismatch is detected
-        MigrationChecksumMismatchError: If checksum doesn't match
+        ChecksumMismatchError: If checksum doesn't match
     """
+    versions_changed: list[str] = []
     for index, (file_version, filepath) in enumerate(
         migrated_filepaths_by_version.items()
     ):
         sql_statements: list[str] = parse_upgrade_statements(file_path=filepath)
         checksum: str = calculate_checksum(sql_statements=sql_statements)
 
-        if file_version != migrated_versions_and_checksums[index][0]:
-            raise MigrationVersionMismatchError(
-                f"Version mismatch: expected {migrated_versions_and_checksums[index][0]}, found {file_version}."
-            )
+        for migrated_version, migrated_checksum in migrated_versions_and_checksums:
+            if file_version == migrated_version:
+                if checksum != migrated_checksum:
+                    versions_changed.append(file_version)
 
-        if checksum != migrated_versions_and_checksums[index][1]:
-            raise MigrationChecksumMismatchError(
-                f"Checksum mismatch for version {file_version}: file has been changed since migration."
+        if versions_changed:
+            raise ChecksumMismatchError(
+                f"Checksum mismatch for versions: {', '.join(versions_changed)}. Files have been changed since migration."
             )
 
 
@@ -144,3 +144,17 @@ def validate_no_duplicate_migration_file_versions(
                 "Please rename the file to have a unique version."
             )
         seen_versions.add(file_version)
+
+
+def validate_migrated_repeatable_versions_in_migration_files(
+    migrated_repeatable_filenames: list[str],
+    all_repeatable_filenames: list[str],
+) -> None:
+    missing_filenames: list[str] = []
+    for r_file in migrated_repeatable_filenames:
+        if r_file not in all_repeatable_filenames:
+            missing_filenames.append(r_file)
+    if missing_filenames:
+        raise FileNotFoundError(
+            f"The following migrated repeatable files are missing: {', '.join(missing_filenames)}"
+        )

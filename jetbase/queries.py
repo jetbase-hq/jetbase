@@ -197,6 +197,17 @@ GET_REPEATABLE_ALWAYS_MIGRATIONS_QUERY: TextClause = text(f"""
         filename ASC
         """)
 
+GET_REPEATABLE_MIGRATIONS_QUERY: TextClause = text(f"""
+    SELECT 
+        filename
+    FROM 
+        jetbase_migrations
+    WHERE
+        migration_type in ('{MigrationType.REPEATABLE_ALWAYS.value}', '{MigrationType.REPEATABLE_ON_CHANGE.value}')
+    ORDER BY 
+        filename ASC
+        """)
+
 UPDATE_REPEATABLE_MIGRATION_STMT: TextClause = text("""
 UPDATE jetbase_migrations
 SET checksum = :checksum,
@@ -210,4 +221,10 @@ DELETE_MISSING_VERSION_STMT: TextClause = text(f"""
 DELETE FROM jetbase_migrations
 WHERE version = :version
 AND migration_type = '{MigrationType.VERSIONED.value}'
+""")
+
+DELETE_MISSING_REPEATABLE_STMT: TextClause = text(f"""
+DELETE FROM jetbase_migrations
+WHERE filename = :filename
+AND migration_type in ('{MigrationType.REPEATABLE_ALWAYS.value}', '{MigrationType.REPEATABLE_ON_CHANGE.value}')
 """)

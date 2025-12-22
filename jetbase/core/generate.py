@@ -1,22 +1,40 @@
+import datetime as dt
 import os
-from datetime import datetime
+
+from jetbase.constants import MIGRATIONS_DIR
+from jetbase.exceptions import DirectoryNotFoundError
 
 
-def generate_new_migration_file_cmd(description: str | None = None) -> None:
-    migrations_dir: str = os.path.join(os.getcwd(), "migrations")
-    if not os.path.exists(migrations_dir):
-        print(
-            "Migrations directory not found. Run 'jetbase initialize' to set up jetbase.\n If you have already done so, run this command from the jetbase directory."
+def generate_new_migration_file_cmd(description: str) -> None:
+    """
+    Generate a new migration file with a timestamped filename.
+    This function creates a new SQL migration file in the migrations directory with
+    a filename format of V{timestamp}__{description}.sql. The timestamp is in the
+    format YYYYMMDD.HHMMSS.
+    Args:
+        description (str): A description for the migration file.
+            Spaces in the description will be replaced with underscores in the
+            filename.
+    Raises:
+        DirectoryNotFoundError: If the migrations directory is not found.
+    Returns:
+        None
+    Examples:
+        >>> generate_new_migration_file_cmd("create users table")
+        Created migration file: jetbase/migrations/V20251201.120000__create_users_table.sql
+    """
+
+    migrations_dir_path: str = os.path.join(os.getcwd(), MIGRATIONS_DIR)
+
+    if not os.path.exists(migrations_dir_path):
+        raise DirectoryNotFoundError(
+            "Migrations directory not found. Run 'jetbase initialize' to set up jetbase.\n"
+            "If you have already done so, run this command from the jetbase directory."
         )
-        return
 
-    if description is None:
-        print("Error: description is required")
-        return
-
-    timestamp = datetime.now().strftime("%Y%m%d.%H%M%S")
+    timestamp = dt.datetime.now().strftime("%Y%m%d.%H%M%S")
     filename: str = f"V{timestamp}__{description.replace(' ', '_')}.sql"
-    filepath: str = os.path.join(migrations_dir, filename)
+    filepath: str = os.path.join(migrations_dir_path, filename)
 
     with open(filepath, "w") as f:  # noqa: F841
         pass

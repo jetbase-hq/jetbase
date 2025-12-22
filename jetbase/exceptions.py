@@ -22,7 +22,7 @@ class OutOfOrderMigrationError(Exception):
     pass
 
 
-class MigrationChecksumMismatchError(Exception):
+class ChecksumMismatchError(Exception):
     """Raised when a migration file's checksum doesn't match the stored checksum."""
 
     pass
@@ -36,5 +36,11 @@ class MigrationVersionMismatchError(Exception):
 
 class VersionNotFoundError(Exception):
     """Raised when attempting to rollback to a version that doesn't exist or hasn't been applied."""
+
+    pass
+
+
+class DirectoryNotFoundError(Exception):
+    """Raised when the specified migrations directory does not exist."""
 
     pass

@@ -1,11 +1,38 @@
 import os
+from pathlib import Path
 
-from jetbase.core.repository import delete_missing_versions, get_migrated_versions
-from jetbase.core.version import get_migration_filepaths_by_version
+from jetbase.core.lock import create_lock_table_if_not_exists, migration_lock
+from jetbase.core.repository import (
+    create_migrations_table_if_not_exists,
+    delete_missing_repeatables,
+    delete_missing_versions,
+    get_migrated_repeatable_filenames,
+    get_migrated_versions,
+)
+from jetbase.core.version import (
+    get_migration_filepaths_by_version,
+    get_repeatable_filenames,
+)
+from jetbase.exceptions import DirectoryNotFoundError
 
 
 def fix_files_cmd(audit_only: bool = False) -> None:
-    """Fix file version validation issues."""
+    """
+    Fix migration tracking by removing database records for missing migration files.
+
+    This function reconciles the migration state between the database and the filesystem
+    by identifying and optionally removing records of migrations whose corresponding
+    files no longer exist. It handles both versioned and repeatable migrations.
+    Args:
+        audit_only (bool, optional): If True, only reports missing migration files
+            without making any changes to the database. If False, removes database
+            records for missing migrations. Defaults to False.
+    Returns:
+        None: This function prints its results to stdout and does not return a value.
+    """
+
+    create_lock_table_if_not_exists()
+    create_migrations_table_if_not_exists()
 
     migrated_versions: list[str] = get_migrated_versions()
     current_migration_filepaths_by_version: dict[str, str] = (
@@ -13,28 +40,67 @@ def fix_files_cmd(audit_only: bool = False) -> None:
             directory=os.path.join(os.getcwd(), "migrations")
         )
     )
+    migrated_repeatable_filenames: list[str] = get_migrated_repeatable_filenames()
+    all_repeatable_filenames: list[str] = get_repeatable_filenames()
 
     missing_versions: list[str] = []
+    missing_repeatables: list[str] = []
 
     for migrated_version in migrated_versions:
         if migrated_version not in current_migration_filepaths_by_version:
             missing_versions.append(migrated_version)
 
+    for r_filename in migrated_repeatable_filenames:
+        if r_filename not in all_repeatable_filenames:
+            missing_repeatables.append(r_filename)
+
     if audit_only:
-        if missing_versions:
-            print("The following migrated versions are missing migration files:")
+        if missing_versions or missing_repeatables:
+            print("The following migrations are missing their corresponding files:")
             for version in missing_versions:
                 print(f"→ {version}")
+            for r_file in missing_repeatables:
+                print(f"→ {r_file}")
 
         else:
-            print("All migrated versions have corresponding migration files.")
+            print("All migrations have corresponding files.")
         return
 
     if not audit_only:
-        if missing_versions:
-            delete_missing_versions(versions=missing_versions)
-            print("Removed the following missing migrated versions from the database:")
-            for version in missing_versions:
-                print(f"→ {version}")
+        if missing_versions or missing_repeatables:
+            with migration_lock():
+                if missing_versions:
+                    delete_missing_versions(versions=missing_versions)
+                    print("Stopped tracking the following missing versions:")
+                    for version in missing_versions:
+                        print(f"→ {version}")
+
+                if missing_repeatables:
+                    delete_missing_repeatables(repeatable_filenames=missing_repeatables)
+                    print(
+                        "Removed the following missing repeatable migrations from the database:"
+                    )
+                    for r_file in missing_repeatables:
+                        print(f"→ {r_file}")
         else:
-            print("No missing migrated versions to fix.")
+            print("No missing migration files.")
+
+
+def validate_jetbase_directory() -> None:
+    current_dir = Path.cwd()
+
+    # Check if current directory is named 'jetbase'
+    if current_dir.name != "jetbase":
+        raise DirectoryNotFoundError(
+            "Command must be run from the 'jetbase' directory.\n"
+            "You can run 'jetbase init' to create a Jetbase project."
+        )
+
+    # Check if migrations directory exists
+    migrations_dir = current_dir / "migrations"
+    if not migrations_dir.exists() or not migrations_dir.is_dir():
+        raise DirectoryNotFoundError(
+            f"'migrations' directory not found in {current_dir}.\n"
+            "Add a migrations directory inside the 'jetbase' directory to proceed.\n"
+            "You can also run 'jetbase init' to create a Jetbase project."
+        )

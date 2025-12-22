@@ -4,17 +4,28 @@ from rich.console import Console
 from rich.table import Table
 
 from jetbase.core.file_parser import get_description_from_filename
+from jetbase.core.history import get_display_version
 from jetbase.core.models import MigrationRecord
 from jetbase.core.repository import (
+    create_migrations_table_if_not_exists,
+    get_existing_on_change_filenames_to_checksums,
     get_migration_records,
     get_repeatable_on_change_filepaths,
+    migrations_table_exists,
 )
-from jetbase.core.version import get_migration_filepaths_by_version
+from jetbase.core.version import get_migration_filepaths_by_version, get_ra_filenames
 from jetbase.enums import MigrationType
 
 
 def status_cmd() -> None:
-    migration_records: list[MigrationRecord] = get_migration_records()
+    is_migrations_table: bool = migrations_table_exists()
+    if not is_migrations_table:
+        create_migrations_table_if_not_exists()
+        is_migrations_table = True
+
+    migration_records: list[MigrationRecord] = (
+        get_migration_records() if is_migrations_table else []
+    )
 
     versioned_migration_records: list[MigrationRecord] = [
         record
@@ -38,12 +49,27 @@ def status_cmd() -> None:
             list(migration_filepaths_by_version_to_be_migrated.items())[1:]
         )
 
-    roc_filepaths_to_be_migrated: list[str] = get_repeatable_on_change_filepaths(
+    all_roc_filenames: list[str] = get_ra_filenames()
+
+    roc_filepaths_changed_only: list[str] = get_repeatable_on_change_filepaths(
         directory=os.path.join(os.getcwd(), "migrations"), changed_only=True
     )
 
-    roc_filenames_to_be_migrated: list[str] = [
-        os.path.basename(filepath) for filepath in roc_filepaths_to_be_migrated
+    roc_filenames_changed_only: list[str] = [
+        os.path.basename(filepath) for filepath in roc_filepaths_changed_only
+    ]
+
+    roc_filenames_migrated: list[str] = list(
+        get_existing_on_change_filenames_to_checksums().keys()
+    )
+    print(roc_filenames_migrated)
+
+    all_roc_filepaths: list[str] = get_repeatable_on_change_filepaths(
+        directory=os.path.join(os.getcwd(), "migrations")
+    )
+
+    all_roc_filenames: list[str] = [
+        os.path.basename(filepath) for filepath in all_roc_filepaths
     ]
 
     console = Console()
@@ -59,7 +85,10 @@ def status_cmd() -> None:
         if record.migration_type == MigrationType.VERSIONED.value:
             applied_table.add_row(record.version, record.description)
         else:
-            applied_table.add_row(record.migration_type, record.description)
+            applied_table.add_row(
+                get_display_version(migration_type=record.migration_type),
+                record.description,
+            )
 
     console.print(applied_table)
     console.print()
@@ -76,15 +105,35 @@ def status_cmd() -> None:
             version, get_description_from_filename(filename=os.path.basename(filepath))
         )
 
-    for record in migration_records:
-        if record.migration_type == MigrationType.REPEATABLE_ALWAYS.value:
-            pending_table.add_row(record.migration_type, record.description)
+    # Repeatable always
+    for ra_filename in get_ra_filenames():
+        description: str = get_description_from_filename(filename=ra_filename)
+        pending_table.add_row(
+            get_display_version(migration_type=MigrationType.REPEATABLE_ALWAYS.value),
+            description,
+        )
 
+    # Repeatable on change
     for record in migration_records:
         if (
             record.migration_type == MigrationType.REPEATABLE_ON_CHANGE.value
-            and record.filename in roc_filenames_to_be_migrated
+            and record.filename in roc_filenames_changed_only
         ):
-            pending_table.add_row(record.migration_type, record.description)
+            pending_table.add_row(
+                get_display_version(
+                    migration_type=MigrationType.REPEATABLE_ON_CHANGE.value
+                ),
+                record.description,
+            )
+
+    for filename in all_roc_filenames:
+        if filename not in roc_filenames_migrated:
+            description: str = get_description_from_filename(filename=filename)
+            pending_table.add_row(
+                get_display_version(
+                    migration_type=MigrationType.REPEATABLE_ALWAYS.value
+                ),
+                description,
+            )
 
     console.print(pending_table)

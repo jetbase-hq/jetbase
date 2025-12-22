@@ -26,7 +26,10 @@ def create_directory_structure(base_path: str) -> None:
     with open(config_path, "w") as f:
         f.write(ENV_FILE_CONTENT)
 
-    print(f"Initialized Jetbase project in {Path(base_path).absolute()}")
+    print(
+        f"Initialized Jetbase project in {Path(base_path).absolute()}\n"
+        "Run cd jetbase to get started!"
+    )
 
 
 def initialize_cmd() -> None:

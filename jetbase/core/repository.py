@@ -17,9 +17,11 @@ from jetbase.queries import (
     CHECK_IF_MIGRATIONS_TABLE_EXISTS_QUERY,
     CHECK_IF_VERSION_EXISTS_QUERY,
     CREATE_MIGRATIONS_TABLE_STMT,
+    DELETE_MISSING_REPEATABLE_STMT,
     DELETE_MISSING_VERSION_STMT,
     DELETE_VERSION_STMT,
     GET_REPEATABLE_ALWAYS_MIGRATIONS_QUERY,
+    GET_REPEATABLE_MIGRATIONS_QUERY,
     GET_REPEATABLE_ON_CHANGE_MIGRATIONS_QUERY,
     GET_VERSION_CHECKSUMS_QUERY,
     INSERT_VERSION_STMT,
@@ -406,3 +408,26 @@ def delete_missing_versions(versions: list[str]) -> None:
                 statement=DELETE_MISSING_VERSION_STMT,
                 parameters={"version": version},
             )
+
+
+def delete_missing_repeatables(repeatable_filenames: list[str]) -> None:
+    sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
+    engine: Engine = create_engine(url=sqlalchemy_url)
+
+    with engine.begin() as connection:
+        for r_file in repeatable_filenames:
+            connection.execute(
+                statement=DELETE_MISSING_REPEATABLE_STMT,
+                parameters={"filename": r_file},
+            )
+
+
+def get_migrated_repeatable_filenames() -> list[str]:
+    sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
+    engine: Engine = create_engine(url=sqlalchemy_url)
+
+    with engine.begin() as connection:
+        results: Result[tuple[str]] = connection.execute(
+            statement=GET_REPEATABLE_MIGRATIONS_QUERY,
+        )
+        return [row.filename for row in results.fetchall()]

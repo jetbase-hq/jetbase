@@ -52,7 +52,9 @@ def rollback_cmd(
     for version in latest_migration_versions:
         if version not in list(versions_to_rollback.keys()):
             raise VersionNotFoundError(
-                f"Migration file for version {version} not found; cannot proceed with rollback."
+                f"Migration file for version '{version}' not found. Cannot proceed with rollback.\n"
+                "Please restore the missing migration file and try again, or run 'jetbase fix' "
+                "to synchronize the migrations table with existing files before retrying the rollback."
             )
 
     versions_to_rollback: dict[str, str] = dict(reversed(versions_to_rollback.items()))
