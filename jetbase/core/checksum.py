@@ -7,7 +7,6 @@ from jetbase.core.file_parser import parse_upgrade_statements
 from jetbase.exceptions import (
     ChecksumMismatchError,
     DuplicateMigrationVersionError,
-    MigrationVersionMismatchError,
     OutOfOrderMigrationError,
 )
 
