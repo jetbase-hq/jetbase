@@ -1,15 +1,15 @@
 import typer
 
-from jetbase.core.checksum_cmd import repair_checksums_cmd
+from jetbase.core.checksum_cmd import fix_checksums_cmd
 from jetbase.core.generate import generate_new_migration_file_cmd
 from jetbase.core.history import history_cmd
 from jetbase.core.initialize import initialize_cmd
-from jetbase.core.latest import latest_cmd
-from jetbase.core.lock import check_lock_cmd, force_unlock_cmd
+from jetbase.core.latest import current_cmd
+from jetbase.core.lock import check_lock_cmd, unlock_cmd
 from jetbase.core.rollback import rollback_cmd
 from jetbase.core.status import status_cmd
 from jetbase.core.upgrade import upgrade_cmd
-from jetbase.core.validation import fix_files_cmd
+from jetbase.core.validation import fix_files_cmd, validate_jetbase_directory
 
 app = typer.Typer(help="Jetbase CLI")
 
@@ -31,6 +31,11 @@ def upgrade(
     dry_run: bool = typer.Option(
         False, "--dry-run", "-d", help="Simulate the upgrade without making changes"
     ),
+    skip_validation: bool = typer.Option(
+        False,
+        "--skip-validation",
+        help="Skip both checksum and file version validation when running migrations",
+    ),
     skip_checksum_validation: bool = typer.Option(
         False,
         "--skip-checksum-validation",
@@ -43,10 +48,12 @@ def upgrade(
     ),
 ):
     """Execute pending migrations"""
+    validate_jetbase_directory()
     upgrade_cmd(
         count=count,
         to_version=to_version.replace("_", ".") if to_version else None,
         dry_run=dry_run,
+        skip_validation=skip_validation,
         skip_checksum_validation=skip_checksum_validation,
         skip_file_validation=skip_file_validation,
     )
@@ -65,6 +72,7 @@ def rollback(
     ),
 ):
     """Rollback migration(s)"""
+    validate_jetbase_directory()
     rollback_cmd(
         count=count,
         to_version=to_version.replace("_", ".") if to_version else None,
@@ -75,13 +83,15 @@ def rollback(
 @app.command()
 def history():
     """Show migration history"""
+    validate_jetbase_directory()
     history_cmd()
 
 
 @app.command()
 def current():
     """Show the latest version that has been migrated"""
-    latest_cmd()
+    validate_jetbase_directory()
+    current_cmd()
 
 
 @app.command()
@@ -92,26 +102,30 @@ def unlock():
     WARNING: Only use this if you're certain no migration is currently running.
     Unlocking then running a migration during an active migration can cause database corruption.
     """
-    force_unlock_cmd()
+    validate_jetbase_directory()
+    unlock_cmd()
 
 
 @app.command()
 def lock_status() -> None:
     """Checks if the database is currently locked for migrations or not."""
+    validate_jetbase_directory()
     check_lock_cmd()
 
 
 @app.command()
 def fix_checksums() -> None:
     """Updates all stored checksums to their current values."""
-    repair_checksums_cmd()
+    validate_jetbase_directory()
+    fix_checksums_cmd()
 
 
 @app.command()
 def fix() -> None:
     """Repair migration files and versions."""
+    validate_jetbase_directory()
     fix_files_cmd(audit_only=False)
-    repair_checksums_cmd(audit_only=False)
+    fix_checksums_cmd(audit_only=False)
 
 
 @app.command()
@@ -123,12 +137,12 @@ def validate_checksums(
         help="Fix any detected checksum mismatches by updating the stored checksum to match any changes in its corresponding migration file",
     ),
 ) -> None:
-    """Audit migration checksums without making changes."""
-
+    """Audit migration checksums without making changes. Use --fix to update stored checksums to match current migration files."""
+    validate_jetbase_directory()
     if fix:
-        repair_checksums_cmd(audit_only=False)
+        fix_checksums_cmd(audit_only=False)
     else:
-        repair_checksums_cmd(audit_only=True)
+        fix_checksums_cmd(audit_only=True)
 
 
 @app.command()
@@ -141,7 +155,7 @@ def validate_files(
     ),
 ) -> None:
     """Check if any migration files are missing. Use --fix to clean up records of migrations whose files no longer exist."""
-
+    validate_jetbase_directory()
     if fix:
         fix_files_cmd(audit_only=False)
     else:
@@ -151,12 +165,14 @@ def validate_files(
 @app.command()
 def fix_files() -> None:
     """Stops jetbase from tracking migrations whose files no longer exist."""
+    validate_jetbase_directory()
     fix_files_cmd(audit_only=False)
 
 
 @app.command()
 def status() -> None:
     """Display migration status: applied migrations and pending migrations."""
+    validate_jetbase_directory()
     status_cmd()
 
 
@@ -165,6 +181,7 @@ def new(
     description: str = typer.Argument(..., help="Description of the migration"),
 ) -> None:
     """Create a new migration file with a timestamp-based version and the provided description."""
+    validate_jetbase_directory()
     generate_new_migration_file_cmd(description=description)
 
 

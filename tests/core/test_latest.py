@@ -2,7 +2,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from jetbase.core.latest import latest_cmd
+from jetbase.core.latest import current_cmd
 
 
 @pytest.mark.parametrize(
@@ -13,16 +13,16 @@ from jetbase.core.latest import latest_cmd
     ],
 )
 @patch("jetbase.core.latest.get_last_updated_version")
-def test_latest_cmd(
+def test_current_cmd(
     mock_get_last_updated_version: Mock,
     capsys: pytest.CaptureFixture,
     version: str | None,
     expected_output: str,
 ) -> None:
-    """Test latest_cmd with different version scenarios."""
+    """Test current_cmd with different version scenarios."""
     mock_get_last_updated_version.return_value = version
 
-    latest_cmd()
+    current_cmd()
 
     captured = capsys.readouterr()
     assert expected_output in captured.out

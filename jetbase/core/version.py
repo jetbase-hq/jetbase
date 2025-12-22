@@ -142,3 +142,41 @@ def get_migration_filepaths_by_version(
     )
 
     return ordered_version_to_filepath_dict
+
+
+def get_ra_filenames() -> list[str]:
+    """
+    Retrieve all Repeatable Always (RA) migration filenames from the migrations directory.
+
+    This function scans the 'migrations' directory in the current working directory
+    for files that follow the Repeatable Always naming convention (starting with 'RA__').
+    It returns a list of these filenames.
+
+    Returns:
+        list[str]: A list of Repeatable Always migration filenames.
+    """
+    ra_filenames: list[str] = []
+    for root, _, files in os.walk(os.path.join(os.getcwd(), "migrations")):
+        for filename in files:
+            if filename.startswith("RA__"):
+                ra_filenames.append(filename)
+    return ra_filenames
+
+
+def get_repeatable_filenames() -> list[str]:
+    """
+    Retrieve all Repeatable migration filenames from the migrations directory.
+
+    This function scans the 'migrations' directory in the current working directory
+    for files that follow the Repeatable naming convention (starting with 'RA__' or 'RC__').
+    It returns a list of these filenames.
+
+    Returns:
+        list[str]: A list of Repeatable migration filenames.
+    """
+    repeatable_filenames: list[str] = []
+    for root, _, files in os.walk(os.path.join(os.getcwd(), "migrations")):
+        for filename in files:
+            if filename.startswith("RA__") or filename.startswith("RC__"):
+                repeatable_filenames.append(filename)
+    return repeatable_filenames
