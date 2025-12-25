@@ -28,7 +28,7 @@ class TestValidateJetbaseDirectory:
         migrations_dir.mkdir()
 
         with patch("jetbase.core.validation.Path.cwd", return_value=wrong_dir):
-            with pytest.raises(DirectoryNotFoundError) as exc_info:
+            with pytest.raises(DirectoryNotFoundError):
                 validate_jetbase_directory()
 
     def test_validate_jetbase_directory_missing_migrations_folder(
@@ -39,5 +39,5 @@ class TestValidateJetbaseDirectory:
         jetbase_dir.mkdir()
 
         with patch("jetbase.core.validation.Path.cwd", return_value=jetbase_dir):
-            with pytest.raises(DirectoryNotFoundError) as exc_info:
+            with pytest.raises(DirectoryNotFoundError):
                 validate_jetbase_directory()
