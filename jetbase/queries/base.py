@@ -1,7 +1,9 @@
 from enum import Enum
 
 from sqlalchemy import TextClause
+from sqlalchemy.engine import make_url
 
+from jetbase.enums import DatabaseType
 from jetbase.queries import default_queries
 
 
@@ -103,6 +105,28 @@ class BaseQueries:
     @staticmethod
     def delete_missing_repeatable_stmt() -> TextClause:
         return default_queries.DELETE_MISSING_REPEATABLE_STMT
+
+
+def detect_db(sqlalchemy_url: str) -> DatabaseType:
+    """Detect database type from SQLAlchemy URL.
+
+    Returns one of: postgresql, mysql, sqlite
+
+    Raises:
+        ValueError: If database type is not supported
+    """
+    url = make_url(sqlalchemy_url)
+    backend_name = url.get_backend_name()
+
+    try:
+        database_type: DatabaseType = DatabaseType(backend_name)
+    except ValueError:
+        raise ValueError(
+            f"Unsupported database: {backend_name}. "
+            f"Supported databases are: {', '.join(db.value for db in DatabaseType)}"
+        )
+
+    return database_type
 
 
 class QueryMethod(Enum):

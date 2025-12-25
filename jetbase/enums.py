@@ -10,3 +10,8 @@ class MigrationType(Enum):
     VERSIONED = "VERSIONED"
     REPEATABLE_ON_CHANGE = "REPEATABLE_ON_CHANGE"
     REPEATABLE_ALWAYS = "REPEATABLE_ALWAYS"
+
+
+class DatabaseType(Enum):
+    POSTGRESQL = "postgresql"
+    SQLITE = "sqlite"
