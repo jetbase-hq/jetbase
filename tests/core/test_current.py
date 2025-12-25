@@ -12,7 +12,7 @@ from jetbase.commands.current import current_cmd
         (None, "No migrations have been applied yet."),
     ],
 )
-@patch("jetbase.core.latest.get_last_updated_version")
+@patch("jetbase.commands.current.get_last_updated_version")
 def test_current_cmd(
     mock_get_last_updated_version: Mock,
     capsys: pytest.CaptureFixture,

@@ -17,7 +17,7 @@ def test_generate_new_migration_file_cmd_success(tmp_path, capsys):
     # Mock os.getcwd to return tmp_path
     with patch("os.getcwd", return_value=str(tmp_path)):
         # Mock datetime to get predictable timestamp
-        with patch("jetbase.core.generate.dt") as mock_dt:
+        with patch("jetbase.commands.new.dt") as mock_dt:
             mock_dt.datetime.now.return_value.strftime.return_value = "20251214.153000"
 
             # Generate migration file
