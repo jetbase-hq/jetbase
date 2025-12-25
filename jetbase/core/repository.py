@@ -3,6 +3,7 @@ import os
 from sqlalchemy import Engine, Result, create_engine, text
 
 from jetbase.config import get_config
+from jetbase.constants import RUNS_ALWAYS_FILE_PREFIX, RUNS_ON_CHANGE_FILE_PREFIX
 from jetbase.core.checksum import calculate_checksum
 from jetbase.core.file_parser import (
     get_description_from_filename,
@@ -12,26 +13,8 @@ from jetbase.core.file_parser import (
 from jetbase.core.models import MigrationRecord
 from jetbase.enums import MigrationDirectionType, MigrationType
 from jetbase.exceptions import VersionNotFoundError
-from jetbase.queries import (
-    CHECK_IF_LOCK_TABLE_EXISTS_QUERY,
-    CHECK_IF_MIGRATIONS_TABLE_EXISTS_QUERY,
-    CHECK_IF_VERSION_EXISTS_QUERY,
-    CREATE_MIGRATIONS_TABLE_STMT,
-    DELETE_MISSING_REPEATABLE_STMT,
-    DELETE_MISSING_VERSION_STMT,
-    DELETE_VERSION_STMT,
-    GET_REPEATABLE_ALWAYS_MIGRATIONS_QUERY,
-    GET_REPEATABLE_MIGRATIONS_QUERY,
-    GET_REPEATABLE_ON_CHANGE_MIGRATIONS_QUERY,
-    GET_VERSION_CHECKSUMS_QUERY,
-    INSERT_VERSION_STMT,
-    LATEST_VERSION_QUERY,
-    LATEST_VERSIONS_BY_STARTING_VERSION_QUERY,
-    LATEST_VERSIONS_QUERY,
-    MIGRATION_RECORDS_QUERY,
-    REPAIR_MIGRATION_CHECKSUM_STMT,
-    UPDATE_REPEATABLE_MIGRATION_STMT,
-)
+from jetbase.queries.base import QueryMethod
+from jetbase.queries.query_loader import get_query
 
 
 def get_last_updated_version() -> str | None:
@@ -52,7 +35,9 @@ def get_last_updated_version() -> str | None:
     engine: Engine = create_engine(url=sqlalchemy_url)
 
     with engine.begin() as connection:
-        result: Result[tuple[str]] = connection.execute(LATEST_VERSION_QUERY)
+        result: Result[tuple[str]] = connection.execute(
+            get_query(QueryMethod.LATEST_VERSION_QUERY)
+        )
         latest_version: str | None = result.scalar()
     if not latest_version:
         return None
@@ -70,7 +55,10 @@ def create_migrations_table_if_not_exists() -> None:
     sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
     engine: Engine = create_engine(url=sqlalchemy_url)
     with engine.begin() as connection:
-        connection.execute(statement=CREATE_MIGRATIONS_TABLE_STMT)
+        # connection.execute(text("SET LOCAL search_path TO metrics"))
+        connection.execute(
+            statement=get_query(QueryMethod.CREATE_MIGRATIONS_TABLE_STMT)
+        )
 
 
 def run_migration(
@@ -106,7 +94,7 @@ def run_migration(
             checksum: str = calculate_checksum(sql_statements=sql_statements)
 
             connection.execute(
-                statement=INSERT_VERSION_STMT,
+                statement=get_query(QueryMethod.INSERT_VERSION_STMT),
                 parameters={
                     "version": version,
                     "description": description,
@@ -118,7 +106,8 @@ def run_migration(
 
         elif migration_operation == MigrationDirectionType.ROLLBACK:
             connection.execute(
-                statement=DELETE_VERSION_STMT, parameters={"version": version}
+                statement=get_query(QueryMethod.DELETE_VERSION_STMT),
+                parameters={"version": version},
             )
 
 
@@ -137,7 +126,7 @@ def run_update_repeatable_migration(
             connection.execute(text(statement))
 
         connection.execute(
-            statement=UPDATE_REPEATABLE_MIGRATION_STMT,
+            statement=get_query(QueryMethod.UPDATE_REPEATABLE_MIGRATION_STMT),
             parameters={
                 "checksum": checksum,
                 "filename": filename,
@@ -161,7 +150,7 @@ def get_latest_versions(limit: int) -> list[str]:
 
     with engine.begin() as connection:
         result: Result[tuple[str]] = connection.execute(
-            statement=LATEST_VERSIONS_QUERY,
+            statement=get_query(QueryMethod.LATEST_VERSIONS_QUERY),
             parameters={"limit": limit},
         )
         latest_versions: list[str] = [row[0] for row in result.fetchall()]
@@ -189,7 +178,7 @@ def get_latest_versions_by_starting_version(
 
     with engine.begin() as connection:
         version_exists_result: Result[tuple[int]] = connection.execute(
-            statement=CHECK_IF_VERSION_EXISTS_QUERY,
+            statement=get_query(QueryMethod.CHECK_IF_VERSION_EXISTS_QUERY),
             parameters={"version": starting_version},
         )
         version_exists: int = version_exists_result.scalar_one()
@@ -200,7 +189,7 @@ def get_latest_versions_by_starting_version(
             )
 
         latest_versions_result: Result[tuple[str]] = connection.execute(
-            statement=LATEST_VERSIONS_BY_STARTING_VERSION_QUERY,
+            statement=get_query(QueryMethod.LATEST_VERSIONS_BY_STARTING_VERSION_QUERY),
             parameters={"starting_version": starting_version},
         )
         latest_versions: list[str] = [
@@ -222,9 +211,10 @@ def migrations_table_exists() -> bool:
 
     with engine.begin() as connection:
         result: Result[tuple[bool]] = connection.execute(
-            statement=CHECK_IF_MIGRATIONS_TABLE_EXISTS_QUERY
+            statement=get_query(QueryMethod.CHECK_IF_MIGRATIONS_TABLE_EXISTS_QUERY)
         )
         table_exists: bool = result.scalar_one()
+        print(f"migrations_table_exists: {table_exists}")
 
     return table_exists
 
@@ -241,7 +231,7 @@ def get_migration_records() -> list[MigrationRecord]:
 
     with engine.begin() as connection:
         results: Result[tuple[str, int, str]] = connection.execute(
-            statement=MIGRATION_RECORDS_QUERY
+            statement=get_query(QueryMethod.MIGRATION_RECORDS_QUERY)
         )
         migration_records: list[MigrationRecord] = [
             MigrationRecord(
@@ -270,7 +260,7 @@ def lock_table_exists() -> bool:
 
     with engine.begin() as connection:
         result: Result[tuple[bool]] = connection.execute(
-            statement=CHECK_IF_LOCK_TABLE_EXISTS_QUERY
+            statement=get_query(QueryMethod.CHECK_IF_LOCK_TABLE_EXISTS_QUERY)
         )
         table_exists: bool = result.scalar_one()
 
@@ -289,7 +279,7 @@ def get_checksums_by_version() -> list[tuple[str, str]]:
 
     with engine.begin() as connection:
         results: Result[tuple[str, str]] = connection.execute(
-            statement=GET_VERSION_CHECKSUMS_QUERY
+            statement=get_query(QueryMethod.GET_VERSION_CHECKSUMS_QUERY)
         )
         versions_and_checksums: list[tuple[str, str]] = [
             (row.version, row.checksum) for row in results.fetchall()
@@ -310,7 +300,7 @@ def get_migrated_versions() -> list[str]:
 
     with engine.begin() as connection:
         results: Result[tuple[str]] = connection.execute(
-            statement=GET_VERSION_CHECKSUMS_QUERY
+            statement=get_query(QueryMethod.GET_VERSION_CHECKSUMS_QUERY)
         )
         migrated_versions: list[str] = [row.version for row in results.fetchall()]
 
@@ -324,7 +314,7 @@ def update_migration_checksums(versions_and_checksums: list[tuple[str, str]]) ->
     with engine.begin() as connection:
         for version, checksum in versions_and_checksums:
             connection.execute(
-                statement=REPAIR_MIGRATION_CHECKSUM_STMT,
+                statement=get_query(QueryMethod.REPAIR_MIGRATION_CHECKSUM_STMT),
                 parameters={"version": version, "checksum": checksum},
             )
 
@@ -334,7 +324,7 @@ def get_repeatable_always_filepaths(directory: str) -> list[str]:
     for root, _, files in os.walk(directory):
         for filename in files:
             validate_filename_format(filename=filename)
-            if filename.startswith("RA__"):
+            if filename.startswith(RUNS_ALWAYS_FILE_PREFIX):
                 filepath: str = os.path.join(root, filename)
                 repeatable_always_filepaths.append(filepath)
 
@@ -349,7 +339,7 @@ def get_repeatable_on_change_filepaths(
     for root, _, files in os.walk(directory):
         for filename in files:
             validate_filename_format(filename=filename)
-            if filename.startswith("RC__"):
+            if filename.startswith(RUNS_ON_CHANGE_FILE_PREFIX):
                 filepath: str = os.path.join(root, filename)
                 repeatable_on_change_filepaths.append(filepath)
 
@@ -376,7 +366,7 @@ def get_existing_on_change_filenames_to_checksums() -> dict[str, str]:
 
     with engine.begin() as connection:
         results: Result[tuple[str, str]] = connection.execute(
-            statement=GET_REPEATABLE_ON_CHANGE_MIGRATIONS_QUERY,
+            statement=get_query(QueryMethod.GET_REPEATABLE_ON_CHANGE_MIGRATIONS_QUERY),
         )
         migration_filenames_to_checksums: dict[str, str] = {
             row.filename: row.checksum for row in results.fetchall()
@@ -391,7 +381,7 @@ def get_existing_repeatable_always_migration_filenames() -> set[str]:
 
     with engine.begin() as connection:
         results: Result[tuple[str]] = connection.execute(
-            statement=GET_REPEATABLE_ALWAYS_MIGRATIONS_QUERY,
+            statement=get_query(QueryMethod.GET_REPEATABLE_ALWAYS_MIGRATIONS_QUERY),
         )
         migration_filenames: set[str] = {row.filename for row in results.fetchall()}
 
@@ -405,7 +395,7 @@ def delete_missing_versions(versions: list[str]) -> None:
     with engine.begin() as connection:
         for version in versions:
             connection.execute(
-                statement=DELETE_MISSING_VERSION_STMT,
+                statement=get_query(QueryMethod.DELETE_MISSING_VERSION_STMT),
                 parameters={"version": version},
             )
 
@@ -417,7 +407,7 @@ def delete_missing_repeatables(repeatable_filenames: list[str]) -> None:
     with engine.begin() as connection:
         for r_file in repeatable_filenames:
             connection.execute(
-                statement=DELETE_MISSING_REPEATABLE_STMT,
+                statement=get_query(QueryMethod.DELETE_MISSING_REPEATABLE_STMT),
                 parameters={"filename": r_file},
             )
 
@@ -428,6 +418,6 @@ def get_migrated_repeatable_filenames() -> list[str]:
 
     with engine.begin() as connection:
         results: Result[tuple[str]] = connection.execute(
-            statement=GET_REPEATABLE_MIGRATIONS_QUERY,
+            statement=get_query(QueryMethod.GET_REPEATABLE_MIGRATIONS_QUERY),
         )
         return [row.filename for row in results.fetchall()]

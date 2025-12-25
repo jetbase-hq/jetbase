@@ -1,5 +1,10 @@
 import re
 
+from jetbase.constants import (
+    RUNS_ALWAYS_FILE_PREFIX,
+    RUNS_ON_CHANGE_FILE_PREFIX,
+    VERSION_FILE_PREFIX,
+)
 from jetbase.enums import MigrationDirectionType
 from jetbase.exceptions import (
     InvalidMigrationFilenameError,
@@ -102,14 +107,16 @@ def is_filename_format_valid(filename: str) -> bool:
     """
     if not filename.endswith(".sql"):
         return False
-    if not filename.startswith(("V", "RC__", "RA__")):
+    if not filename.startswith(
+        (VERSION_FILE_PREFIX, RUNS_ON_CHANGE_FILE_PREFIX, RUNS_ALWAYS_FILE_PREFIX)
+    ):
         return False
     if "__" not in filename:
         return False
     description: str = _get_raw_description_from_filename(filename=filename)
     if len(description.strip()) == 0:
         return False
-    if filename.startswith(("RC__", "RA__")):
+    if filename.startswith((RUNS_ON_CHANGE_FILE_PREFIX, RUNS_ALWAYS_FILE_PREFIX)):
         return True
     raw_version: str = _get_version_from_filename(filename=filename)
     if not _is_valid_version(version=raw_version):
@@ -227,14 +234,16 @@ def validate_filename_format(filename: str) -> None:
     is_valid_filename: bool = True
     if not filename.endswith(".sql"):
         is_valid_filename = False
-    if not filename.startswith(("V", "RC__", "RA__")):
+    if not filename.startswith(
+        (VERSION_FILE_PREFIX, RUNS_ON_CHANGE_FILE_PREFIX, RUNS_ALWAYS_FILE_PREFIX)
+    ):
         is_valid_filename = False
     if "__" not in filename:
         is_valid_filename = False
     description: str = _get_raw_description_from_filename(filename=filename)
     if len(description.strip()) == 0:
         is_valid_filename = False
-    if filename.startswith("V"):
+    if filename.startswith(VERSION_FILE_PREFIX):
         raw_version: str = _get_version_from_filename(filename=filename)
         if not _is_valid_version(version=raw_version):
             is_valid_filename = False

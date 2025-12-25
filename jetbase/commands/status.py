@@ -4,7 +4,7 @@ from rich.console import Console
 from rich.table import Table
 
 from jetbase.core.file_parser import get_description_from_filename
-from jetbase.core.history import get_display_version
+from jetbase.core.formatters import get_display_version
 from jetbase.core.models import MigrationRecord
 from jetbase.core.repository import (
     create_migrations_table_if_not_exists,

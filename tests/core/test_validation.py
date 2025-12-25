@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
-from jetbase.core.validation import validate_jetbase_directory
+from jetbase.commands.helpers import validate_jetbase_directory
 from jetbase.exceptions import DirectoryNotFoundError
 
 

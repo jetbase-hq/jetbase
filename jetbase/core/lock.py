@@ -6,15 +6,8 @@ from typing import Generator
 from sqlalchemy import Engine, create_engine
 
 from jetbase.config import get_config
-from jetbase.core.repository import lock_table_exists, migrations_table_exists
-from jetbase.queries import (
-    ACQUIRE_LOCK_STMT,
-    CHECK_LOCK_STATUS_STMT,
-    CREATE_LOCK_TABLE_STMT,
-    FORCE_UNLOCK_STMT,
-    INITIALIZE_LOCK_RECORD_STMT,
-    RELEASE_LOCK_STMT,
-)
+from jetbase.queries.base import QueryMethod
+from jetbase.queries.query_loader import get_query
 
 sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
 
@@ -28,10 +21,12 @@ def create_lock_table_if_not_exists() -> None:
     engine: Engine = create_engine(url=sqlalchemy_url)
 
     with engine.begin() as connection:
-        connection.execute(CREATE_LOCK_TABLE_STMT)
+        connection.execute(get_query(query_name=QueryMethod.CREATE_LOCK_TABLE_STMT))
 
         # Initialize with single row if empty
-        connection.execute(INITIALIZE_LOCK_RECORD_STMT)
+        connection.execute(
+            get_query(query_name=QueryMethod.INITIALIZE_LOCK_RECORD_STMT)
+        )
 
 
 def acquire_lock() -> str:
@@ -50,14 +45,14 @@ def acquire_lock() -> str:
     with engine.begin() as connection:
         # Try to acquire lock
         result = connection.execute(
-            ACQUIRE_LOCK_STMT,
+            get_query(query_name=QueryMethod.ACQUIRE_LOCK_STMT),
             {
                 "locked_at": dt.datetime.now(dt.timezone.utc),
                 "process_id": process_id,
             },
         )
 
-        if result.rowcount == 0:  # already locked``
+        if result.rowcount == 0:  # already locked
             raise RuntimeError(
                 "Migration lock is already held by another process.\n\n"
                 "If you are completely sure that no other migrations are running, "
@@ -81,7 +76,7 @@ def release_lock(process_id: str) -> None:
 
     with engine.begin() as connection:
         connection.execute(
-            RELEASE_LOCK_STMT,
+            get_query(query_name=QueryMethod.RELEASE_LOCK_STMT),
             {"process_id": process_id},
         )
 
@@ -103,51 +98,3 @@ def migration_lock() -> Generator[None, None, None]:
     finally:
         if process_id:
             release_lock(process_id=process_id)
-
-
-def unlock_cmd() -> None:
-    """
-    Unlocks the database migration lock unconditionally.
-    Use with caution. This should only be used if you are certain that no migration
-    is currently running.
-    Returns:
-    None: This function does not return a value. It prints the unlock status
-            to standard output.
-    """
-
-    if not lock_table_exists() or not migrations_table_exists():
-        print("Unlock successful.")
-        return
-    engine: Engine = create_engine(url=sqlalchemy_url)
-
-    with engine.begin() as connection:
-        connection.execute(FORCE_UNLOCK_STMT)
-
-    print("Unlock successful.")
-
-
-def check_lock_cmd() -> None:
-    """
-    Check and display the current lock status of the database migration system.
-    This function queries the current lock status. It prints whether the database
-    migrations are locked or unlocked, and if locked, displays the timestamp
-    when it was locked.
-    Returns:
-        None: Prints the lock status directly to stdout.
-    """
-
-    if not lock_table_exists() or not migrations_table_exists():
-        print("Status: UNLOCKED")
-        return
-
-    engine: Engine = create_engine(url=sqlalchemy_url)
-
-    with engine.begin() as connection:
-        result = connection.execute(CHECK_LOCK_STATUS_STMT)
-        row = result.fetchone()
-        if row and row[0]:  # is_locked
-            locked_at = row[1]
-
-            print(f"Status: LOCKED\nLocked At: {locked_at}")
-        else:
-            print("Status: UNLOCKED")

@@ -2,7 +2,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from jetbase.core.latest import current_cmd
+from jetbase.commands.current import current_cmd
 
 
 @pytest.mark.parametrize(

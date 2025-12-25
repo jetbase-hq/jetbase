@@ -1,15 +1,17 @@
 import typer
 
-from jetbase.core.checksum_cmd import fix_checksums_cmd
-from jetbase.core.generate import generate_new_migration_file_cmd
-from jetbase.core.history import history_cmd
-from jetbase.core.initialize import initialize_cmd
-from jetbase.core.latest import current_cmd
-from jetbase.core.lock import check_lock_cmd, unlock_cmd
-from jetbase.core.rollback import rollback_cmd
-from jetbase.core.status import status_cmd
-from jetbase.core.upgrade import upgrade_cmd
-from jetbase.core.validation import fix_files_cmd, validate_jetbase_directory
+from jetbase.commands.current import current_cmd
+from jetbase.commands.fix_checksums import fix_checksums_cmd
+from jetbase.commands.fix_files import fix_files_cmd
+from jetbase.commands.helpers import validate_jetbase_directory
+from jetbase.commands.history import history_cmd
+from jetbase.commands.init import initialize_cmd
+from jetbase.commands.lock_status import lock_status_cmd
+from jetbase.commands.new import generate_new_migration_file_cmd
+from jetbase.commands.rollback import rollback_cmd
+from jetbase.commands.status import status_cmd
+from jetbase.commands.unlock import unlock_cmd
+from jetbase.commands.upgrade import upgrade_cmd
 
 app = typer.Typer(help="Jetbase CLI")
 
@@ -110,7 +112,7 @@ def unlock():
 def lock_status() -> None:
     """Checks if the database is currently locked for migrations or not."""
     validate_jetbase_directory()
-    check_lock_cmd()
+    lock_status_cmd()
 
 
 @app.command()
@@ -176,9 +178,16 @@ def status() -> None:
     status_cmd()
 
 
+# check if typer enforces enum types - if yes then create enum for migration type
 @app.command()
 def new(
     description: str = typer.Argument(..., help="Description of the migration"),
+    # migration_type: str = typer.Option(
+    #     "V",
+    #     "--type",
+    #     "-t",
+    #     help="Specify migration type (V, ROC, RA)",
+    # ),
 ) -> None:
     """Create a new migration file with a timestamp-based version and the provided description."""
     validate_jetbase_directory()

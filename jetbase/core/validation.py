@@ -1,11 +1,13 @@
 import os
-from pathlib import Path
 
-from jetbase.core.lock import create_lock_table_if_not_exists, migration_lock
+from packaging.version import parse as parse_version
+
+from jetbase.config import get_config
+from jetbase.constants import MIGRATIONS_DIR
+from jetbase.core.checksum import calculate_checksum
+from jetbase.core.file_parser import parse_upgrade_statements
 from jetbase.core.repository import (
-    create_migrations_table_if_not_exists,
-    delete_missing_repeatables,
-    delete_missing_versions,
+    get_checksums_by_version,
     get_migrated_repeatable_filenames,
     get_migrated_versions,
 )
@@ -13,94 +15,192 @@ from jetbase.core.version import (
     get_migration_filepaths_by_version,
     get_repeatable_filenames,
 )
-from jetbase.exceptions import DirectoryNotFoundError
+from jetbase.exceptions import (
+    ChecksumMismatchError,
+    DuplicateMigrationVersionError,
+    OutOfOrderMigrationError,
+)
 
 
-def fix_files_cmd(audit_only: bool = False) -> None:
+def validate_current_migration_files_match_checksums(
+    migrated_filepaths_by_version: dict[str, str],
+    migrated_versions_and_checksums: list[tuple[str, str]],
+) -> None:
     """
-    Fix migration tracking by removing database records for missing migration files.
+    Validates that current migration files match their stored checksums.
 
-    This function reconciles the migration state between the database and the filesystem
-    by identifying and optionally removing records of migrations whose corresponding
-    files no longer exist. It handles both versioned and repeatable migrations.
     Args:
-        audit_only (bool, optional): If True, only reports missing migration files
-            without making any changes to the database. If False, removes database
-            records for missing migrations. Defaults to False.
-    Returns:
-        None: This function prints its results to stdout and does not return a value.
+        migrated_filepaths_by_version: Dictionary mapping version strings to file paths
+        migrated_versions_and_checksums: List of tuples containing version and checksum pairs
+
+    Raises:
+        MigrationVersionMismatchError: If version mismatch is detected
+        ChecksumMismatchError: If checksum doesn't match
     """
+    versions_changed: list[str] = []
+    for index, (file_version, filepath) in enumerate(
+        migrated_filepaths_by_version.items()
+    ):
+        sql_statements: list[str] = parse_upgrade_statements(file_path=filepath)
+        checksum: str = calculate_checksum(sql_statements=sql_statements)
 
-    create_lock_table_if_not_exists()
-    create_migrations_table_if_not_exists()
+        for migrated_version, migrated_checksum in migrated_versions_and_checksums:
+            if file_version == migrated_version:
+                if checksum != migrated_checksum:
+                    versions_changed.append(file_version)
 
-    migrated_versions: list[str] = get_migrated_versions()
-    current_migration_filepaths_by_version: dict[str, str] = (
-        get_migration_filepaths_by_version(
-            directory=os.path.join(os.getcwd(), "migrations")
-        )
-    )
-    migrated_repeatable_filenames: list[str] = get_migrated_repeatable_filenames()
-    all_repeatable_filenames: list[str] = get_repeatable_filenames()
+        if versions_changed:
+            raise ChecksumMismatchError(
+                f"Checksum mismatch for versions: {', '.join(versions_changed)}. Files have been changed since migration."
+            )
 
-    missing_versions: list[str] = []
-    missing_repeatables: list[str] = []
 
+def validate_migrated_versions_in_current_migration_files(
+    migrated_versions: list[str],
+    current_migration_filepaths_by_version: dict[str, str],
+) -> None:
+    """
+    Validates that all migrated versions have corresponding migration files.
+
+    This function checks that every version that has been previously migrated
+    still has a corresponding migration file present in the current migration
+    files directory.
+
+    Args:
+        migrated_versions: A list of version strings that have been previously
+            migrated to the database.
+        current_migration_filepaths_by_version: A dictionary mapping version
+            strings to their corresponding migration file paths.
+
+    Raises:
+        FileNotFoundError: If a migrated version is not found in the current
+            migration files, indicating that a migration file has been removed
+            or is missing.
+    """
     for migrated_version in migrated_versions:
         if migrated_version not in current_migration_filepaths_by_version:
-            missing_versions.append(migrated_version)
-
-    for r_filename in migrated_repeatable_filenames:
-        if r_filename not in all_repeatable_filenames:
-            missing_repeatables.append(r_filename)
-
-    if audit_only:
-        if missing_versions or missing_repeatables:
-            print("The following migrations are missing their corresponding files:")
-            for version in missing_versions:
-                print(f"→ {version}")
-            for r_file in missing_repeatables:
-                print(f"→ {r_file}")
-
-        else:
-            print("All migrations have corresponding files.")
-        return
-
-    if not audit_only:
-        if missing_versions or missing_repeatables:
-            with migration_lock():
-                if missing_versions:
-                    delete_missing_versions(versions=missing_versions)
-                    print("Stopped tracking the following missing versions:")
-                    for version in missing_versions:
-                        print(f"→ {version}")
-
-                if missing_repeatables:
-                    delete_missing_repeatables(repeatable_filenames=missing_repeatables)
-                    print(
-                        "Removed the following missing repeatable migrations from the database:"
-                    )
-                    for r_file in missing_repeatables:
-                        print(f"→ {r_file}")
-        else:
-            print("No missing migration files.")
+            raise FileNotFoundError(
+                f"Version {migrated_version} has been migrated but is missing from the current migration files."
+            )
 
 
-def validate_jetbase_directory() -> None:
-    current_dir = Path.cwd()
+def validate_no_new_migration_files_with_lower_version_than_latest_migration(
+    current_migration_filepaths_by_version: dict[str, str],
+    migrated_versions: list[str],
+    latest_migrated_version: str,
+) -> None:
+    """
+    Validates that no new migration files have been added with a version lower than the latest migrated version.
+    Args:
+        current_migration_filepaths_by_version: Dictionary mapping version strings to file paths
+        migrated_versions: List of versions that have already been migrated
+        latest_migrated_version: The most recent version that has been migrated
+    Raises:
+        ValueError: If a new migration file has a version lower than the latest migrated version
+    """
+    for file_version, filepath in current_migration_filepaths_by_version.items():
+        if (
+            parse_version(file_version) < parse_version(latest_migrated_version)
+            and file_version not in migrated_versions
+        ):
+            filename: str = os.path.basename(filepath)
+            raise OutOfOrderMigrationError(
+                f"{filename} has version {file_version} which is lower than the latest migrated version {latest_migrated_version}.\n"
+                "New migration files cannot have versions lower than the latest migrated version.\n"
+                f"Please rename the file to have a version higher than {latest_migrated_version}.\n"
+            )
 
-    # Check if current directory is named 'jetbase'
-    if current_dir.name != "jetbase":
-        raise DirectoryNotFoundError(
-            "Command must be run from the 'jetbase' directory.\n"
-            "You can run 'jetbase init' to create a Jetbase project."
+
+def validate_no_duplicate_migration_file_versions(
+    current_migration_filepaths_by_version: dict[str, str],
+) -> None:
+    """
+    Validates that there are no duplicate migration file versions in the provided dictionary.
+
+    Args:
+        current_migration_filepaths_by_version (dict[str, str]): A dictionary mapping migration
+            file versions (as strings) to their corresponding file paths.
+
+    Raises:
+        DuplicateMigrationVersionError: If a duplicate migration file version is detected. The error message includes
+            the duplicate version number converted to a readable format.
+    """
+    seen_versions: set[str] = set()
+    for file_version in current_migration_filepaths_by_version.keys():
+        if file_version in seen_versions:
+            raise DuplicateMigrationVersionError(
+                f"Duplicate migration version detected: {file_version}.\n"
+                "Each file must have a unique version.\n"
+                "Please rename the file to have a unique version."
+            )
+        seen_versions.add(file_version)
+
+
+def validate_migrated_repeatable_versions_in_migration_files(
+    migrated_repeatable_filenames: list[str],
+    all_repeatable_filenames: list[str],
+) -> None:
+    missing_filenames: list[str] = []
+    for r_file in migrated_repeatable_filenames:
+        if r_file not in all_repeatable_filenames:
+            missing_filenames.append(r_file)
+    if missing_filenames:
+        raise FileNotFoundError(
+            f"The following migrated repeatable files are missing: {', '.join(missing_filenames)}"
         )
 
-    # Check if migrations directory exists
-    migrations_dir = current_dir / "migrations"
-    if not migrations_dir.exists() or not migrations_dir.is_dir():
-        raise DirectoryNotFoundError(
-            f"'migrations' directory not found in {current_dir}.\n"
-            "Add a migrations directory inside the 'jetbase' directory to proceed.\n"
-            "You can also run 'jetbase init' to create a Jetbase project."
+
+def run_migration_validations(
+    latest_migrated_version: str,
+    skip_validation: bool = False,
+    skip_checksum_validation: bool = False,
+    skip_file_validation: bool = False,
+) -> None:
+    """
+    Run validations on migration files before performing upgrade.
+    """
+
+    skip_validation_config: bool = get_config().skip_validation
+    skip_checksum_validation_config: bool = get_config().skip_checksum_validation
+    skip_file_validation_config: bool = get_config().skip_file_validation
+
+    migrations_directory_path: str = os.path.join(os.getcwd(), MIGRATIONS_DIR)
+
+    migration_filepaths_by_version: dict[str, str] = get_migration_filepaths_by_version(
+        directory=migrations_directory_path
+    )
+    validate_no_duplicate_migration_file_versions(
+        current_migration_filepaths_by_version=migration_filepaths_by_version
+    )
+
+    if not skip_validation and not skip_validation_config:
+        if not skip_file_validation and not skip_file_validation_config:
+            migrated_versions: list[str] = get_migrated_versions()
+
+            validate_no_new_migration_files_with_lower_version_than_latest_migration(
+                current_migration_filepaths_by_version=migration_filepaths_by_version,
+                migrated_versions=migrated_versions,
+                latest_migrated_version=latest_migrated_version,
+            )
+
+            validate_migrated_versions_in_current_migration_files(
+                migrated_versions=migrated_versions,
+                current_migration_filepaths_by_version=migration_filepaths_by_version,
+            )
+
+            validate_migrated_repeatable_versions_in_migration_files(
+                migrated_repeatable_filenames=get_migrated_repeatable_filenames(),
+                all_repeatable_filenames=get_repeatable_filenames(),
+            )
+
+        migrated_filepaths_by_version: dict[str, str] = (
+            get_migration_filepaths_by_version(
+                directory=migrations_directory_path, end_version=latest_migrated_version
+            )
         )
+
+        if not skip_checksum_validation and not skip_checksum_validation_config:
+            validate_current_migration_files_match_checksums(
+                migrated_filepaths_by_version=migrated_filepaths_by_version,
+                migrated_versions_and_checksums=get_checksums_by_version(),
+            )

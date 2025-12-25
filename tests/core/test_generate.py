@@ -3,8 +3,8 @@ from unittest.mock import patch
 
 import pytest
 
+from jetbase.commands.new import generate_new_migration_file_cmd
 from jetbase.constants import MIGRATIONS_DIR
-from jetbase.core.generate import generate_new_migration_file_cmd
 from jetbase.exceptions import DirectoryNotFoundError
 
 
