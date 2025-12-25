@@ -93,11 +93,11 @@ def clean_db(test_db_url):
 
     def cleanup():
         with engine.begin() as connection:
-            connection.execute(text("DROP TABLE IF EXISTS test_users CASCADE"))
-            connection.execute(text("DROP TABLE IF EXISTS users CASCADE"))
-            connection.execute(text("DROP TABLE IF EXISTS test_posts CASCADE"))
-            connection.execute(text("DROP TABLE IF EXISTS jetbase_migrations CASCADE"))
-            connection.execute(text("DROP TABLE IF EXISTS jetbase_lock CASCADE"))
+            connection.execute(text("DROP TABLE IF EXISTS test_users"))
+            connection.execute(text("DROP TABLE IF EXISTS users"))
+            connection.execute(text("DROP TABLE IF EXISTS test_posts"))
+            connection.execute(text("DROP TABLE IF EXISTS jetbase_migrations"))
+            connection.execute(text("DROP TABLE IF EXISTS jetbase_lock"))
 
     cleanup()
     yield engine

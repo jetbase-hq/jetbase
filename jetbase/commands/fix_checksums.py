@@ -8,7 +8,7 @@ from jetbase.core.repository import (
     get_checksums_by_version,
     update_migration_checksums,
 )
-from jetbase.core.upgrade import run_upgrade_validations
+from jetbase.core.validation import run_migration_validations
 from jetbase.core.version import get_migration_filepaths_by_version
 from jetbase.exceptions import (
     MigrationVersionMismatchError,
@@ -50,7 +50,7 @@ def fix_checksums_cmd(audit_only: bool = False) -> None:
 
     latest_migrated_version: str = migrated_versions_and_checksums[-1][0]
 
-    run_upgrade_validations(
+    run_migration_validations(
         latest_migrated_version=latest_migrated_version,
         skip_checksum_validation=True,
     )

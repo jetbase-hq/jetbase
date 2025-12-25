@@ -51,6 +51,7 @@ DEFAULT_VALUES: dict[str, Any] = {
     "skip_checksum_validation": False,
     "skip_file_validation": False,
     "skip_validation": False,
+    "postgres_schema": None,
 }
 
 REQUIRED_KEYS: set[str] = {

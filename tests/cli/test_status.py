@@ -99,7 +99,7 @@ def test_status_success_roc_changed(runner, test_db_url, clean_db, setup_migrati
 
     # Modify the migration file
     migrations_dir = os.path.join(os.getcwd(), "migrations")
-    file_to_modify = os.path.join(migrations_dir, "RC__roc.sql")
+    file_to_modify = os.path.join(migrations_dir, "ROC__roc.sql")
     with open(file_to_modify, "w") as f:
         f.write("\n-- Modified content\n")
 

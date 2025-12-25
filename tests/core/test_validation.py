@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
-from jetbase.core.validation import validate_jetbase_directory
+from jetbase.commands.helpers import validate_jetbase_directory
 from jetbase.exceptions import DirectoryNotFoundError
 
 
@@ -15,7 +15,7 @@ class TestValidateJetbaseDirectory:
         migrations_dir = jetbase_dir / "migrations"
         migrations_dir.mkdir()
 
-        with patch("jetbase.core.validation.Path.cwd", return_value=jetbase_dir):
+        with patch("jetbase.commands.helpers.Path.cwd", return_value=jetbase_dir):
             validate_jetbase_directory()  # Should not raise
 
     def test_validate_jetbase_directory_wrong_directory_name(
@@ -27,8 +27,8 @@ class TestValidateJetbaseDirectory:
         migrations_dir = wrong_dir / "migrations"
         migrations_dir.mkdir()
 
-        with patch("jetbase.core.validation.Path.cwd", return_value=wrong_dir):
-            with pytest.raises(DirectoryNotFoundError) as exc_info:
+        with patch("jetbase.commands.helpers.Path.cwd", return_value=wrong_dir):
+            with pytest.raises(DirectoryNotFoundError):
                 validate_jetbase_directory()
 
     def test_validate_jetbase_directory_missing_migrations_folder(
@@ -38,6 +38,6 @@ class TestValidateJetbaseDirectory:
         jetbase_dir = tmp_path / "jetbase"
         jetbase_dir.mkdir()
 
-        with patch("jetbase.core.validation.Path.cwd", return_value=jetbase_dir):
-            with pytest.raises(DirectoryNotFoundError) as exc_info:
+        with patch("jetbase.commands.helpers.Path.cwd", return_value=jetbase_dir):
+            with pytest.raises(DirectoryNotFoundError):
                 validate_jetbase_directory()

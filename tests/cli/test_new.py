@@ -25,7 +25,7 @@ def test_new_command_success(tmp_path):
     result = runner.invoke(app, ["init"])
     os.chdir("jetbase")
 
-    with patch("jetbase.core.generate.dt") as mock_dt:
+    with patch("jetbase.commands.new.dt") as mock_dt:
         mock_dt.datetime.now.return_value.strftime.return_value = "20251214.160000"
 
         # Run the command

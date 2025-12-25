@@ -2,8 +2,9 @@ import datetime as dt
 import os
 import uuid
 
+from sqlalchemy import text
+
 from jetbase.cli.main import app
-from jetbase.queries import ACQUIRE_LOCK_STMT
 
 
 def test_lock_status_unlocked(
@@ -31,7 +32,13 @@ def test_lock_status_locked(
         assert result.exit_code == 0
 
         connection.execute(
-            ACQUIRE_LOCK_STMT,
+            text("""
+            UPDATE jetbase_lock
+            SET is_locked = TRUE,
+                locked_at = :locked_at,
+                process_id = :process_id
+            WHERE id = 1 AND is_locked = FALSE
+            """),
             {
                 "locked_at": dt.datetime.now(dt.timezone.utc),
                 "process_id": str(uuid.uuid4()),

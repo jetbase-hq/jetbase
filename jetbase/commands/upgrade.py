@@ -1,32 +1,22 @@
 import os
 
-from jetbase.config import get_config
-from jetbase.core.checksum import (
-    validate_current_migration_files_match_checksums,
-    validate_migrated_repeatable_versions_in_migration_files,
-    validate_migrated_versions_in_current_migration_files,
-    validate_no_duplicate_migration_file_versions,
-    validate_no_new_migration_files_with_lower_version_than_latest_migration,
-)
+from jetbase.constants import MIGRATIONS_DIR
 from jetbase.core.dry_run import process_dry_run
 from jetbase.core.file_parser import parse_upgrade_statements
 from jetbase.core.lock import create_lock_table_if_not_exists, migration_lock
 from jetbase.core.repository import (
     create_migrations_table_if_not_exists,
-    get_checksums_by_version,
     get_existing_on_change_filenames_to_checksums,
     get_existing_repeatable_always_migration_filenames,
     get_last_updated_version,
-    get_migrated_repeatable_filenames,
-    get_migrated_versions,
     get_repeatable_always_filepaths,
     get_repeatable_on_change_filepaths,
     run_migration,
     run_update_repeatable_migration,
 )
+from jetbase.core.validation import run_migration_validations
 from jetbase.core.version import (
     get_migration_filepaths_by_version,
-    get_repeatable_filenames,
 )
 from jetbase.enums import MigrationDirectionType, MigrationType
 
@@ -64,7 +54,7 @@ def upgrade_cmd(
     latest_migrated_version: str | None = get_last_updated_version()
 
     if latest_migrated_version:
-        run_upgrade_validations(
+        run_migration_validations(
             latest_migrated_version=latest_migrated_version,
             skip_validation=skip_validation,
             skip_checksum_validation=skip_checksum_validation,
@@ -72,7 +62,7 @@ def upgrade_cmd(
         )
 
     all_versions: dict[str, str] = get_migration_filepaths_by_version(
-        directory=os.path.join(os.getcwd(), "migrations"),
+        directory=os.path.join(os.getcwd(), MIGRATIONS_DIR),
         version_to_start_from=latest_migrated_version,
     )
 
@@ -94,14 +84,14 @@ def upgrade_cmd(
         all_versions = dict(all_versions_list)
 
     repeatable_always_filepaths: list[str] = get_repeatable_always_filepaths(
-        directory=os.path.join(os.getcwd(), "migrations")
+        directory=os.path.join(os.getcwd(), MIGRATIONS_DIR)
     )
     existing_repeatable_always_filenames: set[str] = (
         get_existing_repeatable_always_migration_filenames()
     )
 
     repeatable_on_change_filepaths: list[str] = get_repeatable_on_change_filepaths(
-        directory=os.path.join(os.getcwd(), "migrations"),
+        directory=os.path.join(os.getcwd(), MIGRATIONS_DIR),
         changed_only=True,
     )
 
@@ -181,59 +171,3 @@ def upgrade_cmd(
             repeatable_always_filepaths=repeatable_always_filepaths,
             repeatable_on_change_filepaths=repeatable_on_change_filepaths,
         )
-
-
-def run_upgrade_validations(
-    latest_migrated_version: str,
-    skip_validation: bool = False,
-    skip_checksum_validation: bool = False,
-    skip_file_validation: bool = False,
-) -> None:
-    """
-    Run validations on migration files before performing upgrade.
-    """
-
-    skip_validation_config: bool = get_config().skip_validation
-    skip_checksum_validation_config: bool = get_config().skip_checksum_validation
-    skip_file_validation_config: bool = get_config().skip_file_validation
-
-    migrations_directory: str = os.path.join(os.getcwd(), "migrations")
-
-    migration_filepaths_by_version: dict[str, str] = get_migration_filepaths_by_version(
-        directory=migrations_directory
-    )
-    validate_no_duplicate_migration_file_versions(
-        current_migration_filepaths_by_version=migration_filepaths_by_version
-    )
-
-    if not skip_validation and not skip_validation_config:
-        if not skip_file_validation and not skip_file_validation_config:
-            migrated_versions: list[str] = get_migrated_versions()
-
-            validate_no_new_migration_files_with_lower_version_than_latest_migration(
-                current_migration_filepaths_by_version=migration_filepaths_by_version,
-                migrated_versions=migrated_versions,
-                latest_migrated_version=latest_migrated_version,
-            )
-
-            validate_migrated_versions_in_current_migration_files(
-                migrated_versions=migrated_versions,
-                current_migration_filepaths_by_version=migration_filepaths_by_version,
-            )
-
-            validate_migrated_repeatable_versions_in_migration_files(
-                migrated_repeatable_filenames=get_migrated_repeatable_filenames(),
-                all_repeatable_filenames=get_repeatable_filenames(),
-            )
-
-        migrated_filepaths_by_version: dict[str, str] = (
-            get_migration_filepaths_by_version(
-                directory=migrations_directory, end_version=latest_migrated_version
-            )
-        )
-
-        if not skip_checksum_validation and not skip_checksum_validation_config:
-            validate_current_migration_files_match_checksums(
-                migrated_filepaths_by_version=migrated_filepaths_by_version,
-                migrated_versions_and_checksums=get_checksums_by_version(),
-            )

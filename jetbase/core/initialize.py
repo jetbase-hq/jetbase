@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from jetbase.constants import BASE_DIR, ENV_FILE, ENV_FILE_CONTENT, MIGRATIONS_DIR
+from jetbase.constants import ENV_FILE, ENV_FILE_CONTENT, MIGRATIONS_DIR
 
 
 def create_directory_structure(base_path: str) -> None:
@@ -30,7 +30,3 @@ def create_directory_structure(base_path: str) -> None:
         f"Initialized Jetbase project in {Path(base_path).absolute()}\n"
         "Run cd jetbase to get started!"
     )
-
-
-def initialize_cmd() -> None:
-    create_directory_structure(base_path=BASE_DIR)

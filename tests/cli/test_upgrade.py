@@ -350,7 +350,7 @@ def test_roc_with_changes(runner, test_db_url, clean_db, setup_migrations):
 
         # Modify the ROC migration file
         migrations_dir = os.path.join(os.getcwd(), "migrations")
-        roc_file = os.path.join(migrations_dir, "RC__roc.sql")
+        roc_file = os.path.join(migrations_dir, "ROC__roc.sql")
         with open(roc_file, "w") as f:
             f.write("\n-- Modified content to trigger reapplication\n")
 

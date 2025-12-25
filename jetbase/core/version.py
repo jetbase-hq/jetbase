@@ -2,6 +2,11 @@ import os
 
 from packaging.version import parse as parse_version
 
+from jetbase.constants import (
+    RUNS_ALWAYS_FILE_PREFIX,
+    RUNS_ON_CHANGE_FILE_PREFIX,
+    VERSION_FILE_PREFIX,
+)
 from jetbase.core.file_parser import is_filename_format_valid, is_filename_length_valid
 from jetbase.exceptions import (
     DuplicateMigrationVersionError,
@@ -107,7 +112,7 @@ def get_migration_filepaths_by_version(
                 )
 
             if is_filename_format_valid(filename=filename):
-                if filename.startswith("V"):
+                if filename.startswith(VERSION_FILE_PREFIX):
                     file_path: str = os.path.join(root, filename)
                     file_version: str = _get_version_key_from_filename(
                         filename=filename
@@ -158,7 +163,7 @@ def get_ra_filenames() -> list[str]:
     ra_filenames: list[str] = []
     for root, _, files in os.walk(os.path.join(os.getcwd(), "migrations")):
         for filename in files:
-            if filename.startswith("RA__"):
+            if filename.startswith(RUNS_ALWAYS_FILE_PREFIX):
                 ra_filenames.append(filename)
     return ra_filenames
 
@@ -177,6 +182,8 @@ def get_repeatable_filenames() -> list[str]:
     repeatable_filenames: list[str] = []
     for root, _, files in os.walk(os.path.join(os.getcwd(), "migrations")):
         for filename in files:
-            if filename.startswith("RA__") or filename.startswith("RC__"):
+            if filename.startswith(RUNS_ALWAYS_FILE_PREFIX) or filename.startswith(
+                RUNS_ON_CHANGE_FILE_PREFIX
+            ):
                 repeatable_filenames.append(filename)
     return repeatable_filenames

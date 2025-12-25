@@ -1,7 +1,8 @@
 import os
 
+from sqlalchemy import text
+
 from jetbase.cli.main import app
-from jetbase.queries import LATEST_VERSION_QUERY
 
 
 def test_current_success_versions_only(
@@ -18,7 +19,11 @@ def test_current_success_versions_only(
         assert result.exit_code == 0
 
         assert "21" in result.output
-        result = connection.execute(LATEST_VERSION_QUERY)
+        result = connection.execute(
+            text(
+                """SELECT version FROM jetbase_migrations WHERE migration_type = 'VERSIONED' ORDER BY applied_at DESC LIMIT 1"""
+            )
+        )
         latest_version = result.scalar()
         assert latest_version == "21"
 
@@ -35,7 +40,11 @@ def test_current_success_repeatables(runner, test_db_url, clean_db, setup_migrat
         assert result.exit_code == 0
 
         assert "21" in result.output
-        result = connection.execute(LATEST_VERSION_QUERY)
+        result = connection.execute(
+            text(
+                """SELECT version FROM jetbase_migrations WHERE migration_type = 'VERSIONED' ORDER BY applied_at DESC LIMIT 1"""
+            )
+        )
         latest_version = result.scalar()
         assert latest_version == "21"
 
