@@ -1,9 +1,9 @@
-from sqlalchemy import Engine, create_engine
-
 from jetbase.config import get_config
-from jetbase.core.repository import lock_table_exists, migrations_table_exists
-from jetbase.queries.base import QueryMethod
-from jetbase.queries.query_loader import get_query
+from jetbase.core.repository import (
+    lock_table_exists,
+    migrations_table_exists,
+    unlock_database,
+)
 
 sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
 
@@ -21,9 +21,7 @@ def unlock_cmd() -> None:
     if not lock_table_exists() or not migrations_table_exists():
         print("Unlock successful.")
         return
-    engine: Engine = create_engine(url=sqlalchemy_url)
-
-    with engine.begin() as connection:
-        connection.execute(get_query(query_name=QueryMethod.FORCE_UNLOCK_STMT))
+    #
+    unlock_database()
 
     print("Unlock successful.")

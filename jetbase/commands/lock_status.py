@@ -1,9 +1,10 @@
-from sqlalchemy import Engine, create_engine
-
 from jetbase.config import get_config
-from jetbase.core.repository import lock_table_exists, migrations_table_exists
-from jetbase.queries.base import QueryMethod
-from jetbase.queries.query_loader import get_query
+from jetbase.core.models import LockStatus
+from jetbase.core.repository import (
+    fetch_lock_status,
+    lock_table_exists,
+    migrations_table_exists,
+)
 
 sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
 
@@ -22,16 +23,8 @@ def lock_status_cmd() -> None:
         print("Status: UNLOCKED")
         return
 
-    engine: Engine = create_engine(url=sqlalchemy_url)
-
-    with engine.begin() as connection:
-        result = connection.execute(
-            get_query(query_name=QueryMethod.CHECK_LOCK_STATUS_STMT)
-        )
-        row = result.fetchone()
-        if row and row[0]:  # is_locked
-            locked_at = row[1]
-
-            print(f"Status: LOCKED\nLocked At: {locked_at}")
-        else:
-            print("Status: UNLOCKED")
+    lock_status: LockStatus = fetch_lock_status()
+    if lock_status.is_locked:
+        print(f"Status: LOCKED\nLocked At: {lock_status.locked_at}")
+    else:
+        print("Status: UNLOCKED")

@@ -1,6 +1,7 @@
 import os
+from typing import Any
 
-from sqlalchemy import Engine, Result, create_engine, text
+from sqlalchemy import Engine, Result, Row, create_engine, text
 
 from jetbase.config import get_config
 from jetbase.constants import RUNS_ALWAYS_FILE_PREFIX, RUNS_ON_CHANGE_FILE_PREFIX
@@ -10,7 +11,7 @@ from jetbase.core.file_parser import (
     parse_upgrade_statements,
     validate_filename_format,
 )
-from jetbase.core.models import MigrationRecord
+from jetbase.core.models import LockStatus, MigrationRecord
 from jetbase.enums import MigrationDirectionType, MigrationType
 from jetbase.exceptions import VersionNotFoundError
 from jetbase.queries.base import QueryMethod
@@ -421,3 +422,24 @@ def get_migrated_repeatable_filenames() -> list[str]:
             statement=get_query(QueryMethod.GET_REPEATABLE_MIGRATIONS_QUERY),
         )
         return [row.filename for row in results.fetchall()]
+
+
+def fetch_lock_status() -> LockStatus:
+    sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
+    engine: Engine = create_engine(url=sqlalchemy_url)
+
+    with engine.begin() as connection:
+        result: Row[Any] | None = connection.execute(
+            get_query(query_name=QueryMethod.CHECK_LOCK_STATUS_STMT)
+        ).first()
+        if result:
+            return LockStatus(is_locked=result.is_locked, locked_at=result.locked_at)
+        return LockStatus(is_locked=False, locked_at=None)
+
+
+def unlock_database() -> None:
+    sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
+    engine: Engine = create_engine(url=sqlalchemy_url)
+
+    with engine.begin() as connection:
+        connection.execute(get_query(query_name=QueryMethod.FORCE_UNLOCK_STMT))
