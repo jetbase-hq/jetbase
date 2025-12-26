@@ -6,15 +6,15 @@ from jetbase.core.lock import (
     create_lock_table_if_not_exists,
     migration_lock,
 )
-from jetbase.core.repository import (
+from jetbase.core.version import get_migration_filepaths_by_version
+from jetbase.enums import MigrationDirectionType
+from jetbase.exceptions import VersionNotFoundError
+from jetbase.repositories.migrations_repo import (
     create_migrations_table_if_not_exists,
     get_latest_versions,
     get_latest_versions_by_starting_version,
     run_migration,
 )
-from jetbase.core.version import get_migration_filepaths_by_version
-from jetbase.enums import MigrationDirectionType
-from jetbase.exceptions import VersionNotFoundError
 
 
 def rollback_cmd(

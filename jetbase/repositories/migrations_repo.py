@@ -1,77 +1,15 @@
-import os
-from contextlib import contextmanager
-from typing import Any, Generator
+from sqlalchemy import Result, text
 
-from sqlalchemy import Connection, Engine, Result, Row, create_engine, text
-
-from jetbase.config import get_config
-from jetbase.constants import RUNS_ALWAYS_FILE_PREFIX, RUNS_ON_CHANGE_FILE_PREFIX
 from jetbase.core.checksum import calculate_checksum
 from jetbase.core.file_parser import (
     get_description_from_filename,
-    parse_upgrade_statements,
-    validate_filename_format,
 )
-from jetbase.core.models import LockStatus, MigrationRecord
-from jetbase.enums import DatabaseType, MigrationDirectionType, MigrationType
+from jetbase.core.models import MigrationRecord
+from jetbase.enums import MigrationDirectionType, MigrationType
 from jetbase.exceptions import VersionNotFoundError
-from jetbase.queries.base import QueryMethod, detect_db
+from jetbase.queries.base import QueryMethod
 from jetbase.queries.query_loader import get_query
-
-
-@contextmanager
-def get_db_connection() -> Generator[Connection, None, None]:
-    """Get a database connection with PostgreSQL schema configured if applicable."""
-    sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
-    engine: Engine = create_engine(url=sqlalchemy_url)
-    db_type: DatabaseType = detect_db(sqlalchemy_url=sqlalchemy_url)
-
-    with engine.begin() as connection:
-        if db_type == DatabaseType.POSTGRESQL:
-            postgres_schema: str | None = get_config().postgres_schema
-            if postgres_schema:
-                connection.execute(
-                    text("SET search_path TO :postgres_schema"),
-                    parameters={"postgres_schema": postgres_schema},
-                )
-        yield connection
-
-
-def get_last_updated_version() -> str | None:
-    """
-    Retrieves the latest version from the database.
-    This function connects to the database, executes a query to get the most recent version,
-    and returns that version as a string.
-    Returns:
-        str | None: The latest version string if available, None if no version was found.
-    """
-
-    table_exists: bool = migrations_table_exists()
-    if not table_exists:
-        return None
-
-    with get_db_connection() as connection:
-        result: Result[tuple[str]] = connection.execute(
-            get_query(QueryMethod.LATEST_VERSION_QUERY)
-        )
-        latest_version: str | None = result.scalar()
-    if not latest_version:
-        return None
-    return latest_version
-
-
-def create_migrations_table_if_not_exists() -> None:
-    """
-    Creates the migrations table in the database
-    if it does not already exist.
-    Returns:
-        None
-    """
-
-    with get_db_connection() as connection:
-        connection.execute(
-            statement=get_query(QueryMethod.CREATE_MIGRATIONS_TABLE_STMT)
-        )
+from jetbase.repositories.db import get_db_connection
 
 
 def run_migration(
@@ -139,6 +77,43 @@ def run_update_repeatable_migration(
                 "filename": filename,
                 "migration_type": migration_type.value,
             },
+        )
+
+
+def get_last_updated_version() -> str | None:
+    """
+    Retrieves the latest version from the database.
+    This function connects to the database, executes a query to get the most recent version,
+    and returns that version as a string.
+    Returns:
+        str | None: The latest version string if available, None if no version was found.
+    """
+
+    table_exists: bool = migrations_table_exists()
+    if not table_exists:
+        return None
+
+    with get_db_connection() as connection:
+        result: Result[tuple[str]] = connection.execute(
+            get_query(QueryMethod.LATEST_VERSION_QUERY)
+        )
+        latest_version: str | None = result.scalar()
+    if not latest_version:
+        return None
+    return latest_version
+
+
+def create_migrations_table_if_not_exists() -> None:
+    """
+    Creates the migrations table in the database
+    if it does not already exist.
+    Returns:
+        None
+    """
+
+    with get_db_connection() as connection:
+        connection.execute(
+            statement=get_query(QueryMethod.CREATE_MIGRATIONS_TABLE_STMT)
         )
 
 
@@ -241,21 +216,6 @@ def get_migration_records() -> list[MigrationRecord]:
     return migration_records
 
 
-def lock_table_exists() -> bool:
-    """
-    Check if the jetbase_lock table exists in the database.
-    Returns:
-        bool: True if the jetbase_lock table exists, False otherwise.
-    """
-    with get_db_connection() as connection:
-        result: Result[tuple[bool]] = connection.execute(
-            statement=get_query(QueryMethod.CHECK_IF_LOCK_TABLE_EXISTS_QUERY)
-        )
-        table_exists: bool = result.scalar_one()
-
-    return table_exists
-
-
 def get_checksums_by_version() -> list[tuple[str, str]]:
     """
     Retrieve all migration versions along with their corresponding checksums from the database.
@@ -295,47 +255,6 @@ def update_migration_checksums(versions_and_checksums: list[tuple[str, str]]) ->
                 statement=get_query(QueryMethod.REPAIR_MIGRATION_CHECKSUM_STMT),
                 parameters={"version": version, "checksum": checksum},
             )
-
-
-def get_repeatable_always_filepaths(directory: str) -> list[str]:
-    repeatable_always_filepaths: list[str] = []
-    for root, _, files in os.walk(directory):
-        for filename in files:
-            validate_filename_format(filename=filename)
-            if filename.startswith(RUNS_ALWAYS_FILE_PREFIX):
-                filepath: str = os.path.join(root, filename)
-                repeatable_always_filepaths.append(filepath)
-
-    repeatable_always_filepaths.sort()
-    return repeatable_always_filepaths
-
-
-def get_repeatable_on_change_filepaths(
-    directory: str, changed_only: bool = False
-) -> list[str]:
-    repeatable_on_change_filepaths: list[str] = []
-    for root, _, files in os.walk(directory):
-        for filename in files:
-            validate_filename_format(filename=filename)
-            if filename.startswith(RUNS_ON_CHANGE_FILE_PREFIX):
-                filepath: str = os.path.join(root, filename)
-                repeatable_on_change_filepaths.append(filepath)
-
-    if repeatable_on_change_filepaths and changed_only:
-        existing_on_change_migrations: dict[str, str] = (
-            get_existing_on_change_filenames_to_checksums()
-        )
-
-        for filepath in repeatable_on_change_filepaths.copy():
-            filename: str = os.path.basename(filepath)
-            sql_statements: list[str] = parse_upgrade_statements(file_path=filepath)
-            checksum: str = calculate_checksum(sql_statements=sql_statements)
-
-            if existing_on_change_migrations.get(filename) == checksum:
-                repeatable_on_change_filepaths.remove(filepath)
-
-    repeatable_on_change_filepaths.sort()
-    return repeatable_on_change_filepaths
 
 
 def get_existing_on_change_filenames_to_checksums() -> dict[str, str]:
@@ -384,18 +303,3 @@ def get_migrated_repeatable_filenames() -> list[str]:
             statement=get_query(QueryMethod.GET_REPEATABLE_MIGRATIONS_QUERY),
         )
         return [row.filename for row in results.fetchall()]
-
-
-def fetch_lock_status() -> LockStatus:
-    with get_db_connection() as connection:
-        result: Row[Any] | None = connection.execute(
-            get_query(query_name=QueryMethod.CHECK_LOCK_STATUS_STMT)
-        ).first()
-        if result:
-            return LockStatus(is_locked=result.is_locked, locked_at=result.locked_at)
-        return LockStatus(is_locked=False, locked_at=None)
-
-
-def unlock_database() -> None:
-    with get_db_connection() as connection:
-        connection.execute(get_query(query_name=QueryMethod.FORCE_UNLOCK_STMT))

@@ -6,19 +6,19 @@ from jetbase.config import get_config
 from jetbase.constants import MIGRATIONS_DIR
 from jetbase.core.checksum import calculate_checksum
 from jetbase.core.file_parser import parse_upgrade_statements
-from jetbase.core.repository import (
-    get_checksums_by_version,
-    get_migrated_repeatable_filenames,
-    get_migrated_versions,
-)
+from jetbase.core.repeatable import get_repeatable_filenames
 from jetbase.core.version import (
     get_migration_filepaths_by_version,
-    get_repeatable_filenames,
 )
 from jetbase.exceptions import (
     ChecksumMismatchError,
     DuplicateMigrationVersionError,
     OutOfOrderMigrationError,
+)
+from jetbase.repositories.migrations_repo import (
+    get_checksums_by_version,
+    get_migrated_repeatable_filenames,
+    get_migrated_versions,
 )
 
 

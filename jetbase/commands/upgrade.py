@@ -4,21 +4,23 @@ from jetbase.constants import MIGRATIONS_DIR
 from jetbase.core.dry_run import process_dry_run
 from jetbase.core.file_parser import parse_upgrade_statements
 from jetbase.core.lock import create_lock_table_if_not_exists, migration_lock
-from jetbase.core.repository import (
-    create_migrations_table_if_not_exists,
-    get_existing_on_change_filenames_to_checksums,
-    get_existing_repeatable_always_migration_filenames,
-    get_last_updated_version,
+from jetbase.core.repeatable import (
     get_repeatable_always_filepaths,
     get_repeatable_on_change_filepaths,
-    run_migration,
-    run_update_repeatable_migration,
 )
 from jetbase.core.validation import run_migration_validations
 from jetbase.core.version import (
     get_migration_filepaths_by_version,
 )
 from jetbase.enums import MigrationDirectionType, MigrationType
+from jetbase.repositories.migrations_repo import (
+    create_migrations_table_if_not_exists,
+    get_existing_on_change_filenames_to_checksums,
+    get_existing_repeatable_always_migration_filenames,
+    get_last_updated_version,
+    run_migration,
+    run_update_repeatable_migration,
+)
 
 
 def upgrade_cmd(

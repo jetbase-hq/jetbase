@@ -1,4 +1,5 @@
-from jetbase.core.repository import get_last_updated_version
+# from jetbase.repositories.migrations_repo import get_last_updated_version
+from jetbase.repositories.migrations_repo import get_last_updated_version
 
 
 def current_cmd() -> None:

@@ -4,14 +4,14 @@ from jetbase.constants import MIGRATIONS_DIR
 from jetbase.core.checksum import calculate_checksum
 from jetbase.core.file_parser import parse_upgrade_statements
 from jetbase.core.lock import migration_lock
-from jetbase.core.repository import (
-    get_checksums_by_version,
-    update_migration_checksums,
-)
 from jetbase.core.validation import run_migration_validations
 from jetbase.core.version import get_migration_filepaths_by_version
 from jetbase.exceptions import (
     MigrationVersionMismatchError,
+)
+from jetbase.repositories.migrations_repo import (
+    get_checksums_by_version,
+    update_migration_checksums,
 )
 
 
