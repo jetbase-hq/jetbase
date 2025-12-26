@@ -3,7 +3,10 @@ from rich.table import Table
 
 from jetbase.core.formatters import get_display_version
 from jetbase.core.models import MigrationRecord
-from jetbase.core.repository import get_migration_records, migrations_table_exists
+from jetbase.repositories.migrations_repo import (
+    get_migration_records,
+    migrations_table_exists,
+)
 
 
 def history_cmd() -> None:

@@ -6,15 +6,15 @@ from rich.table import Table
 from jetbase.core.file_parser import get_description_from_filename
 from jetbase.core.formatters import get_display_version
 from jetbase.core.models import MigrationRecord
-from jetbase.core.repository import (
+from jetbase.core.repeatable import get_ra_filenames, get_repeatable_on_change_filepaths
+from jetbase.core.version import get_migration_filepaths_by_version
+from jetbase.enums import MigrationType
+from jetbase.repositories.migrations_repo import (
     create_migrations_table_if_not_exists,
     get_existing_on_change_filenames_to_checksums,
     get_migration_records,
-    get_repeatable_on_change_filepaths,
     migrations_table_exists,
 )
-from jetbase.core.version import get_migration_filepaths_by_version, get_ra_filenames
-from jetbase.enums import MigrationType
 
 
 def status_cmd() -> None:

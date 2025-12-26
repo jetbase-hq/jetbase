@@ -1,16 +1,16 @@
 import os
 
 from jetbase.core.lock import create_lock_table_if_not_exists, migration_lock
-from jetbase.core.repository import (
+from jetbase.core.repeatable import get_repeatable_filenames
+from jetbase.core.version import (
+    get_migration_filepaths_by_version,
+)
+from jetbase.repositories.migrations_repo import (
     create_migrations_table_if_not_exists,
     delete_missing_repeatables,
     delete_missing_versions,
     get_migrated_repeatable_filenames,
     get_migrated_versions,
-)
-from jetbase.core.version import (
-    get_migration_filepaths_by_version,
-    get_repeatable_filenames,
 )
 
 

@@ -1,9 +1,9 @@
 from jetbase.config import get_config
-from jetbase.core.repository import (
+from jetbase.repositories.lock_repo import (
     lock_table_exists,
-    migrations_table_exists,
     unlock_database,
 )
+from jetbase.repositories.migrations_repo import migrations_table_exists
 
 sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
 
