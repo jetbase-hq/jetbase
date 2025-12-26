@@ -1,0 +1,79 @@
+site_name: Jetbase
+site_description: "A friendly, lightweight database migration tool for Python"
+site_url: "https://jaz-alli.github.io/jetbase/"
+
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.instant
+    - navigation.indexes
+    - navigation.expand
+    - content.code.copy
+    - content.tabs.link
+    - search.highlight
+    - search.share
+    - toc.follow
+  palette:
+    - scheme: slate
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-night
+        name: Switch to light mode
+    - scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to dark mode
+  font:
+    text: Roboto
+    code: JetBrains Mono
+  icon:
+    repo: fontawesome/brands/github
+
+repo_url: https://github.com/jaz-alli/jetbase
+repo_name: jaz-alli/jetbase
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Configuration: configuration.md
+  - Commands:
+      - commands/index.md
+      - init: commands/init.md
+      - new: commands/new.md
+      - upgrade: commands/upgrade.md
+      - rollback: commands/rollback.md
+      - status: commands/status.md
+      - history: commands/history.md
+      - current: commands/current.md
+      - lock-status: commands/lock-status.md
+      - unlock: commands/unlock.md
+      - validate-checksums: commands/validate-checksums.md
+      - validate-files: commands/validate-files.md
+      - fix: commands/fix.md
+  - Migrations:
+      - migrations/index.md
+      - Writing Migrations: migrations/writing-migrations.md
+      - Migration Types: migrations/migration-types.md
+  - Troubleshooting: troubleshooting.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - tables
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
