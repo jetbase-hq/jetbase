@@ -62,7 +62,6 @@ def status_cmd() -> None:
     roc_filenames_migrated: list[str] = list(
         get_existing_on_change_filenames_to_checksums().keys()
     )
-    print(roc_filenames_migrated)
 
     all_roc_filepaths: list[str] = get_runs_on_change_filepaths(
         directory=os.path.join(os.getcwd(), "migrations")

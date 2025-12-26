@@ -13,9 +13,9 @@ class SQLiteQueries(BaseQueries):
             order_executed INTEGER PRIMARY KEY AUTOINCREMENT,
             version TEXT,
             description TEXT,
-            filename TEXT,
+            filename TEXT NOT NULL,
             migration_type TEXT NOT NULL,
-            applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            applied_at TEXT DEFAULT (STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW')),
             checksum TEXT
         );
         """)
@@ -33,15 +33,16 @@ class SQLiteQueries(BaseQueries):
     def check_if_lock_table_exists_query() -> TextClause:
         return TextClause("""
         SELECT name FROM sqlite_master 
-        WHERE type='table' AND name='lock';
+        WHERE type='table' AND name='jetbase_lock'
         """)
 
     @staticmethod
     def create_lock_table_stmt() -> TextClause:
         return TextClause("""
-        CREATE TABLE IF NOT EXISTS lock (
+        CREATE TABLE IF NOT EXISTS jetbase_lock (
             id INTEGER PRIMARY KEY CHECK (id = 1),
             is_locked BOOLEAN NOT NULL DEFAULT 0,
-            locked_at TIMESTAMP
+            locked_at TIMESTAMP,
+            process_id TEXT
         );
         """)

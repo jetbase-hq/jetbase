@@ -55,6 +55,7 @@ def rollback_cmd(
             )
 
     versions_to_rollback: dict[str, str] = dict(reversed(versions_to_rollback.items()))
+    print(f"Versions to rollback: {versions_to_rollback}")
 
     if not dry_run:
         with migration_lock():
