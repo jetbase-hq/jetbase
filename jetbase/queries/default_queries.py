@@ -93,22 +93,6 @@ SELECT EXISTS (
 """)
 
 
-# MIGRATION_RECORDS_QUERY: TextClause = text("""
-#     SELECT
-#         order_executed,
-#         version,
-#         description,
-#         filename,
-#         migration_type,
-#         applied_at,
-#         checksum
-#     FROM
-#         jetbase_migrations
-#     ORDER BY
-#         applied_at ASC
-# """)
-
-
 CREATE_LOCK_TABLE_STMT: TextClause = text("""
 CREATE TABLE IF NOT EXISTS jetbase_lock (
     id INTEGER PRIMARY KEY CHECK (id = 1),

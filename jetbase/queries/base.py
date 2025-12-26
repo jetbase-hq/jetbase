@@ -52,7 +52,6 @@ class BaseQueries:
         all_repeatables: bool = False,
         migration_type: MigrationType | None = None,
     ) -> TextClause:
-        # return default_queries.MIGRATION_RECORDS_QUERY
         query: str = f"""
             SELECT
                 order_executed, 
