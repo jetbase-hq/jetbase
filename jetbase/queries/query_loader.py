@@ -54,7 +54,7 @@ def get_queries() -> type[BaseQueries]:
 
 
 # Convenience function to get specific queries
-def get_query(query_name: QueryMethod) -> TextClause:
+def get_query(query_name: QueryMethod, **kwargs) -> TextClause:
     """
     Get a specific query for the current database type.
 
@@ -66,4 +66,4 @@ def get_query(query_name: QueryMethod) -> TextClause:
     """
     queries = get_queries()
     method = getattr(queries, query_name.value)
-    return method()
+    return method(**kwargs)

@@ -93,19 +93,20 @@ SELECT EXISTS (
 """)
 
 
-MIGRATION_RECORDS_QUERY: TextClause = text("""
-    SELECT
-        version, 
-        order_executed, 
-        description,
-        filename,
-        applied_at,
-        migration_type  
-    FROM
-        jetbase_migrations
-    ORDER BY
-        applied_at ASC
-""")
+# MIGRATION_RECORDS_QUERY: TextClause = text("""
+#     SELECT
+#         order_executed,
+#         version,
+#         description,
+#         filename,
+#         migration_type,
+#         applied_at,
+#         checksum
+#     FROM
+#         jetbase_migrations
+#     ORDER BY
+#         applied_at ASC
+# """)
 
 
 CREATE_LOCK_TABLE_STMT: TextClause = text("""
@@ -174,25 +175,25 @@ WHERE version = :version
 AND migration_type = '{MigrationType.VERSIONED.value}'
 """)
 
-GET_REPEATABLE_ON_CHANGE_MIGRATIONS_QUERY: TextClause = text(f"""
+GET_RUNS_ON_CHANGE_MIGRATIONS_QUERY: TextClause = text(f"""
     SELECT 
         filename, checksum
     FROM 
         jetbase_migrations
     WHERE
-        migration_type = '{MigrationType.REPEATABLE_ON_CHANGE.value}'
+        migration_type = '{MigrationType.RUNS_ON_CHANGE.value}'
     ORDER BY 
         filename ASC
         """)
 
 
-GET_REPEATABLE_ALWAYS_MIGRATIONS_QUERY: TextClause = text(f"""
+GET_RUNS_ALWAYS_MIGRATIONS_QUERY: TextClause = text(f"""
     SELECT 
         filename
     FROM 
         jetbase_migrations
     WHERE
-        migration_type = '{MigrationType.REPEATABLE_ALWAYS.value}'
+        migration_type = '{MigrationType.RUNS_ALWAYS.value}'
     ORDER BY 
         filename ASC
         """)
@@ -203,7 +204,7 @@ GET_REPEATABLE_MIGRATIONS_QUERY: TextClause = text(f"""
     FROM 
         jetbase_migrations
     WHERE
-        migration_type in ('{MigrationType.REPEATABLE_ALWAYS.value}', '{MigrationType.REPEATABLE_ON_CHANGE.value}')
+        migration_type in ('{MigrationType.RUNS_ALWAYS.value}', '{MigrationType.RUNS_ON_CHANGE.value}')
     ORDER BY 
         filename ASC
         """)
@@ -226,5 +227,5 @@ AND migration_type = '{MigrationType.VERSIONED.value}'
 DELETE_MISSING_REPEATABLE_STMT: TextClause = text(f"""
 DELETE FROM jetbase_migrations
 WHERE filename = :filename
-AND migration_type in ('{MigrationType.REPEATABLE_ALWAYS.value}', '{MigrationType.REPEATABLE_ON_CHANGE.value}')
+AND migration_type in ('{MigrationType.RUNS_ALWAYS.value}', '{MigrationType.RUNS_ON_CHANGE.value}')
 """)

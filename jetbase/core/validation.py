@@ -16,8 +16,8 @@ from jetbase.exceptions import (
     OutOfOrderMigrationError,
 )
 from jetbase.repositories.migrations_repo import (
+    fetch_repeatable_migrations,
     get_checksums_by_version,
-    get_migrated_repeatable_filenames,
     get_migrated_versions,
 )
 
@@ -189,7 +189,9 @@ def run_migration_validations(
             )
 
             validate_migrated_repeatable_versions_in_migration_files(
-                migrated_repeatable_filenames=get_migrated_repeatable_filenames(),
+                migrated_repeatable_filenames=[
+                    r.filename for r in fetch_repeatable_migrations()
+                ],
                 all_repeatable_filenames=get_repeatable_filenames(),
             )
 

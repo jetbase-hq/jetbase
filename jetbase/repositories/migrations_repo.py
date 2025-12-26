@@ -1,4 +1,4 @@
-from sqlalchemy import Result, text
+from sqlalchemy import Result, Row, text
 
 from jetbase.core.checksum import calculate_checksum
 from jetbase.core.file_parser import (
@@ -80,7 +80,7 @@ def run_update_repeatable_migration(
         )
 
 
-def get_last_updated_version() -> str | None:
+def fetch_latest_versioned_migration() -> MigrationRecord | None:
     """
     Retrieves the latest version from the database.
     This function connects to the database, executes a query to get the most recent version,
@@ -95,12 +95,16 @@ def get_last_updated_version() -> str | None:
 
     with get_db_connection() as connection:
         result: Result[tuple[str]] = connection.execute(
-            get_query(QueryMethod.LATEST_VERSION_QUERY)
+            get_query(
+                QueryMethod.MIGRATION_RECORDS_QUERY,
+                ascending=False,
+                migration_type=MigrationType.VERSIONED,
+            )
         )
-        latest_version: str | None = result.scalar()
-    if not latest_version:
+        latest_migration: Row | None = result.first()
+    if not latest_migration:
         return None
-    return latest_version
+    return MigrationRecord(*latest_migration)
 
 
 def create_migrations_table_if_not_exists() -> None:
@@ -117,7 +121,9 @@ def create_migrations_table_if_not_exists() -> None:
         )
 
 
-def get_latest_versions(limit: int) -> list[str]:
+def get_latest_versions(
+    limit: int | None = None, starting_version: str | None = None
+) -> list[str]:
     """
     Retrieve the latest N migration versions from the database.
     Args:
@@ -126,52 +132,46 @@ def get_latest_versions(limit: int) -> list[str]:
         list[str]: A list of the latest migration version strings
     """
 
+    if limit and starting_version:
+        raise ValueError(
+            "Cannot specify both 'limit' and 'starting_version'. Choose only one."
+        )
+
+    if not limit and not starting_version:
+        raise ValueError("Either 'limit' or 'starting_version' must be specified.")
+
     latest_versions: list[str] = []
 
-    with get_db_connection() as connection:
-        result: Result[tuple[str]] = connection.execute(
-            statement=get_query(QueryMethod.LATEST_VERSIONS_QUERY),
-            parameters={"limit": limit},
-        )
-        latest_versions: list[str] = [row[0] for row in result.fetchall()]
-
-    return latest_versions
-
-
-def get_latest_versions_by_starting_version(
-    starting_version: str,
-) -> list[str]:
-    """
-    Retrieve the latest N migration versions from the database,
-    starting from a specific version.
-    Args:
-        starting_version (str): The version to start retrieving from
-        limit (int): The number of latest versions to retrieve
-    Returns:
-        list[str]: A list of the latest migration version strings
-    """
-    latest_versions: list[str] = []
-    starting_version = starting_version
-
-    with get_db_connection() as connection:
-        version_exists_result: Result[tuple[int]] = connection.execute(
-            statement=get_query(QueryMethod.CHECK_IF_VERSION_EXISTS_QUERY),
-            parameters={"version": starting_version},
-        )
-        version_exists: int = version_exists_result.scalar_one()
-
-        if version_exists == 0:
-            raise VersionNotFoundError(
-                f"Version '{starting_version}' has not been applied yet or does not exist."
+    if limit:
+        with get_db_connection() as connection:
+            result: Result[tuple[str]] = connection.execute(
+                statement=get_query(QueryMethod.LATEST_VERSIONS_QUERY),
+                parameters={"limit": limit},
             )
+            latest_versions: list[str] = [row[0] for row in result.fetchall()]
 
-        latest_versions_result: Result[tuple[str]] = connection.execute(
-            statement=get_query(QueryMethod.LATEST_VERSIONS_BY_STARTING_VERSION_QUERY),
-            parameters={"starting_version": starting_version},
-        )
-        latest_versions: list[str] = [
-            row[0] for row in latest_versions_result.fetchall()
-        ]
+    if starting_version:
+        with get_db_connection() as connection:
+            version_exists_result: Result[tuple[int]] = connection.execute(
+                statement=get_query(QueryMethod.CHECK_IF_VERSION_EXISTS_QUERY),
+                parameters={"version": starting_version},
+            )
+            version_exists: int = version_exists_result.scalar_one()
+
+            if version_exists == 0:
+                raise VersionNotFoundError(
+                    f"Version '{starting_version}' has not been applied yet or does not exist."
+                )
+
+            latest_versions_result: Result[tuple[str]] = connection.execute(
+                statement=get_query(
+                    QueryMethod.LATEST_VERSIONS_BY_STARTING_VERSION_QUERY
+                ),
+                parameters={"starting_version": starting_version},
+            )
+            latest_versions: list[str] = [
+                row[0] for row in latest_versions_result.fetchall()
+            ]
 
     return latest_versions
 
@@ -203,12 +203,13 @@ def get_migration_records() -> list[MigrationRecord]:
         )
         migration_records: list[MigrationRecord] = [
             MigrationRecord(
-                version=row.version,
                 order_executed=row.order_executed,
+                version=row.version,
                 description=row.description,
                 filename=row.filename,
-                applied_at=row.applied_at,
                 migration_type=row.migration_type,
+                applied_at=row.applied_at,
+                checksum=row.checksum,
             )
             for row in results.fetchall()
         ]
@@ -260,7 +261,7 @@ def update_migration_checksums(versions_and_checksums: list[tuple[str, str]]) ->
 def get_existing_on_change_filenames_to_checksums() -> dict[str, str]:
     with get_db_connection() as connection:
         results: Result[tuple[str, str]] = connection.execute(
-            statement=get_query(QueryMethod.GET_REPEATABLE_ON_CHANGE_MIGRATIONS_QUERY),
+            statement=get_query(QueryMethod.GET_RUNS_ON_CHANGE_MIGRATIONS_QUERY),
         )
         migration_filenames_to_checksums: dict[str, str] = {
             row.filename: row.checksum for row in results.fetchall()
@@ -272,7 +273,7 @@ def get_existing_on_change_filenames_to_checksums() -> dict[str, str]:
 def get_existing_repeatable_always_migration_filenames() -> set[str]:
     with get_db_connection() as connection:
         results: Result[tuple[str]] = connection.execute(
-            statement=get_query(QueryMethod.GET_REPEATABLE_ALWAYS_MIGRATIONS_QUERY),
+            statement=get_query(QueryMethod.GET_RUNS_ALWAYS_MIGRATIONS_QUERY),
         )
         migration_filenames: set[str] = {row.filename for row in results.fetchall()}
 
@@ -297,9 +298,22 @@ def delete_missing_repeatables(repeatable_filenames: list[str]) -> None:
             )
 
 
-def get_migrated_repeatable_filenames() -> list[str]:
+def fetch_repeatable_migrations() -> list[MigrationRecord]:
     with get_db_connection() as connection:
         results: Result[tuple[str]] = connection.execute(
-            statement=get_query(QueryMethod.GET_REPEATABLE_MIGRATIONS_QUERY),
+            statement=get_query(
+                QueryMethod.MIGRATION_RECORDS_QUERY, all_repeatables=True
+            ),
         )
-        return [row.filename for row in results.fetchall()]
+        return [
+            MigrationRecord(
+                order_executed=row.order_executed,
+                version=row.version,
+                description=row.description,
+                filename=row.filename,
+                migration_type=row.migration_type,
+                applied_at=row.applied_at,
+                checksum=row.checksum,
+            )
+            for row in results.fetchall()
+        ]

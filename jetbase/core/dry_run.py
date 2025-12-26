@@ -8,7 +8,7 @@ def process_dry_run(
     version_to_filepath: dict[str, str],
     migration_operation: MigrationDirectionType,
     repeatable_always_filepaths: list[str] | None = None,
-    repeatable_on_change_filepaths: list[str] | None = None,
+    runs_on_change_filepaths: list[str] | None = None,
 ) -> None:
     print("\nJETBASE - Dry Run Mode")
     print("No SQL will be executed. This is a preview of what would happen.")
@@ -47,8 +47,8 @@ def process_dry_run(
                     filename=filename, sql_statements=sql_statements
                 )
 
-        if repeatable_on_change_filepaths:
-            for filepath in repeatable_on_change_filepaths:
+        if runs_on_change_filepaths:
+            for filepath in runs_on_change_filepaths:
                 sql_statements: list[str] = parse_upgrade_statements(
                     file_path=filepath, dry_run=True
                 )

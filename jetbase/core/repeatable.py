@@ -24,32 +24,32 @@ def get_repeatable_always_filepaths(directory: str) -> list[str]:
     return repeatable_always_filepaths
 
 
-def get_repeatable_on_change_filepaths(
+def get_runs_on_change_filepaths(
     directory: str, changed_only: bool = False
 ) -> list[str]:
-    repeatable_on_change_filepaths: list[str] = []
+    runs_on_change_filepaths: list[str] = []
     for root, _, files in os.walk(directory):
         for filename in files:
             validate_filename_format(filename=filename)
             if filename.startswith(RUNS_ON_CHANGE_FILE_PREFIX):
                 filepath: str = os.path.join(root, filename)
-                repeatable_on_change_filepaths.append(filepath)
+                runs_on_change_filepaths.append(filepath)
 
-    if repeatable_on_change_filepaths and changed_only:
+    if runs_on_change_filepaths and changed_only:
         existing_on_change_migrations: dict[str, str] = (
             get_existing_on_change_filenames_to_checksums()
         )
 
-        for filepath in repeatable_on_change_filepaths.copy():
+        for filepath in runs_on_change_filepaths.copy():
             filename: str = os.path.basename(filepath)
             sql_statements: list[str] = parse_upgrade_statements(file_path=filepath)
             checksum: str = calculate_checksum(sql_statements=sql_statements)
 
             if existing_on_change_migrations.get(filename) == checksum:
-                repeatable_on_change_filepaths.remove(filepath)
+                runs_on_change_filepaths.remove(filepath)
 
-    repeatable_on_change_filepaths.sort()
-    return repeatable_on_change_filepaths
+    runs_on_change_filepaths.sort()
+    return runs_on_change_filepaths
 
 
 def get_ra_filenames() -> list[str]:

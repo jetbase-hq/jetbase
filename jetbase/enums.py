@@ -8,8 +8,8 @@ class MigrationDirectionType(Enum):
 
 class MigrationType(Enum):
     VERSIONED = "VERSIONED"
-    REPEATABLE_ON_CHANGE = "REPEATABLE_ON_CHANGE"
-    REPEATABLE_ALWAYS = "REPEATABLE_ALWAYS"
+    RUNS_ON_CHANGE = "RUNS_ON_CHANGE"
+    RUNS_ALWAYS = "RUNS_ALWAYS"
 
 
 class DatabaseType(Enum):
