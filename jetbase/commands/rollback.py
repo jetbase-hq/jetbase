@@ -12,7 +12,6 @@ from jetbase.exceptions import VersionNotFoundError
 from jetbase.repositories.migrations_repo import (
     create_migrations_table_if_not_exists,
     get_latest_versions,
-    get_latest_versions_by_starting_version,
     run_migration,
 )
 
@@ -35,9 +34,7 @@ def rollback_cmd(
     if count:
         latest_migration_versions = get_latest_versions(limit=count)
     elif to_version:
-        latest_migration_versions = get_latest_versions_by_starting_version(
-            starting_version=to_version
-        )
+        latest_migration_versions = get_latest_versions(starting_version=to_version)
 
     if not latest_migration_versions:
         print("Nothing to rollback.")

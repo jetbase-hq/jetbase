@@ -4,9 +4,10 @@ from jetbase.constants import MIGRATIONS_DIR
 from jetbase.core.dry_run import process_dry_run
 from jetbase.core.file_parser import parse_upgrade_statements
 from jetbase.core.lock import create_lock_table_if_not_exists, migration_lock
+from jetbase.core.models import MigrationRecord
 from jetbase.core.repeatable import (
     get_repeatable_always_filepaths,
-    get_repeatable_on_change_filepaths,
+    get_runs_on_change_filepaths,
 )
 from jetbase.core.validation import run_migration_validations
 from jetbase.core.version import (
@@ -15,9 +16,9 @@ from jetbase.core.version import (
 from jetbase.enums import MigrationDirectionType, MigrationType
 from jetbase.repositories.migrations_repo import (
     create_migrations_table_if_not_exists,
+    fetch_latest_versioned_migration,
     get_existing_on_change_filenames_to_checksums,
     get_existing_repeatable_always_migration_filenames,
-    get_last_updated_version,
     run_migration,
     run_update_repeatable_migration,
 )
@@ -53,11 +54,11 @@ def upgrade_cmd(
     create_migrations_table_if_not_exists()
     create_lock_table_if_not_exists()
 
-    latest_migrated_version: str | None = get_last_updated_version()
+    latest_migration: MigrationRecord | None = fetch_latest_versioned_migration()
 
-    if latest_migrated_version:
+    if latest_migration:
         run_migration_validations(
-            latest_migrated_version=latest_migrated_version,
+            latest_migrated_version=latest_migration.version,
             skip_validation=skip_validation,
             skip_checksum_validation=skip_checksum_validation,
             skip_file_validation=skip_file_validation,
@@ -65,10 +66,10 @@ def upgrade_cmd(
 
     all_versions: dict[str, str] = get_migration_filepaths_by_version(
         directory=os.path.join(os.getcwd(), MIGRATIONS_DIR),
-        version_to_start_from=latest_migrated_version,
+        version_to_start_from=latest_migration.version if latest_migration else None,
     )
 
-    if latest_migrated_version:
+    if latest_migration:
         all_versions = dict(list(all_versions.items())[1:])
 
     if count:
@@ -92,12 +93,12 @@ def upgrade_cmd(
         get_existing_repeatable_always_migration_filenames()
     )
 
-    repeatable_on_change_filepaths: list[str] = get_repeatable_on_change_filepaths(
+    runs_on_change_filepaths: list[str] = get_runs_on_change_filepaths(
         directory=os.path.join(os.getcwd(), MIGRATIONS_DIR),
         changed_only=True,
     )
 
-    existing_repeatable_on_change_filenames: list[str] = list(
+    existing_runs_on_change_filenames: list[str] = list(
         get_existing_on_change_filenames_to_checksums().keys()
     )
 
@@ -129,7 +130,7 @@ def upgrade_cmd(
                         run_update_repeatable_migration(
                             sql_statements=sql_statements,
                             filename=filename,
-                            migration_type=MigrationType.REPEATABLE_ALWAYS,
+                            migration_type=MigrationType.RUNS_ALWAYS,
                         )
                         print(f"Migration applied successfully: {filename}")
                     else:
@@ -138,23 +139,23 @@ def upgrade_cmd(
                             version=None,
                             migration_operation=MigrationDirectionType.UPGRADE,
                             filename=filename,
-                            migration_type=MigrationType.REPEATABLE_ALWAYS,
+                            migration_type=MigrationType.RUNS_ALWAYS,
                         )
                         print(f"Migration applied successfully: {filename}")
 
-            if repeatable_on_change_filepaths:
-                for filepath in repeatable_on_change_filepaths:
+            if runs_on_change_filepaths:
+                for filepath in runs_on_change_filepaths:
                     sql_statements: list[str] = parse_upgrade_statements(
                         file_path=filepath
                     )
                     filename: str = os.path.basename(filepath)
 
-                    if filename in existing_repeatable_on_change_filenames:
+                    if filename in existing_runs_on_change_filenames:
                         # update migration
                         run_update_repeatable_migration(
                             sql_statements=sql_statements,
                             filename=filename,
-                            migration_type=MigrationType.REPEATABLE_ON_CHANGE,
+                            migration_type=MigrationType.RUNS_ON_CHANGE,
                         )
                         print(f"Migration applied successfully: {filename}")
                     else:
@@ -163,7 +164,7 @@ def upgrade_cmd(
                             version=None,
                             migration_operation=MigrationDirectionType.UPGRADE,
                             filename=filename,
-                            migration_type=MigrationType.REPEATABLE_ON_CHANGE,
+                            migration_type=MigrationType.RUNS_ON_CHANGE,
                         )
                         print(f"Migration applied successfully: {filename}")
     else:
@@ -171,5 +172,5 @@ def upgrade_cmd(
             version_to_filepath=all_versions,
             migration_operation=MigrationDirectionType.UPGRADE,
             repeatable_always_filepaths=repeatable_always_filepaths,
-            repeatable_on_change_filepaths=repeatable_on_change_filepaths,
+            runs_on_change_filepaths=runs_on_change_filepaths,
         )

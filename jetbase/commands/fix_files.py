@@ -1,6 +1,7 @@
 import os
 
 from jetbase.core.lock import create_lock_table_if_not_exists, migration_lock
+from jetbase.core.models import MigrationRecord
 from jetbase.core.repeatable import get_repeatable_filenames
 from jetbase.core.version import (
     get_migration_filepaths_by_version,
@@ -9,7 +10,7 @@ from jetbase.repositories.migrations_repo import (
     create_migrations_table_if_not_exists,
     delete_missing_repeatables,
     delete_missing_versions,
-    get_migrated_repeatable_filenames,
+    fetch_repeatable_migrations,
     get_migrated_versions,
 )
 
@@ -38,7 +39,7 @@ def fix_files_cmd(audit_only: bool = False) -> None:
             directory=os.path.join(os.getcwd(), "migrations")
         )
     )
-    migrated_repeatable_filenames: list[str] = get_migrated_repeatable_filenames()
+    repeatable_migrations: list[MigrationRecord] = fetch_repeatable_migrations()
     all_repeatable_filenames: list[str] = get_repeatable_filenames()
 
     missing_versions: list[str] = []
@@ -48,9 +49,9 @@ def fix_files_cmd(audit_only: bool = False) -> None:
         if migrated_version not in current_migration_filepaths_by_version:
             missing_versions.append(migrated_version)
 
-    for r_filename in migrated_repeatable_filenames:
-        if r_filename not in all_repeatable_filenames:
-            missing_repeatables.append(r_filename)
+    for r_migration in repeatable_migrations:
+        if r_migration.filename not in all_repeatable_filenames:
+            missing_repeatables.append(r_migration.filename)
 
     if audit_only:
         if missing_versions or missing_repeatables:

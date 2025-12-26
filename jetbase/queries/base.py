@@ -1,9 +1,9 @@
 from enum import Enum
 
-from sqlalchemy import TextClause
+from sqlalchemy import TextClause, text
 from sqlalchemy.engine import make_url
 
-from jetbase.enums import DatabaseType
+from jetbase.enums import DatabaseType, MigrationType
 from jetbase.queries import default_queries
 
 
@@ -47,8 +47,29 @@ class BaseQueries:
         return default_queries.CHECK_IF_LOCK_TABLE_EXISTS_QUERY
 
     @staticmethod
-    def migration_records_query() -> TextClause:
-        return default_queries.MIGRATION_RECORDS_QUERY
+    def migration_records_query(
+        ascending: bool = True,
+        all_repeatables: bool = False,
+        migration_type: MigrationType | None = None,
+    ) -> TextClause:
+        query: str = f"""
+            SELECT
+                order_executed, 
+                version, 
+                description,
+                filename,
+                migration_type,
+                applied_at,
+                checksum  
+            FROM
+                jetbase_migrations
+            {"WHERE migration_type = " + f"'{migration_type.value}'" if migration_type else ""}
+            {"WHERE migration_type IN ('RUNS_ON_CHANGE', 'RUNS_ALWAYS')" if all_repeatables else ""}
+            ORDER BY
+                applied_at {"ASC" if ascending else "DESC"}
+        """
+
+        return text(query)
 
     @staticmethod
     def create_lock_table_stmt() -> TextClause:
@@ -83,12 +104,12 @@ class BaseQueries:
         return default_queries.REPAIR_MIGRATION_CHECKSUM_STMT
 
     @staticmethod
-    def get_repeatable_on_change_migrations_query() -> TextClause:
-        return default_queries.GET_REPEATABLE_ON_CHANGE_MIGRATIONS_QUERY
+    def get_runs_on_change_migrations_query() -> TextClause:
+        return default_queries.GET_RUNS_ON_CHANGE_MIGRATIONS_QUERY
 
     @staticmethod
     def get_repeatable_always_migrations_query() -> TextClause:
-        return default_queries.GET_REPEATABLE_ALWAYS_MIGRATIONS_QUERY
+        return default_queries.GET_RUNS_ALWAYS_MIGRATIONS_QUERY
 
     @staticmethod
     def get_repeatable_migrations_query() -> TextClause:
@@ -152,10 +173,8 @@ class QueryMethod(Enum):
     FORCE_UNLOCK_STMT = "force_unlock_stmt"
     GET_VERSION_CHECKSUMS_QUERY = "get_version_checksums_query"
     REPAIR_MIGRATION_CHECKSUM_STMT = "repair_migration_checksum_stmt"
-    GET_REPEATABLE_ON_CHANGE_MIGRATIONS_QUERY = (
-        "get_repeatable_on_change_migrations_query"
-    )
-    GET_REPEATABLE_ALWAYS_MIGRATIONS_QUERY = "get_repeatable_always_migrations_query"
+    GET_RUNS_ON_CHANGE_MIGRATIONS_QUERY = "get_runs_on_change_migrations_query"
+    GET_RUNS_ALWAYS_MIGRATIONS_QUERY = "get_repeatable_always_migrations_query"
     GET_REPEATABLE_MIGRATIONS_QUERY = "get_repeatable_migrations_query"
     UPDATE_REPEATABLE_MIGRATION_STMT = "update_repeatable_migration_stmt"
     DELETE_MISSING_VERSION_STMT = "delete_missing_version_stmt"

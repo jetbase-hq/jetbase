@@ -305,7 +305,7 @@ def test_roc_with_no_changes(runner, test_db_url, clean_db, setup_migrations):
 
         timestamp_result = connection.execute(
             text(
-                "SELECT applied_at FROM jetbase_migrations WHERE migration_type = 'REPEATABLE_ON_CHANGE'"
+                "SELECT applied_at FROM jetbase_migrations WHERE migration_type = 'RUNS_ON_CHANGE'"
             )
         )
         applied_at_before = timestamp_result.scalar()
@@ -316,13 +316,13 @@ def test_roc_with_no_changes(runner, test_db_url, clean_db, setup_migrations):
 
         timestamp_result = connection.execute(
             text(
-                "SELECT applied_at FROM jetbase_migrations WHERE migration_type = 'REPEATABLE_ON_CHANGE'"
+                "SELECT applied_at FROM jetbase_migrations WHERE migration_type = 'RUNS_ON_CHANGE'"
             )
         )
         applied_at_after = timestamp_result.scalar()
 
         assert applied_at_before == applied_at_after, (
-            "REPEATABLE_ON_CHANGE migration was reapplied despite no changes."
+            "RUNS_ON_CHANGE migration was reapplied despite no changes."
         )
 
 
@@ -343,7 +343,7 @@ def test_roc_with_changes(runner, test_db_url, clean_db, setup_migrations):
 
         timestamp_result = connection.execute(
             text(
-                "SELECT applied_at FROM jetbase_migrations WHERE migration_type = 'REPEATABLE_ON_CHANGE'"
+                "SELECT applied_at FROM jetbase_migrations WHERE migration_type = 'RUNS_ON_CHANGE'"
             )
         )
         applied_at_before = timestamp_result.scalar()
@@ -360,13 +360,13 @@ def test_roc_with_changes(runner, test_db_url, clean_db, setup_migrations):
 
         timestamp_result = connection.execute(
             text(
-                "SELECT applied_at FROM jetbase_migrations WHERE migration_type = 'REPEATABLE_ON_CHANGE'"
+                "SELECT applied_at FROM jetbase_migrations WHERE migration_type = 'RUNS_ON_CHANGE'"
             )
         )
         applied_at_after = timestamp_result.scalar()
 
         assert applied_at_before < applied_at_after, (
-            "REPEATABLE_ON_CHANGE migration was not reapplied despite changes."
+            "RUNS_ON_CHANGE migration was not reapplied despite changes."
         )
 
 
@@ -389,7 +389,7 @@ def test_repeatable_always_multiple_upgrades(
 
         timestamp_result = connection.execute(
             text(
-                "SELECT applied_at FROM jetbase_migrations WHERE migration_type = 'REPEATABLE_ALWAYS'"
+                "SELECT applied_at FROM jetbase_migrations WHERE migration_type = 'RUNS_ALWAYS'"
             )
         )
         applied_at_first = timestamp_result.scalar()
@@ -400,13 +400,13 @@ def test_repeatable_always_multiple_upgrades(
 
         timestamp_result = connection.execute(
             text(
-                "SELECT applied_at FROM jetbase_migrations WHERE migration_type = 'REPEATABLE_ALWAYS'"
+                "SELECT applied_at FROM jetbase_migrations WHERE migration_type = 'RUNS_ALWAYS'"
             )
         )
         applied_at_second = timestamp_result.scalar()
 
         assert applied_at_first < applied_at_second, (
-            "REPEATABLE_ALWAYS migration was not reapplied on subsequent upgrade."
+            "RUNS_ALWAYS migration was not reapplied on subsequent upgrade."
         )
 
 

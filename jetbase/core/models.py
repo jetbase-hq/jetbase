@@ -4,12 +4,13 @@ from dataclasses import dataclass
 
 @dataclass
 class MigrationRecord:
-    version: str
     order_executed: int
+    version: str
     description: str
     filename: str
-    applied_at: dt.datetime
     migration_type: str
+    applied_at: dt.datetime
+    checksum: str
 
 
 @dataclass
