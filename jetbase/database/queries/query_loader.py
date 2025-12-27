@@ -3,15 +3,15 @@ from enum import Enum
 from sqlalchemy import Engine, TextClause, create_engine
 
 from jetbase.config import get_config
-from jetbase.queries.base import BaseQueries, QueryMethod
-from jetbase.queries.postgres import PostgresQueries
-from jetbase.queries.sqlite import SQLiteQueries
+from jetbase.database.queries.base import BaseQueries, QueryMethod
+from jetbase.database.queries.postgres import PostgresQueries
+from jetbase.database.queries.sqlite import SQLiteQueries
+from jetbase.enums import DatabaseType
 
-
-class DatabaseType(Enum):
-    POSTGRESQL = "postgresql"
-    SQLITE = "sqlite"
-    MYSQL = "mysql"
+# class DatabaseType(Enum):
+#     POSTGRESQL = "postgresql"
+#     SQLITE = "sqlite"
+#     MYSQL = "mysql"
 
 
 def get_database_type() -> DatabaseType:

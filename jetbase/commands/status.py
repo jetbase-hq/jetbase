@@ -3,6 +3,7 @@ import os
 from rich.console import Console
 from rich.table import Table
 
+from jetbase.constants import MIGRATIONS_DIR
 from jetbase.core.file_parser import get_description_from_filename
 from jetbase.core.formatters import get_display_version
 from jetbase.core.models import MigrationRecord
@@ -37,9 +38,11 @@ def status_cmd() -> None:
         versioned_migration_records[-1].version if versioned_migration_records else None
     )
 
+    migrations_dir: str = os.path.join(os.getcwd(), MIGRATIONS_DIR)
+
     migration_filepaths_by_version_to_be_migrated: dict[str, str] = (
         get_migration_filepaths_by_version(
-            directory=os.path.join(os.getcwd(), "migrations"),
+            directory=migrations_dir,
             version_to_start_from=latest_migrated_version,
         )
     )
@@ -49,10 +52,8 @@ def status_cmd() -> None:
             list(migration_filepaths_by_version_to_be_migrated.items())[1:]
         )
 
-    all_roc_filenames: list[str] = get_ra_filenames()
-
     roc_filepaths_changed_only: list[str] = get_runs_on_change_filepaths(
-        directory=os.path.join(os.getcwd(), "migrations"), changed_only=True
+        directory=migrations_dir, changed_only=True
     )
 
     roc_filenames_changed_only: list[str] = [
@@ -64,7 +65,7 @@ def status_cmd() -> None:
     )
 
     all_roc_filepaths: list[str] = get_runs_on_change_filepaths(
-        directory=os.path.join(os.getcwd(), "migrations")
+        directory=migrations_dir,
     )
 
     all_roc_filenames: list[str] = [
@@ -127,7 +128,7 @@ def status_cmd() -> None:
         if filename not in roc_filenames_migrated:
             description: str = get_description_from_filename(filename=filename)
             pending_table.add_row(
-                get_display_version(migration_type=MigrationType.RUNS_ALWAYS.value),
+                get_display_version(migration_type=MigrationType.RUNS_ON_CHANGE.value),
                 description,
             )
 

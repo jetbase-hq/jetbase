@@ -1,4 +1,4 @@
-from jetbase.queries.base import BaseQueries
+from jetbase.database.queries.base import BaseQueries
 
 
 class PostgresQueries(BaseQueries):

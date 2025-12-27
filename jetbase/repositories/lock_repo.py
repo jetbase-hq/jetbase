@@ -5,9 +5,9 @@ from sqlalchemy import Result, Row
 from sqlalchemy.engine import CursorResult
 
 from jetbase.core.models import LockStatus
-from jetbase.queries.base import QueryMethod
-from jetbase.queries.query_loader import get_query
-from jetbase.repositories.db import get_db_connection
+from jetbase.database.connection import get_db_connection
+from jetbase.database.queries.base import QueryMethod
+from jetbase.database.queries.query_loader import get_query
 
 
 def lock_table_exists() -> bool:
