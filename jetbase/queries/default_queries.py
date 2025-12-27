@@ -118,7 +118,7 @@ WHERE id = 1
 ACQUIRE_LOCK_STMT: TextClause = text("""
 UPDATE jetbase_lock
 SET is_locked = TRUE,
-    locked_at = :locked_at,
+    locked_at = CURRENT_TIMESTAMP,
     process_id = :process_id
 WHERE id = 1 AND is_locked = FALSE
 """)
