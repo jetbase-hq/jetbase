@@ -55,7 +55,7 @@ jobs:
       - name: Run unit tests
         run: uv run pytest tests/core/ -v
 
-  cli-tests:
+  postgres-cli-tests:
     runs-on: ubuntu-latest
 
     env:
@@ -75,6 +75,29 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      - name: Run CLI tests
+        run: uv run pytest tests/cli/ -v
+
+  sqlite-cli-tests:
+    runs-on: ubuntu-latest
+
+    env:
+      JETBASE_SQLALCHEMY_URL: sqlite:///test.db
 
     steps:
       - uses: actions/checkout@v5

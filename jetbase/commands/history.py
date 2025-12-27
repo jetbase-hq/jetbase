@@ -1,3 +1,5 @@
+import datetime as dt
+
 from rich.console import Console
 from rich.table import Table
 
@@ -58,7 +60,17 @@ def history_cmd() -> None:
             ),
             str(record.order_executed),
             record.description,
-            record.applied_at.strftime("%Y-%m-%d %H:%M:%S.%f")[:22],
+            format_applied_at(applied_at=record.applied_at),
         )
 
     console.print(migration_history_table)
+
+
+def format_applied_at(applied_at: dt.datetime | str | None) -> str:
+    """Format applied_at timestamp for display, handling both datetime and string (sqlite returns a string)."""
+    if applied_at is None:
+        return ""
+    if isinstance(applied_at, str):
+        # SQLite returns strings - just truncate to match format
+        return applied_at[:22]
+    return applied_at.strftime("%Y-%m-%d %H:%M:%S.%f")[:22]
