@@ -21,10 +21,8 @@ def test_db_url(tmp_path):
     For PostgreSQL, uses the environment variable.
     """
     db_url = os.getenv("JETBASE_SQLALCHEMY_URL")
-    if not db_url:
-        pytest.skip("JETBASE_SQLALCHEMY_URL environment variable not set")
 
-    assert db_url is not None
+    assert db_url is not None, "JETBASE_SQLALCHEMY_URL must be set for tests."
     # If using SQLite, convert to absolute file path for test isolation
     if db_url.startswith("sqlite"):
         db_file = tmp_path / "test.db"
