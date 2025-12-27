@@ -14,15 +14,24 @@ def runner():
 
 
 @pytest.fixture
-def test_db_url():
+def test_db_url(tmp_path):
     """
     Provide a test database URL.
-    Set the JETBASE_DATABASE_URL environment variable with your test database.
-    Example: postgresql://user:password@localhost:5432/jetbase_test
+    For SQLite, creates a file-based database in the temp directory.
+    For PostgreSQL, uses the environment variable.
     """
     db_url = os.getenv("JETBASE_SQLALCHEMY_URL")
     if not db_url:
         pytest.skip("JETBASE_SQLALCHEMY_URL environment variable not set")
+
+    assert db_url is not None
+    # If using SQLite, convert to absolute file path for test isolation
+    if db_url.startswith("sqlite"):
+        db_file = tmp_path / "test.db"
+        file_url = f"sqlite:///{db_file}"
+        os.environ["JETBASE_SQLALCHEMY_URL"] = file_url
+        return file_url
+
     return db_url
 
 

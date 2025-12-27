@@ -9,8 +9,6 @@ from jetbase.config import get_config
 from jetbase.queries.base import QueryMethod
 from jetbase.queries.query_loader import get_query
 
-sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
-
 
 def create_lock_table_if_not_exists() -> None:
     """
@@ -18,6 +16,8 @@ def create_lock_table_if_not_exists() -> None:
     Returns:
         None
     """
+    sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
+
     engine: Engine = create_engine(url=sqlalchemy_url)
 
     with engine.begin() as connection:
@@ -40,6 +40,8 @@ def acquire_lock() -> str:
         RuntimeError: If lock is already held by another process
     """
     process_id = str(uuid.uuid4())
+    sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
+
     engine: Engine = create_engine(url=sqlalchemy_url)
 
     with engine.begin() as connection:
@@ -72,6 +74,8 @@ def release_lock(process_id: str) -> None:
     Args:
         process_id: The process ID that acquired the lock
     """
+    sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
+
     engine: Engine = create_engine(url=sqlalchemy_url)
 
     with engine.begin() as connection:
