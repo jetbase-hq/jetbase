@@ -3,7 +3,7 @@ import os
 from jetbase.constants import MIGRATIONS_DIR
 from jetbase.core.dry_run import process_dry_run
 from jetbase.core.file_parser import parse_upgrade_statements
-from jetbase.core.lock import create_lock_table_if_not_exists, migration_lock
+from jetbase.core.lock import migration_lock
 from jetbase.core.models import MigrationRecord
 from jetbase.core.repeatable import (
     get_repeatable_always_filepaths,
@@ -14,6 +14,7 @@ from jetbase.core.version import (
     get_migration_filepaths_by_version,
 )
 from jetbase.enums import MigrationDirectionType, MigrationType
+from jetbase.repositories.lock_repo import create_lock_table_if_not_exists
 from jetbase.repositories.migrations_repo import (
     create_migrations_table_if_not_exists,
     fetch_latest_versioned_migration,
