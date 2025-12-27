@@ -2,7 +2,7 @@ import datetime as dt
 import os
 import uuid
 
-from sqlalchemy import create_engine, inspect, text
+from sqlalchemy import text
 
 from jetbase.cli.main import app
 
