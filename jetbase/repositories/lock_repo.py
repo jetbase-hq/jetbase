@@ -60,7 +60,6 @@ def lock_database(process_id: str) -> CursorResult:
         result = connection.execute(
             get_query(query_name=QueryMethod.ACQUIRE_LOCK_STMT),
             {
-                "locked_at": dt.datetime.now(dt.timezone.utc),
                 "process_id": process_id,
             },
         )

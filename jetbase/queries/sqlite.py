@@ -69,7 +69,7 @@ class SQLiteQueries(BaseQueries):
         return text("""
         UPDATE jetbase_lock
         SET is_locked = 1,
-            locked_at = :locked_at,
+            locked_at = STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW'),
             process_id = :process_id
         WHERE id = 1 AND is_locked = 0
         """)
