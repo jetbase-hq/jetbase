@@ -1,32 +1,10 @@
-import datetime as dt
 import uuid
 from contextlib import contextmanager
 from typing import Generator
 
-from sqlalchemy import Engine, create_engine
+from sqlalchemy.engine import CursorResult
 
-from jetbase.config import get_config
-from jetbase.queries.base import QueryMethod
-from jetbase.queries.query_loader import get_query
-
-
-def create_lock_table_if_not_exists() -> None:
-    """
-    Create the migrations lock table if it doesn't exist.
-    Returns:
-        None
-    """
-    sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
-
-    engine: Engine = create_engine(url=sqlalchemy_url)
-
-    with engine.begin() as connection:
-        connection.execute(get_query(query_name=QueryMethod.CREATE_LOCK_TABLE_STMT))
-
-        # Initialize with single row if empty
-        connection.execute(
-            get_query(query_name=QueryMethod.INITIALIZE_LOCK_RECORD_STMT)
-        )
+from jetbase.repositories.lock_repo import lock_database, release_lock
 
 
 def acquire_lock() -> str:
@@ -40,49 +18,20 @@ def acquire_lock() -> str:
         RuntimeError: If lock is already held by another process
     """
     process_id = str(uuid.uuid4())
-    sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
 
-    engine: Engine = create_engine(url=sqlalchemy_url)
+    result: CursorResult = lock_database(process_id=process_id)
 
-    with engine.begin() as connection:
-        # Try to acquire lock
-        result = connection.execute(
-            get_query(query_name=QueryMethod.ACQUIRE_LOCK_STMT),
-            {
-                "locked_at": dt.datetime.now(dt.timezone.utc),
-                "process_id": process_id,
-            },
+    if result.rowcount == 0:  # already locked
+        raise RuntimeError(
+            "Migration lock is already held by another process.\n\n"
+            "If you are completely sure that no other migrations are running, "
+            "you can unlock using:\n"
+            "  jetbase unlock\n\n"
+            "WARNING: Unlocking then running a migration while another migration process is running may "
+            "lead to database corruption."
         )
 
-        if result.rowcount == 0:  # already locked
-            raise RuntimeError(
-                "Migration lock is already held by another process.\n\n"
-                "If you are completely sure that no other migrations are running, "
-                "you can unlock using:\n"
-                "  jetbase unlock\n\n"
-                "WARNING: Unlocking then running a migration while another migration process is running may "
-                "lead to database corruption."
-            )
-
-        return process_id
-
-
-def release_lock(process_id: str) -> None:
-    """
-    Release the migration lock.
-
-    Args:
-        process_id: The process ID that acquired the lock
-    """
-    sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
-
-    engine: Engine = create_engine(url=sqlalchemy_url)
-
-    with engine.begin() as connection:
-        connection.execute(
-            get_query(query_name=QueryMethod.RELEASE_LOCK_STMT),
-            {"process_id": process_id},
-        )
+    return process_id
 
 
 @contextmanager
