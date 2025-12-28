@@ -27,8 +27,6 @@ Shows all migrations that have been successfully applied to the database:
 │ 20251225.143022   │ create_users_table           │
 │ 20251225.144500   │ add_email_to_users           │
 │ 20251225.150000   │ create_orders_table          │
-│ [ROC]             │ stored_procedures            │
-│ [RA]              │ refresh_materialized_views   │
 └───────────────────┴──────────────────────────────┘
 ```
 
@@ -89,7 +87,7 @@ jetbase status
 ┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Version           ┃ Description                          ┃
 ┡━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ (no pending migrations)                                   │
+│                                                          │
 └───────────────────┴──────────────────────────────────────┘
 ```
 
@@ -100,7 +98,7 @@ jetbase status
 ┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Version           ┃ Description                          ┃
 ┡━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ (no migrations applied yet)                               │
+│                                                          │
 └───────────────────┴──────────────────────────────────────┘
 
                     Migrations Pending
@@ -119,48 +117,27 @@ The status command shows different prefixes for migration types:
 | Prefix            | Meaning                        |
 | ----------------- | ------------------------------ |
 | `20251225.143022` | Versioned migration (standard) |
-| `[ROC]`           | Repeatable On Change migration |
-| `[RA]`            | Repeatable Always migration    |
+| `RUNS_ALWAYS`            | Runs Always migration    |
+| `RUNS_ON_CHANGE`           | Runs On Change migration |
 
-## Common Use Cases
 
-### Before Deploying
-
-```bash
-# Check what will be applied
-jetbase status
-
-# Preview the actual SQL
-jetbase upgrade --dry-run
-
-# Apply when ready
-jetbase upgrade
+Example:
+```
+┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Version           ┃ Description                  ┃
+┡━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ 20251225.143022   │ create_users_table           │
+│ 20251225.144500   │ add_email_to_users           │
+│ 20251225.150000   │ create_orders_table          │
+│ RUNS_ALWAYS       │ refresh_materialized_views   │ 
+│ RUNS_ON_CHANGE    │ stored_procedures            │
+└───────────────────┴──────────────────────────────┘
 ```
 
-### After Pulling New Code
-
-```bash
-# Check if teammates added new migrations
-jetbase status
-
-# Apply them if any
-jetbase upgrade
-```
-
-### Debugging Migration Issues
-
-```bash
-# See the current state
-jetbase status
-
-# Check full history for more details
-jetbase history
-```
 
 ## Notes
 
 - Must be run from inside the `jetbase/` directory
-- Creates the migrations table if it doesn't exist
 - Compares files in `migrations/` with database records
 
 ## See Also

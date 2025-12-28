@@ -24,8 +24,8 @@ V{YYYYMMDD.HHMMSS}__{description}.sql
 
 ```
 V20251225.100000__create_users_table.sql
-V20251225.110000__add_email_to_users.sql
-V20251225.120000__create_orders_table.sql
+V1__add_email_to_users.sql
+V2.1__create_orders_table.sql
 ```
 
 ### When to Use

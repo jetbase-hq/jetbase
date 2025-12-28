@@ -20,9 +20,14 @@ Jetbase helps you manage database schema changes (migrations) in a simple, versi
 
 ### Installation
 
-```bash
-pip install jetbase
-```
+=== "pip"
+    ```bash
+    pip install jetbase
+    ```
+=== "uv"
+    ```bash
+    uv pip install jetbase
+    ```
 
 ### Initialize Your Project
 

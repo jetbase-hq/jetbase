@@ -1,22 +1,41 @@
 # jetbase validate-files
 
-Check for missing migration files.
+Check for missing migration files, out of order migrations, and if files have 
 
 ## Usage
 
 ```bash
-jetbase validate-files [OPTIONS]
+jetbase validate-files
 ```
 
 ## Description
 
-The `validate-files` command checks if all migrations recorded in the database still have their corresponding SQL files. This helps detect when migration files have been accidentally deleted or moved.
+The `validate-files` command performs the following checks:
+
+- Ensures every migration recorded in the database still has its corresponding SQL file (detects missing, deleted, or moved files)
+- Warns if any new migration file has a lower version than those already migrated (out-of-order migrations)
+- Verifies that all migration versions are unique (prevents duplicates)
+
+For detailed explanations of these checks, see [Validations](../validations/index.md).
 
 ## Options
 
 | Option  | Short | Description                               |
 | ------- | ----- | ----------------------------------------- |
 | `--fix` | `-f`  | Remove database records for missing files |
+
+> **Tip:**  
+> You can use either  
+> 
+> ```
+> jetbase validate-files --fix
+> ```
+> or the shortcut:
+> ```
+> jetbase fix-files
+> ```
+> 
+> Both commands are **identical** 
 
 ## Examples
 
@@ -40,7 +59,6 @@ All migrations have corresponding files.
 The following migrations are missing their corresponding files:
 → 20251225.143022
 → 20251225.150000
-→ ROC__stored_procedures.sql
 ```
 
 ### Fix Mode
@@ -49,7 +67,6 @@ Remove records of migrations whose files no longer exist:
 
 ```bash
 jetbase validate-files --fix
-jetbase validate-files -f
 ```
 
 Output:
@@ -58,56 +75,8 @@ Output:
 Stopped tracking the following missing versions:
 → 20251225.143022
 → 20251225.150000
-Removed the following missing repeatable migrations from the database:
-→ ROC__stored_procedures.sql
 ```
 
-## When to Use
-
-### After Accidental Deletion
-
-If you accidentally deleted a migration file:
-
-```bash
-# Check what's missing
-jetbase validate-files
-
-# Option 1: Restore from git
-git checkout -- migrations/V20251225.143022__create_users.sql
-
-# Option 2: Remove the database record
-jetbase validate-files --fix
-```
-
-### Before Rollback
-
-Rollback requires the migration files to exist. Check first:
-
-```bash
-jetbase validate-files
-
-# If files are missing, restore them or fix records
-```
-
-### After Branch Switching
-
-When switching git branches, some migration files might not exist:
-
-```bash
-# Check if current branch has all files
-jetbase validate-files
-```
-
-## Why This Matters
-
-### Rollback Safety
-
-You can't roll back a migration if the file doesn't exist:
-
-```bash
-jetbase rollback
-# Error: Migration file for version '20251225.143022' not found
-```
 
 ### Database Integrity
 
@@ -139,7 +108,6 @@ Using `--fix` means Jetbase will forget those migrations ever happened. The data
 
 ✅ **Safe to fix when:**
 
-- The migration was applied but never committed (development only)
 - The file was intentionally removed and won't be needed
 - You're cleaning up after a failed experiment
 
@@ -148,44 +116,6 @@ Using `--fix` means Jetbase will forget those migrations ever happened. The data
 - You need to roll back those migrations later
 - Other team members might have the files
 - You're not sure why the files are missing
-
-## Common Scenarios
-
-### Development Cleanup
-
-```bash
-# After experimenting with migrations
-jetbase validate-files
-# Shows missing files from deleted experiments
-
-jetbase validate-files --fix
-# Clean up the records
-```
-
-### Production Issue
-
-```bash
-# Check for missing files before deployment
-jetbase validate-files
-
-# If files are missing, DON'T use --fix
-# Instead, restore the files from your repository
-```
-
-### Git Branch Issues
-
-```bash
-# Switched branches, migrations might be different
-jetbase validate-files
-
-# If files are missing, switch back or restore them
-```
-
-## Notes
-
-- Must be run from inside the `jetbase/` directory
-- Checks both versioned and repeatable migrations
-- Using `--fix` is irreversible (without database backup)
 
 ## See Also
 

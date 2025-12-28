@@ -5,7 +5,7 @@ Apply pending migrations to your database.
 ## Usage
 
 ```bash
-jetbase upgrade [OPTIONS]
+jetbase upgrade
 ```
 
 ## Description
@@ -38,7 +38,6 @@ This applies all pending migrations in order.
 ```bash
 # Apply only the next 2 migrations
 jetbase upgrade --count 2
-jetbase upgrade -c 2
 ```
 
 ### Apply Up to a Specific Version
@@ -46,17 +45,13 @@ jetbase upgrade -c 2
 ```bash
 # Apply all migrations up to and including version 20251225.150000
 jetbase upgrade --to-version 20251225.150000
-jetbase upgrade -t 20251225.150000
 ```
 
-!!! note
-Use underscores instead of dots in the version number: `20251225_150000`
 
 ### Preview Changes (Dry Run)
 
 ```bash
 jetbase upgrade --dry-run
-jetbase upgrade -d
 ```
 
 This shows you what migrations would be applied without actually running them. Great for verifying before deployment!
@@ -93,20 +88,13 @@ jetbase upgrade --skip-file-validation
 ```
 
 !!! warning
-Skipping validation can lead to inconsistent database state. Only use these options if you understand the implications.
+    Skipping validation can lead to inconsistent database state. Only use these options if you understand the implications.  
+    To learn more, see [Validations](../validations/index.md).
 
-## How It Works
-
-1. **Checks for pending migrations** — Compares files in `migrations/` with the database
-2. **Validates existing migrations** — Ensures checksums and files match (unless skipped)
-3. **Acquires a lock** — Prevents other processes from running migrations simultaneously
-4. **Applies migrations in order** — Executes the `-- upgrade` section of each file
-5. **Records the migration** — Stores version, checksum, and timestamp in the database
-6. **Releases the lock** — Allows other processes to run migrations
 
 ## Migration Types
 
-During upgrade, Jetbase processes three types of migrations:
+During upgrade, Jetbase processes three types of migrations. Most developers will only ever need to worry about the standard Versioned Migrations. 
 
 ### Versioned Migrations (`V*`)
 
@@ -116,7 +104,7 @@ Standard migrations that run once, in version order.
 V20251225.143022__create_users.sql
 ```
 
-### Repeatable Always (`RA__*`)
+### Runs Always (`RA__*`)
 
 Migrations that run on every upgrade.
 
@@ -124,7 +112,7 @@ Migrations that run on every upgrade.
 RA__refresh_views.sql
 ```
 
-### Repeatable On Change (`ROC__*`)
+### Runs On Change (`ROC__*`)
 
 Migrations that run only when the file content changes.
 
@@ -135,8 +123,6 @@ ROC__stored_procedures.sql
 Learn more in [Migration Types](../migrations/migration-types.md).
 
 ## Common Use Cases
-
-### Deploying to Production
 
 ```bash
 # First, preview what will run
@@ -156,35 +142,23 @@ jetbase upgrade --count 1
 jetbase status
 ```
 
-### Rolling Back After Failed Upgrade
-
-If an upgrade fails midway:
-
-```bash
-# Check current state
-jetbase status
-
-# Roll back to a known good state
-jetbase rollback --to-version 20251225.143022
-```
 
 ## Error Handling
 
-If a migration fails:
+Jetbase is designed to keep your database safe even when something goes wrong. If a migration fails during an upgrade:
 
-1. The failing migration is **not recorded** in the database
-2. The lock is **released**
-3. You'll see an error message with details
-4. Your database remains in its previous state (for that migration)
+1. **No Partial Changes:** The failed migration file will *not* be applied at all. Any statements within that file are rolled back, so your database remains unchanged by that migration.
+2. **Orderly Progress:** All prior migration files that completed successfully in during that same upgrade command remain applied. Any migration files scheduled to run *after* the failed one are skipped.
+3. **Clear Feedback:** You’ll see a descriptive error message explaining what went wrong, so you can fix the issue and try again.
 
-!!! tip
-Always use transactions in your migration SQL when possible. PostgreSQL supports transactional DDL, so failed migrations will be fully rolled back.
+Jetbase stops safely at the first sign of trouble, preventing partial or out-of-order migrations.
+
 
 ## Notes
 
 - Must be run from inside the `jetbase/` directory
 - Cannot use both `--count` and `--to-version` together
-- The lock prevents concurrent migrations from causing conflicts
+- The automatic lock prevents concurrent migrations from causing conflicts
 
 ## See Also
 

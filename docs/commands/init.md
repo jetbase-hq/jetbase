@@ -36,6 +36,16 @@ sqlalchemy_url = "postgresql://user:password@localhost:5432/mydb"
 !!! important
 After running `init`, you need to update the `sqlalchemy_url` in `env.py` with your actual database connection string.
 
+> **Next Step:**  
+> After running `jetbase init`, move into the `jetbase` directory with:
+> 
+> ```bash
+> cd jetbase
+> ```
+> 
+> **Important:**  
+> All future `jetbase` commands should be run *inside* the `jetbase` directory.
+
 ## Examples
 
 ### Basic Usage
@@ -73,9 +83,8 @@ jetbase upgrade
 
 ## Notes
 
-- Running `init` multiple times is safe — it won't overwrite existing files
-- All other Jetbase commands must be run from inside the `jetbase/` directory
-- The migrations directory is empty after initialization; use `jetbase new` to create migration files
+- All other Jetbase commands must be run from inside the `jetbase/` directory.
+- The `migrations/` directory will be empty after initialization. Use `jetbase new` to create your first migration, (or create migration files manually. See [Migrations Overview](../migrations/index.md)).
 
 ## See Also
 

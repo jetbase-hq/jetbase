@@ -1,19 +1,65 @@
 # Configuration ⚙️
 
+## Configuration Options
+
+| Option | Environment Variable | Allowed Values | Default |
+|--------|---------------------|----------------|---------|
+| `sqlalchemy_url` | `JETBASE_SQLALCHEMY_URL` | SQLAlchemy connection string | *(required)* |
+| `postgres_schema` | `JETBASE_POSTGRES_SCHEMA` | Any valid schema name | `None` (uses `public`) |
+| `skip_validation` | `JETBASE_SKIP_VALIDATION` | `True` / `False` | `False` |
+| `skip_checksum_validation` | `JETBASE_SKIP_CHECKSUM_VALIDATION` | `True` / `False` | `False` |
+| `skip_file_validation` | `JETBASE_SKIP_FILE_VALIDATION` | `True` / `False` | `False` |
+
+---
+
 Jetbase uses a simple Python configuration file (`env.py`) to manage your database connection and behavior settings.
 
-## Configuration File
+For flexibility, you can also set config options as environment variables, in `jetbase.toml`, or in `pyproject.toml`.
 
-When you run `jetbase init`, it creates a `jetbase/env.py` file with default settings:
+## Configuration Sources
 
-```python
-# Jetbase Configuration
-# Update the sqlalchemy_url with your database connection string.
+Jetbase loads configuration from four sources, checked in the following priority order:
 
-sqlalchemy_url = "postgresql://user:password@localhost:5432/mydb"
-```
+| Priority | Source | Location |
+|:--------:|--------|----------|
+| 1 | `env.py` | `jetbase/env.py` |
+| 2 | Environment variables | `JETBASE_{OPTION_NAME}` ([see example](#example-setting-sqlalchemy_url)) |
+| 3 | `jetbase.toml` | `jetbase/jetbase.toml` (file must be manually created)  |
+| 4 | `pyproject.toml` | `[tool.jetbase]` section |
 
-## Configuration Options
+The first source that defines a value wins. For example, if `sqlalchemy_url` is set in both `env.py` and as an environment variable, the `env.py` value is used.
+
+### Example: Setting `sqlalchemy_url`
+
+=== "env.py"
+
+    ```python
+    # jetbase/env.py
+    sqlalchemy_url = "postgresql://user:password@localhost:5432/mydb"
+    ```
+
+=== "Environment Variable"
+
+    ```bash
+    export JETBASE_SQLALCHEMY_URL="postgresql://user:password@localhost:5432/mydb"
+    ```
+
+=== "jetbase.toml"
+
+    ```toml
+    # jetbase/jetbase.toml
+    sqlalchemy_url = "postgresql://user:password@localhost:5432/mydb"
+    ```
+
+=== "pyproject.toml"
+
+    ```toml
+    # pyproject.toml
+    [tool.jetbase]
+    sqlalchemy_url = "postgresql://user:password@localhost:5432/mydb"
+    ```
+
+
 
 ### `sqlalchemy_url` (Required)
 
@@ -25,53 +71,18 @@ The database connection string in SQLAlchemy format.
     sqlalchemy_url = "postgresql://username:password@host:port/database"
     ```
 
-    **Examples:**
-    ```python
-    # Local database
-    sqlalchemy_url = "postgresql://postgres:mypassword@localhost:5432/myapp"
 
-    # Remote database
-    sqlalchemy_url = "postgresql://admin:secret@db.example.com:5432/production"
+### `postgres_schema` (Optional, even if using a PostgreSQL database)
 
-    # With SSL
-    sqlalchemy_url = "postgresql://user:pass@host:5432/db?sslmode=require"
-    ```
-
-=== "SQLite"
-
-    ```python
-    # Relative path (from jetbase directory)
-    sqlalchemy_url = "sqlite:///mydb.sqlite"
-
-    # Absolute path
-    sqlalchemy_url = "sqlite:////home/user/databases/myapp.db"
-
-    # In-memory (for testing)
-    sqlalchemy_url = "sqlite:///:memory:"
-    ```
-
-### `postgres_schema` (Optional)
-
-Specify a PostgreSQL schema to use for migrations. If not set, uses the default `public` schema.
+Specify a PostgreSQL schema to use for migrations if using a PostgreSQL database. If not set, uses the default `public` schema.
 
 ```python
-sqlalchemy_url = "postgresql://user:pass@localhost:5432/mydb"
-postgres_schema = "my_custom_schema"
+postgres_schema = "my_schema"
 ```
-
-### `skip_validation` (Optional)
-
-Skip all validation checks when running migrations. **Use with caution!**
-
-```python
-skip_validation = False  # Default
-```
-
-When set to `True`, skips both checksum and file validation.
 
 ### `skip_checksum_validation` (Optional)
 
-Skip only checksum validation when running migrations.
+Skips [checksum validations](../validations/index.md#checksum-validation)
 
 ```python
 skip_checksum_validation = False  # Default
@@ -82,11 +93,21 @@ Only set this to `True` if you intentionally modified a migration file and want 
 
 ### `skip_file_validation` (Optional)
 
-Skip file validation (checking if migration files exist).
+Skip file validations (see [File Validations](../validations/index.md#file-validations) for details).
 
 ```python
 skip_file_validation = False  # Default
 ```
+
+### `skip_validation` (Optional)
+
+Skips both checksum and file validation checks when running migrations. See [Validation Types](../validations/index.md#validation-types) for details. **Use with caution!**
+
+```python
+skip_validation = False  # Default
+```
+
+When set to `True`, skips both checksum and file validation.
 
 ## Full Configuration Example
 
@@ -149,9 +170,6 @@ jetbase upgrade --skip-checksum-validation
 # Skip only file validation
 jetbase upgrade --skip-file-validation
 ```
-
-!!! tip
-Command-line flags take precedence over configuration file settings.
 
 ## Database Tables
 

@@ -2,11 +2,38 @@
 
 Verify that migration files haven't been modified since they were applied.
 
+## What Is a Checksum?
+
+A checksum is a unique "fingerprint" calculated from the contents of your migration file. When you apply a migration, Jetbase stores this fingerprint. Later, it can verify the file hasn't changed by recalculating the fingerprint and comparing.
+
+
 ## Usage
 
 ```bash
-jetbase validate-checksums [OPTIONS]
+jetbase validate-checksums
 ```
+
+```
+
+## Options
+
+| Option  | Short | Description                                    |
+| ------- | ----- | ---------------------------------------------- |
+| `--fix` | `-f`  | Update stored checksums to match current files |
+```
+
+> **Tip:**  
+> You can use either  
+> 
+> ```
+> jetbase validate-checksums --fix
+> ```
+> or the shortcut:
+> ```
+> jetbase fix-checksums
+> ```
+> 
+> Both commands are **identical** 
 
 ## Description
 
@@ -16,11 +43,12 @@ The `validate-checksums` command compares the checksums of your migration files 
 - Intentional changes that need to be handled
 - File corruption
 
-## Options
+When working with AI agents to generate or manage code, it's easy for files to be changed in ways you might not expect. For example, an agent could accidentally revise an old migration file instead of creating a new one when implementing a new feature.
 
-| Option  | Short | Description                                    |
-| ------- | ----- | ---------------------------------------------- |
-| `--fix` | `-f`  | Update stored checksums to match current files |
+This kind of modification can be risky: without proper checksum validation, the altered migration might not run, leading to differences ("drift") between environments such as local, development, staging, and production.
+
+In these situations, some environments may end up applying the old version of a migration file, while others run the new one—resulting in inconsistent database schemas across your projects. Regular checksum validation helps catch these issues early and is especially important when collaborating with both developers and AI agents.
+
 
 ## Examples
 
@@ -54,7 +82,6 @@ Update stored checksums to match the current file contents:
 
 ```bash
 jetbase validate-checksums --fix
-jetbase validate-checksums -f
 ```
 
 Output:
@@ -64,44 +91,13 @@ Fixed checksum for version: 20251225.143022
 Fixed checksum for version: 20251225.150000
 ```
 
-## What Is a Checksum?
 
-A checksum is a unique "fingerprint" calculated from the contents of your migration file. When you apply a migration, Jetbase stores this fingerprint. Later, it can verify the file hasn't changed by recalculating the fingerprint and comparing.
 
 ```
 Original file → Checksum: abc123
 Modified file → Checksum: xyz789  ← Different! File was changed
 ```
 
-## When to Use
-
-### Regular Audits
-
-Run periodically to catch accidental changes:
-
-```bash
-# In CI/CD or as a pre-deployment check
-jetbase validate-checksums
-```
-
-### After Intentional Changes
-
-If you intentionally modified an applied migration:
-
-```bash
-# Verify what changed
-jetbase validate-checksums
-
-# If the changes are intentional, update the checksums
-jetbase validate-checksums --fix
-```
-
-### Debugging Migration Issues
-
-```bash
-# Check if files have drifted
-jetbase validate-checksums
-```
 
 ## Why Do Checksums Matter?
 

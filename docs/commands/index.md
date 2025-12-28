@@ -10,9 +10,9 @@ Jetbase provides a set of intuitive commands to manage your database migrations.
 | [`new`](new.md)                               | Create a new migration file             |
 | [`upgrade`](upgrade.md)                       | Apply pending migrations                |
 | [`rollback`](rollback.md)                     | Undo migrations                         |
-| [`status`](status.md)                         | Show migration status                   |
+| [`status`](status.md)                         | Show migration status of all migration files (applied vs. pending)                   |
 | [`history`](history.md)                       | Show migration history                  |
-| [`current`](current.md)                       | Show current migration version          |
+| [`current`](current.md)                       | Show latest version migrated          |
 | [`lock-status`](lock-status.md)               | Check if migrations are locked          |
 | [`unlock`](unlock.md)                         | Remove migration lock                   |
 | [`validate-checksums`](validate-checksums.md) | Verify migration file integrity         |
@@ -58,66 +58,6 @@ Commands to validate and fix migration issues:
 - **[`validate-files`](validate-files.md)** — Check for missing files
 - **[`fix`](fix.md)** — Automatically repair common issues
 
-## Common Patterns
-
-### First-Time Setup
-
-```bash
-# Initialize Jetbase
-jetbase init
-
-# Navigate to jetbase directory
-cd jetbase
-
-# Edit env.py with your database connection
-# Then create your first migration
-jetbase new "initial schema"
-
-# Apply migrations
-jetbase upgrade
-```
-
-### Daily Workflow
-
-```bash
-# Check what needs to be done
-jetbase status
-
-# Create a new migration
-jetbase new "add email to users"
-
-# Apply it
-jetbase upgrade
-```
-
-### Fixing Issues
-
-```bash
-# Made a mistake? Roll back
-jetbase rollback
-
-# Modified a migration file? Fix checksums
-jetbase fix-checksums
-
-# Deleted a migration file? Fix files
-jetbase fix-files
-
-# Or fix everything at once
-jetbase fix
-```
-
-### Checking Status
-
-```bash
-# Quick current version
-jetbase current
-
-# Full status
-jetbase status
-
-# Complete history
-jetbase history
-```
 
 ## Getting Help
 

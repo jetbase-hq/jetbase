@@ -18,14 +18,14 @@ theme:
     - toc.follow
   palette:
     - scheme: slate
-      primary: teal
-      accent: teal
+      primary: indigo
+      accent: indigo
       toggle:
         icon: material/weather-night
         name: Switch to light mode
     - scheme: default
-      primary: teal
-      accent: teal
+      primary: indigo
+      accent: indigo
       toggle:
         icon: material/weather-sunny
         name: Switch to dark mode
@@ -58,8 +58,10 @@ nav:
       - fix: commands/fix.md
   - Migrations:
       - migrations/index.md
-      - Writing Migrations: migrations/writing-migrations.md
+      - Migration Locking: migrations/migration-locking.md
       - Migration Types: migrations/migration-types.md
+  - Validations:
+      - validations/index.md
   - Troubleshooting: troubleshooting.md
 
 markdown_extensions:

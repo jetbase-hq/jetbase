@@ -5,7 +5,7 @@ Undo one or more migrations.
 ## Usage
 
 ```bash
-jetbase rollback [OPTIONS]
+jetbase rollback
 ```
 
 ## Description
@@ -48,12 +48,11 @@ Output:
 Rollback applied successfully: V20251225.150000__add_email_to_users.sql
 ```
 
-### Roll Back Multiple Migrations
+### Rollback Multiple Migrations
 
 ```bash
 # Roll back the last 3 migrations
 jetbase rollback --count 3
-jetbase rollback -c 3
 ```
 
 Output:
@@ -69,7 +68,6 @@ Rollback applied successfully: V20251225.143022__create_users_table.sql
 ```bash
 # Roll back everything after version 20251225.143022
 jetbase rollback --to-version 20251225.143022
-jetbase rollback -t 20251225_143022
 ```
 
 !!! note
@@ -79,7 +77,6 @@ The specified version will **remain applied**. Only migrations after it are roll
 
 ```bash
 jetbase rollback --dry-run
-jetbase rollback -d
 ```
 
 Output:
@@ -101,15 +98,6 @@ ALTER TABLE users DROP COLUMN email;
 jetbase rollback --count 2 --dry-run
 ```
 
-## How Rollback Works
-
-1. **Identifies migrations to roll back** — Based on count or target version
-2. **Finds the migration files** — Locates the corresponding SQL files
-3. **Acquires a lock** — Prevents concurrent operations
-4. **Executes rollback SQL** — Runs the `-- rollback` section of each file
-5. **Updates the database** — Removes the migration record
-6. **Releases the lock**
-
 ## Important Considerations
 
 ### Migration Files Must Exist
@@ -124,8 +112,9 @@ to synchronize the migrations table with existing files before retrying the roll
 
 **Solutions:**
 
-1. Restore the missing file from version control
-2. Run `jetbase fix` to clean up orphaned records
+1. Restore the missing migration file to its correct location.
+2. Alternatively, run `jetbase fix` to synchronize the migrations table with the current set of files.  
+   _Note: This will remove references to the missing migration from tracking. If you need to roll back past that point in the future, you'll need to write a new migration file to handle it safely._
 
 ### Order of Rollback
 
@@ -149,12 +138,10 @@ DROP INDEX IF EXISTS idx_orders_user_id;
 DROP TABLE IF EXISTS orders;
 ```
 
-!!! warning "Destructive Operations"
-Rollback operations like `DROP TABLE` are destructive. Make sure you have backups before rolling back in production!
 
 ## Common Use Cases
 
-### Fix a Mistake in Development
+### Fix a Mistake
 
 ```bash
 # Oops, made a typo in the last migration
@@ -192,7 +179,7 @@ If a rollback fails:
 
 - The failed migration remains in the database
 - An error message shows what went wrong
-- Fix the issue and retry
+- Fix the rollback statement directly in the migration file ( there is no checksum validation for rollback statements)
 
 ```bash
 # Check current state
@@ -202,17 +189,12 @@ jetbase status
 jetbase history
 ```
 
-## Limitations
-
-- Cannot roll back beyond the first migration
-- Requires migration files to be present
-- Cannot use both `--count` and `--to-version` together
 
 ## Notes
 
 - Must be run from inside the `jetbase/` directory
 - Rollbacks are applied in reverse chronological order
-- Always test rollbacks in development before relying on them in production
+- Cannot use both `--count` and `--to-version` together
 
 ## See Also
 
