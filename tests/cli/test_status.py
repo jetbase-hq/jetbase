@@ -125,3 +125,22 @@ def test_status_success_roc_changed(runner, test_db_url, clean_db, setup_migrati
     assert "mi21" in pending_section
     assert "RUNS_ALWAYS" in pending_section
     assert "RUNS_ON_CHANGE" in pending_section
+
+
+def test_status_success_roc_not_migrated(
+    runner, test_db_url, clean_db, setup_migrations
+):
+    os.chdir("jetbase")
+
+    result = runner.invoke(app, ["status"])
+    assert result.exit_code == 0
+
+    applied_start = result.output.index("Migrations Applied")
+    pending_start = result.output.index("Migrations Pending")
+
+    applied_section = result.output[applied_start:pending_start]
+    pending_section = result.output[pending_start:]
+
+    assert "RUNS_ON_CHANGE" not in applied_section
+
+    assert "RUNS_ON_CHANGE" in pending_section

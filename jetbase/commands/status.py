@@ -127,7 +127,7 @@ def status_cmd() -> None:
         if filename not in roc_filenames_migrated:
             description: str = get_description_from_filename(filename=filename)
             pending_table.add_row(
-                get_display_version(migration_type=MigrationType.RUNS_ALWAYS.value),
+                get_display_version(migration_type=MigrationType.RUNS_ON_CHANGE.value),
                 description,
             )
 
