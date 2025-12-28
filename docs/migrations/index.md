@@ -1,0 +1,183 @@
+# Migrations Overview
+
+Learn how to write and organize database migrations with Jetbase.
+
+## What are Migrations?
+
+Migrations are SQL files that describe changes to your database schema. They let you:
+
+- **Version control** your database schema alongside your code
+- **Apply changes** consistently across development, staging, and production
+- **Rollback** changes when something goes wrong
+- **Collaborate** with your team on database changes
+
+## Guides
+
+<div class="grid cards" markdown>
+
+- 📝 **[Writing Migrations](writing-migrations.md)**
+
+  ***
+
+  Learn the syntax and best practices for writing effective migration files.
+
+- 🔄 **[Migration Types](migration-types.md)**
+
+  ***
+
+  Understand versioned, repeatable always, and repeatable on change migrations.
+
+</div>
+
+## Quick Start
+
+### Create a Migration
+
+You can create migrations in two ways:
+
+**Option 1: Using the CLI**
+
+```bash
+jetbase new "create users table"
+```
+
+This automatically generates a properly formatted migration file with a timestamp.
+
+**Option 2: Creating files manually**
+
+Create a file in your `migrations/` directory following the naming convention:
+
+```
+V<version>__<description>.sql
+```
+
+Examples: `V1__create_users_table.sql`, `V1.1__add_email_column.sql`
+
+### Migration Version Order
+
+Jetbase always applies migrations in version order—from lowest to highest.
+
+Whenever you add a new migration file, make sure its version number is higher than any migration that’s already been applied.
+
+If you accidentally create a migration with a lower version number than the last one applied, Jetbase will catch it and let you know before anything happens.
+
+This simple check helps keep your migration history clean, safe, and easy to follow!
+
+!!! tip "Versioning Example"
+    - ✅ Good: `V1.1__create_table.sql` > `V1.2__add_column.sql`
+    - ❌ Bad: `V1.2__add_column.sql` (already applied)  
+      New file: `V1.1__add_last_name_column.sql` ← lower version!
+
+If you ever need to bypass this check *(not recommended)*, you have two options:
+
+- **Command-line:**  
+  Add `--skip-file-validation` when running `jetbase upgrade`:
+  ```bash
+  jetbase upgrade --skip-file-validation
+  ```
+
+
+- **Configuration:**  
+  Set `skip_file_validation = True` in your `env.py` or `pyproject.toml`.
+
+!!! warning
+    If you skip this check, Jetbase will simply *ignore* any migration file whose version is lower than the last applied migration—no error message will be shown, and that migration won't be run.
+
+### Write the SQL
+
+Writing Jetbase SQL migration files is easy! Just follow these simple guidelines:
+
+- **Multiple Statements:** Add as many SQL statements as you need—just make sure each one ends with a semicolon (`;`).
+- **Upgrade & Rollback Sections:** Separate your *upgrade* statements from *rollback* statements by adding a line with `-- rollback`. (Any variation in case and spacing works: `--rollback`, `-- ROLLBACK`, etc.)
+- **Section Rules:** Only a single upgrade section and a single rollback section are allowed. Everything above the first `-- rollback` is considered an upgrade; everything below is a rollback.
+- **Comments:** Feel free to include comments! Just start a line with `--` and Jetbase will ignore it.
+
+That’s it!
+
+Examples:
+
+```sql
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE
+);
+
+CREATE TABLE items (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+);
+
+-- rollback
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS items;
+```
+
+```sql
+-- upgrade
+
+-- users table
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE
+);
+
+-- items table
+CREATE TABLE items (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+);
+
+-- rollback
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS items;
+```
+
+```sql
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE
+);
+
+-- items table
+CREATE TABLE items (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+);
+```
+
+### Apply It
+
+```bash
+jetbase upgrade
+```
+
+## Migration Lifecycle
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Create    │ ──▶ │    Write    │ ──▶ │   Apply     │
+│ jetbase new │     │    SQL      │     │  upgrade    │
+└─────────────┘     └─────────────┘     └─────────────┘
+                                              │
+                                              ▼
+                    ┌─────────────┐     ┌─────────────┐
+                    │   Rollback  │ ◀── │   Oops?     │
+                    │  if needed  │     │             │
+                    └─────────────┘     └─────────────┘
+```
+
+## File Naming
+
+| Type                 | Pattern                    | Example                              |
+| -------------------- | -------------------------- | ------------------------------------ |
+| Versioned            | `V{timestamp}__{desc}.sql` | `V20251225.143022__create_users.sql` |
+| Runs Always          | `RA__{desc}.sql`           | `RA__refresh_views.sql`              |
+| Runs On Change       | `ROC__{desc}.sql`          | `ROC__functions.sql`                 |
+
+## Best Practices
+
+1. **One change per migration** — Keep migrations focused
+2. **Include rollback** — Even if it's just `DROP TABLE`
+3. **Use descriptive names** — Future you will thank you
+4. **Test locally first** — Use dry-run before production
+5. **Don't modify applied migrations** — Create new ones instead
