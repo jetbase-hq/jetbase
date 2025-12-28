@@ -1,7 +1,7 @@
 import datetime as dt
 import os
 
-from jetbase.constants import MIGRATIONS_DIR
+from jetbase.constants import MIGRATIONS_DIR, NEW_MIGRATION_FILE_CONTENT
 from jetbase.exceptions import DirectoryNotFoundError
 
 
@@ -32,10 +32,21 @@ def generate_new_migration_file_cmd(description: str) -> None:
             "If you have already done so, run this command from the jetbase directory."
         )
 
-    timestamp = dt.datetime.now().strftime("%Y%m%d.%H%M%S")
-    filename: str = f"V{timestamp}__{description.replace(' ', '_')}.sql"
+    filename: str = _generate_new_filename(description=description)
     filepath: str = os.path.join(migrations_dir_path, filename)
 
     with open(filepath, "w") as f:  # noqa: F841
-        pass
-    print(f"Created migration file: {filepath}")
+        f.write(NEW_MIGRATION_FILE_CONTENT)
+    print(f"Created migration file: {filename}")
+
+
+def _generate_new_filename(description: str) -> str:
+    """
+    Generate a new filename for a migration file.
+    Args:
+        description (str): A description for the migration file.
+    Returns:
+        str: A new filename for the migration file.
+    """
+    timestamp = dt.datetime.now().strftime("%Y%m%d.%H%M%S")
+    return f"V{timestamp}__{description.replace(' ', '_')}.sql"
