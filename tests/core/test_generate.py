@@ -31,7 +31,7 @@ def test_generate_new_migration_file_cmd_success(tmp_path, capsys):
 
             # Check console output
             captured = capsys.readouterr()
-            assert f"Created migration file: {expected_filepath}" in captured.out
+            assert f"Created migration file: {expected_filename}" in captured.out
 
 
 def test_generate_new_migration_file_cmd_directory_not_found():

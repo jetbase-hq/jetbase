@@ -13,3 +13,8 @@ ENV_FILE_CONTENT: Final[str] = """
 
 sqlalchemy_url = "postgresql://user:password@localhost:5432/mydb"
 """
+
+NEW_MIGRATION_FILE_CONTENT: Final[str] = """-- upgrade
+
+-- rollback
+"""

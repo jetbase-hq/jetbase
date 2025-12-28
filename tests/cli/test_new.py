@@ -5,6 +5,7 @@ from unittest.mock import patch
 from typer.testing import CliRunner
 
 from jetbase.cli.main import app
+from jetbase.constants import NEW_MIGRATION_FILE_CONTENT
 
 runner = CliRunner()
 
@@ -38,3 +39,26 @@ def test_new_command_success(tmp_path):
         expected_filename = "V20251214.160000__create_users_table.sql"
         expected_filepath = Path("migrations") / expected_filename
         assert expected_filepath.exists()
+
+
+def test_new_success_file_content(tmp_path):
+    os.chdir(tmp_path)
+    result = runner.invoke(app, ["init"])
+    os.chdir("jetbase")
+
+    with patch("jetbase.commands.new.dt") as mock_dt:
+        mock_dt.datetime.now.return_value.strftime.return_value = "20251214.160000"
+
+        # Run the command
+        result = runner.invoke(app, ["new", "create users table"])
+
+        # Check command succeeded
+        assert result.exit_code == 0
+
+        expected_filename = "V20251214.160000__create_users_table.sql"
+        expected_filepath = Path("migrations") / expected_filename
+        assert expected_filepath.exists()
+
+        with open(expected_filepath, "r") as f:
+            content = f.read()
+        assert content == NEW_MIGRATION_FILE_CONTENT
