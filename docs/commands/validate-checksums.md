@@ -123,42 +123,10 @@ Checksums help catch when:
 2. **Run checksum validation in CI/CD** — Catch issues before deployment
 3. **Use `--fix` sparingly** — Only when you understand why the mismatch exists
 
-## Common Scenarios
-
-### Accidental Edit
-
-```bash
-# Someone accidentally edited an applied migration
-jetbase validate-checksums
-# Shows: Changes detected in 20251225.143022
-
-# Option 1: Restore the original file from git
-git checkout -- migrations/V20251225.143022__create_users.sql
-
-# Option 2: If the change was intentional
-jetbase validate-checksums --fix
-```
-
-### After Git Merge
-
-```bash
-# After a merge, verify nothing was corrupted
-jetbase validate-checksums
-```
-
-### CI/CD Check
-
-```yaml
-# In your CI pipeline
-- name: Validate migrations
-  run: |
-    cd jetbase
-    jetbase validate-checksums
-```
 
 ## Notes
 
 - Must be run from inside the `jetbase/` directory
 - Only validates migrations that have been applied
-- Uses the `-- upgrade` section of files to calculate checksums
+- Only uses upgrade SQL statements in the migration file to calculate checksums
 

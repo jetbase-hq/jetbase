@@ -87,8 +87,8 @@ CREATE TABLE items (
 
 
 -- rollback
-DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS items;
+DROP TABLE IF EXISTS users;
 ```
 
 !!! tip "Best Practice"
@@ -98,7 +98,6 @@ Include `-- rollback` sections. This allows you to safely undo migrations if nee
 ## Notes
 
 - Must be run from inside the `jetbase/` directory
-- The file is created empty — you need to add your SQL
 - Timestamp ensures migrations are always in chronological order
-- Spaces in the description are automatically converted to underscores
+- You do not have to use the `jetbase new` CLI command to create a new migration. You can create a new file manually in the `jetbase/migrations` directory and follow the `V<version>__<description>.sql` naming convention. For full details and best practices, see [Migrations Overview](../migrations/index.md).
 

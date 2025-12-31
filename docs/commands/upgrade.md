@@ -101,7 +101,7 @@ During upgrade, Jetbase processes three types of migrations. Most developers wil
 Standard migrations that run once, in version order.
 
 ```
-V20251225.143022__create_users.sql
+V20251225.143022__create_users_table.sql
 ```
 
 ### Runs Always (`RA__*`)
@@ -117,30 +117,11 @@ RA__refresh_views.sql
 Migrations that run only when the file content changes.
 
 ```
-ROC__stored_procedures.sql
+ROC__update_view.sql
 ```
 
-Learn more in [Migration Types](../migrations/migration-types.md).
+Learn more in [Migration Types](../advanced/migration-types.md).
 
-## Common Use Cases
-
-```bash
-# First, preview what will run
-jetbase upgrade --dry-run
-
-# If everything looks good, apply
-jetbase upgrade
-```
-
-### Incremental Development
-
-```bash
-# Apply migrations one at a time to test
-jetbase upgrade --count 1
-
-# Check status after each one
-jetbase status
-```
 
 
 ## Error Handling

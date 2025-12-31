@@ -51,10 +51,10 @@ If you are absolutely certain that no migration or fix command is active, you ma
 2. **During migrations**, the lock prevents other processes from starting migrations
 3. **After migrations complete**, the lock is automatically released
 
-For a detailed explanation of how migration locking works, see [Migration Locking](../migrations/migration-locking.md).
+For a detailed explanation of how migration locking works, see [Migration Locking](../advanced/migration-locking.md).
 
 
 - Must be run from inside the `jetbase/` directory
 - The lock is stored in the `jetbase_lock` database table
-- Locks are automatically released on successful migration completion
+- Locks are automatically released whether the migration was successful or an error occurred.
 

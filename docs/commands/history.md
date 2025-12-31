@@ -1,6 +1,6 @@
 # jetbase history
 
-Show the complete migration history.
+Shows you which migrations have been applied to your database, and the exact time each one was applied.
 
 ## Usage
 
@@ -59,9 +59,10 @@ No migrations have been applied yet.
 ### Version Column
 
 - **Versioned migrations** show the version (e.g., `20251220.100000`, `2.4`)
-- **Repeatable migrations** show their type prefix:
-  - `[ROC]` — Repeatable On Change
-  - `[RA]` — Repeatable Always
+- **Repeatable migrations** show their type (see [Migration Types](../advanced/migration-types.md)):
+  - `RUNS_ALWAYS`
+  - `RUNS_ON_CHANGE`
+
 
 ### Order Executed
 
@@ -70,6 +71,7 @@ The sequential order in which migrations were applied to the database. This is u
 - Understanding the timeline of changes
 - Debugging issues that appeared after a specific migration
 - Auditing purposes
+- For repeatable migrations, the order executed that is displayed will show the order during first time it was run (the applied at section will show the most recent timestamp of when it was run)
 
 ### Applied At
 
@@ -79,50 +81,7 @@ The exact timestamp when the migration was applied. The format is:
 YYYY-MM-DD HH:MM:SS.microseconds
 ```
 
-## Difference from `status`
-
-| Command   | Shows                                                |
-| --------- | ---------------------------------------------------- |
-| `status`  | Applied and **pending** migrations                   |
-| `history` | Only applied migrations with **detailed timestamps** |
-
-Use `status` to see what needs to be done. Use `history` for an audit trail.
-
-### Example: Repeatable Migrations in History
-
-If you have repeatable migrations in your project, the history will show them with their respective prefixes when they are applied.
-
-The "Order Executed" column shows the sequence number from when the migration was originally applied for the very first time.
-
-The "Applied At" timestamp displays the most recent time that migration was applied, reflecting the latest update or re-application.
-
-```bash
-jetbase history
-```
-
-Output:
-
-```
-┏━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┳─────────────────────────────┓
-┃ Version      ┃ Description           ┃ Order       ┃ Applied At                  ┃
-┡━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ 20251220.100000 │ create_users_table│ 1            │ 2025-12-20 10:01:03.234120  │
-│ 20251221.093000 │ add_email_to_users│ 2            │ 2025-12-21 09:30:45.782341  │
-│ RUNS_ALWAYS     │ refresh_mat_views │ 3            │ 2025-12-21 09:31:02.441123  │
-│ RUNS_ON_CHANGE  │ stored_procs      │ 4            │ 2025-12-21 09:31:07.002400  │
-└━━━━━━━━━━━━━━┴━━━━━━━━━━━━━━━━━━━━━━┴━━━━━━━━━━━━━━┴─────────────────────────────┘
-```
-
-
-
-
 ## Notes
 
 - Must be run from inside the `jetbase/` directory
 
-
-## See Also
-
-- [`status`](status.md) — View applied and pending migrations
-- [`current`](current.md) — Quick check of the latest version
-- [`upgrade`](upgrade.md) — Apply new migrations
