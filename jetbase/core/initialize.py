@@ -28,5 +28,5 @@ def create_directory_structure(base_path: str) -> None:
 
     print(
         f"Initialized Jetbase project in {Path(base_path).absolute()}\n"
-        "Run cd jetbase to get started!"
+        "Run 'cd jetbase' to get started!"
     )

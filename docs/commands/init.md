@@ -59,7 +59,7 @@ Output:
 
 ```
 Initialized Jetbase project in /path/to/your/project/jetbase
-Run cd jetbase to get started!
+Run 'cd jetbase' to get started!
 ```
 
 ### Complete Workflow
