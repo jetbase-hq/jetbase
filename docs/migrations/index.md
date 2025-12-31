@@ -11,23 +11,6 @@ Migrations are SQL files that describe changes to your database schema. They let
 - **Rollback** changes when something goes wrong
 - **Collaborate** with your team on database changes
 
-## Guides
-
-<div class="grid cards" markdown>
-
-- 📝 **[Writing Migrations](writing-migrations.md)**
-
-  ***
-
-  Learn the syntax and best practices for writing effective migration files.
-
-- 🔄 **[Migration Types](migration-types.md)**
-
-  ***
-
-  Understand versioned, repeatable always, and repeatable on change migrations.
-
-</div>
 
 ## Quick Start
 
@@ -83,13 +66,16 @@ If you ever need to bypass this check *(not recommended)*, you have two options:
 !!! warning
     If you skip this check, Jetbase will simply *ignore* any migration file whose version is lower than the last applied migration—no error message will be shown, and that migration won't be run.
 
-### Write the SQL
+### Writing the Migration File
 
 Writing Jetbase SQL migration files is easy! Just follow these simple guidelines:
 
-- **Multiple Statements:** Add as many SQL statements as you need—just make sure each one ends with a semicolon (`;`).
+- **Multiple Statements:** Add as many SQL statements as you need. Just make sure each one ends with a semicolon (`;`).
 - **Upgrade & Rollback Sections:** Separate your *upgrade* statements from *rollback* statements by adding a line with `-- rollback`. (Any variation in case and spacing works: `--rollback`, `-- ROLLBACK`, etc.)
 - **Section Rules:** Only a single upgrade section and a single rollback section are allowed. Everything above the first `-- rollback` is considered an upgrade; everything below is a rollback.
+
+    💡 You don't have to include a `-- rollback` section (though it's highly recommended!). If you leave it out, Jetbase will treat *all* SQL statements in the file as upgrade statements.
+
 - **Comments:** Feel free to include comments! Just start a line with `--` and Jetbase will ignore it.
 
 That’s it!
@@ -115,21 +101,21 @@ DROP TABLE IF EXISTS items;
 ```sql
 -- upgrade
 
--- users table
+-- my first comment
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     email VARCHAR(255) NOT NULL UNIQUE
 );
 
--- items table
+-- my second comment
 CREATE TABLE items (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
 );
 
 -- rollback
-DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS items;
+DROP TABLE IF EXISTS users;
 ```
 
 ```sql

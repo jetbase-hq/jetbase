@@ -59,7 +59,7 @@ Output:
 
 ```
 Initialized Jetbase project in /path/to/your/project/jetbase
-Run cd jetbase to get started!
+Run 'cd jetbase' to get started!
 ```
 
 ### Complete Workflow
@@ -86,8 +86,3 @@ jetbase upgrade
 - All other Jetbase commands must be run from inside the `jetbase/` directory.
 - The `migrations/` directory will be empty after initialization. Use `jetbase new` to create your first migration, (or create migration files manually. See [Migrations Overview](../migrations/index.md)).
 
-## See Also
-
-- [Getting Started](../getting-started.md) — Complete setup guide
-- [Configuration](../configuration.md) — Learn about configuration options
-- [`new`](new.md) — Create your first migration file

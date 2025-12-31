@@ -58,18 +58,13 @@ All Jetbase commands must be run from inside the `jetbase/` directory.
 Open `env.py` and update the `sqlalchemy_url` with your database connection string:
 
 === "PostgreSQL"
-
     ```python
-    sqlalchemy_url = "postgresql://username:password@localhost:5432/database_name"
+    sqlalchemy_url = "postgresql+psycopg2://user:password@localhost:5432/mydb"
     ```
-
 === "SQLite"
-
     ```python
-    sqlalchemy_url = "sqlite:///path/to/your/database.db"
+    sqlalchemy_url = "sqlite:///mydb.db"
     ```
-
-!!! tip "Connection String Format" - **PostgreSQL**: `postgresql://user:password@host:port/database` - **SQLite**: `sqlite:///relative/path.db` or `sqlite:////absolute/path.db`
 
 ## Creating Your First Migration
 
@@ -89,6 +84,14 @@ migrations/V20251225.143022__create_users_table.sql
 
 The filename format is: `V{timestamp}__{description}.sql`
 
+!!! tip "Manual Migration Files"
+You can also create migration files manually if you prefer! Simply add your migration file to the `jetbase/migrations/` folder and follow the required filename format:  
+`V{version}__{description}.sql`  
+**Example:**  
+`V2.4__create_users_table.sql`
+
+Be sure your file starts with `V`, followed by a version (like `2.4`), then `__`, a short description (use underscores for spaces), and ends with `.sql`.
+
 ### Step 2: Write Your Migration SQL
 
 Open the newly created file and add your SQL statements:
@@ -97,16 +100,23 @@ Open the newly created file and add your SQL statements:
 -- upgrade
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
-    username VARCHAR(50) NOT NULL UNIQUE,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL
+);
+
+CREATE TABLE items (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
 );
 
 -- rollback
-DROP TABLE IF EXISTS users;
+DROP TABLE items;
+DROP TABLE users;
 ```
 
-!!! note "Migration File Structure" - The `-- upgrade` section contains SQL to apply the migration - The `-- rollback` section contains SQL to undo the migration - Always include both sections for safe rollbacks!
+!!! note "Migration File Structure"
+    - The `-- rollback` section contains *only* SQL to undo the migration, and any rollback statements must go **after** `-- rollback`
+
 
 ### Step 3: Apply the Migration
 
@@ -121,6 +131,15 @@ Output:
 ```
 Migration applied successfully: V20251225.143022__create_users_table.sql
 ```
+
+> **Note:**  
+Jetbase uses SQLAlchemy under the hood to manage database connections.  
+For any database other than SQLite, you must install the appropriate Python database driver.  
+For example, to use Jetbase with PostgreSQL:
+```
+pip install psycopg2
+```
+You can also use another compatible driver if you prefer (such as `asyncpg`, `pg8000`, etc.).
 
 ### Step 4: Verify the Migration
 
@@ -146,30 +165,20 @@ Now that you've set up your first migration, explore these topics:
 
 ## Quick Command Reference
 
-| Command                     | Description                             |
-| --------------------------- | --------------------------------------- |
-| `jetbase init`              | Initialize Jetbase in current directory |
-| `jetbase new "description"` | Create a new migration file             |
-| `jetbase upgrade`           | Apply pending migrations                |
-| `jetbase rollback`          | Undo the last migration                 |
-| `jetbase status`            | Show migration status                   |
-| `jetbase history`           | Show migration history                  |
-| `jetbase current`           | Show current migration version          |
+| Command                                       | Description                             |
+| --------------------------------------------- | --------------------------------------- |
+| [`init`](init.md)                             | Initialize Jetbase in current directory |
+| [`new`](new.md)                               | Create a new migration file             |
+| [`upgrade`](upgrade.md)                       | Apply pending migrations                |
+| [`rollback`](rollback.md)                     | Undo migrations                         |
+| [`status`](status.md)                         | Show migration status of all migration files (applied vs. pending)                   |
+| [`history`](history.md)                       | Show migration history                  |
+| [`current`](current.md)                       | Show latest version migrated          |
+| [`lock-status`](lock-status.md)               | Check if migrations are locked          |
+| [`unlock`](unlock.md)                         | Remove migration lock                   |
+| [`validate-checksums`](validate-checksums.md) | Verify migration file integrity         |
+| [`validate-files`](validate-files.md)         | Check for missing migration files       |
+| [`fix`](fix.md)                               | Fix migration issues                 |
+| [`fix-files`](validate-files.md)                     | Fix missing migration files (same as `validate-files --fix`)        |
+| [`fix-checksums`](validate-checksums.md)             | Fix migration file checksums (same as `validate-checksums --fix`) |
 
-## Troubleshooting
-
-### "Jetbase directory not found"
-
-Make sure you're running commands from inside the `jetbase/` directory, not your project root.
-
-### "Connection refused"
-
-Double-check your database connection string in `env.py`. Make sure your database server is running.
-
-### "Permission denied"
-
-Ensure your database user has the necessary permissions to create tables and execute DDL statements.
-
----
-
-Need more help? Check out the [Troubleshooting Guide](troubleshooting.md) or open an issue on GitHub!

@@ -1,6 +1,6 @@
 # jetbase status
 
-Display the current migration status.
+Displays which migrations have been applied and which migrations are pending.
 
 ## Usage
 
@@ -10,40 +10,8 @@ jetbase status
 
 ## Description
 
-The `status` command gives you a clear overview of your migration state, showing both applied migrations and pending ones. It's your go-to command for understanding what's been done and what still needs to be applied.
+The `status` command gives you a clear overview of your migration state, showing both applied migrations and pending ones.
 
-## Output
-
-The command displays two tables:
-
-### Migrations Applied
-
-Shows all migrations that have been successfully applied to the database:
-
-```
-┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Version           ┃ Description                  ┃
-┡━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ 20251225.143022   │ create_users_table           │
-│ 20251225.144500   │ add_email_to_users           │
-│ 20251225.150000   │ create_orders_table          │
-└───────────────────┴──────────────────────────────┘
-```
-
-### Migrations Pending
-
-Shows migrations that exist in your `migrations/` folder but haven't been applied yet:
-
-```
-┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Version           ┃ Description                  ┃
-┡━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ 20251225.160000   │ add_index_on_orders_date     │
-│ 20251225.170000   │ create_products_table        │
-└───────────────────┴──────────────────────────────┘
-```
-
-## Examples
 
 ### Basic Usage
 
@@ -140,8 +108,3 @@ Example:
 - Must be run from inside the `jetbase/` directory
 - Compares files in `migrations/` with database records
 
-## See Also
-
-- [`history`](history.md) — View detailed migration history with timestamps
-- [`current`](current.md) — Quick check of current version
-- [`upgrade`](upgrade.md) — Apply pending migrations

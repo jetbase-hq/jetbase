@@ -117,8 +117,3 @@ Using `--fix` means Jetbase will forget those migrations ever happened. The data
 - Other team members might have the files
 - You're not sure why the files are missing
 
-## See Also
-
-- [`validate-checksums`](validate-checksums.md) — Check for modified migration files
-- [`fix`](fix.md) — Fix both file and checksum issues
-- [`rollback`](rollback.md) — Understand why files are needed

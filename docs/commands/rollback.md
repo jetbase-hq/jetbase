@@ -139,54 +139,21 @@ DROP TABLE IF EXISTS orders;
 ```
 
 
-## Common Use Cases
-
-### Fix a Mistake
-
-```bash
-# Oops, made a typo in the last migration
-jetbase rollback
-
-# Fix the SQL file, then re-apply
-jetbase upgrade
-```
-
-### Revert a Feature Branch
-
-```bash
-# Roll back all migrations from your feature branch
-jetbase rollback --to-version 20251220.100000
-```
-
-### Testing Migrations
-
-```bash
-# Apply migration
-jetbase upgrade --count 1
-
-# Test your application
-
-# Roll back if there are issues
-jetbase rollback
-
-# Or continue with the rest
-jetbase upgrade
-```
-
 ## Error Handling
 
 If a rollback fails:
 
 - The failed migration remains in the database
-- An error message shows what went wrong
 - Fix the rollback statement directly in the migration file ( there is no checksum validation for rollback statements)
+- If you are rolling back multiple migrations in a single command:
+    - Any migrations that are successfully rolled back before an error will remain rolled back
+    - If a failure occurs, all SQL statements for that migration’s rollback section are aborted
+    - Migrations scheduled to roll back after the failed one will not be attempted
+
 
 ```bash
-# Check current state
+# Check current state of what migrations have been applied and what is pending
 jetbase status
-
-# View history to see what's applied
-jetbase history
 ```
 
 
@@ -196,9 +163,3 @@ jetbase history
 - Rollbacks are applied in reverse chronological order
 - Cannot use both `--count` and `--to-version` together
 
-## See Also
-
-- [`upgrade`](upgrade.md) — Apply migrations
-- [`status`](status.md) — Check current state
-- [`history`](history.md) — View migration history
-- [Writing Migrations](../migrations/writing-migrations.md) — Write effective rollback SQL

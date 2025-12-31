@@ -32,18 +32,11 @@ Unlock successful.
 ### ✅ Safe to Unlock
 
 - The lock is stale from a crashed process
-- You've verified no migration is running (checked processes, database connections)
+- You've verified no migration is running (checked processes, team members, AI agents)
 - You're in a development environment and want to reset state
 
 ### ❌ Do NOT Unlock If
 
 - A migration might still be running
 - You're unsure what's happening
-- Other team members might be running migrations
 
-
-## See Also
-
-- [`lock-status`](lock-status.md) — Check if the database is locked
-- [`upgrade`](upgrade.md) — Run migrations
-- [Troubleshooting](../troubleshooting.md) — Common issues and solutions
