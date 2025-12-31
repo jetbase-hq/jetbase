@@ -162,8 +162,3 @@ jetbase validate-checksums
 - Only validates migrations that have been applied
 - Uses the `-- upgrade` section of files to calculate checksums
 
-## See Also
-
-- [`validate-files`](validate-files.md) — Check for missing migration files
-- [`fix`](fix.md) — Fix both checksum and file issues
-- [Writing Migrations](../migrations/writing-migrations.md) — Best practices for migrations

@@ -140,8 +140,3 @@ Example:
 - Must be run from inside the `jetbase/` directory
 - Compares files in `migrations/` with database records
 
-## See Also
-
-- [`history`](history.md) — View detailed migration history with timestamps
-- [`current`](current.md) — Quick check of current version
-- [`upgrade`](upgrade.md) — Apply pending migrations

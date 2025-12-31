@@ -41,7 +41,6 @@ repo_name: jaz-alli/jetbase
 nav:
   - Home: index.md
   - Getting Started: getting-started.md
-  - Configuration: configuration.md
   - Commands:
       - commands/index.md
       - init: commands/init.md
@@ -58,11 +57,13 @@ nav:
       - fix: commands/fix.md
   - Migrations:
       - migrations/index.md
-      - Migration Locking: migrations/migration-locking.md
-      - Migration Types: migrations/migration-types.md
   - Validations:
-      - validations/index.md
-  - Troubleshooting: troubleshooting.md
+    - validations/index.md
+  - Configuration: configuration.md
+  - Advanced:
+      - advanced/index.md
+      - Migration Types: advanced/migration-types.md
+      - Locking: advanced/migration-locking.md
 
 markdown_extensions:
   - admonition

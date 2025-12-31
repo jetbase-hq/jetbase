@@ -1,17 +1,15 @@
 # Welcome to Jetbase 🚀
 
-**Jetbase** is a friendly, lightweight database migration tool for Python projects. Think of it as your database's best friend — helping you keep track of changes, roll them back when needed, and always know exactly where you stand.
+**Jetbase** is a friendly, lightweight database migration tool for Python projects.
 
-## What is Jetbase?
-
-Jetbase helps you manage database schema changes (migrations) in a simple, version-controlled way. Whether you're adding a new table, modifying columns, or need to undo a change, Jetbase has got your back!
+Jetbase helps you manage database migrations in a simple, version-controlled way. Whether you're adding a new table, modifying columns, or need to undo a change, Jetbase makes it super easy!
 
 ### Key Features ✨
 
 - **📦 Simple Setup** — Get started with just one command
 - **⬆️ Easy Upgrades** — Apply pending migrations with confidence
 - **⬇️ Safe Rollbacks** — Made a mistake? No problem, roll it back!
-- **📊 Clear Status** — Always know which migrations have been applied
+- **📊 Clear Status** — Always know which migrations have been applied and which are pending
 - **🔒 Migration Locking** — Prevents conflicts when multiple processes try to migrate
 - **✅ Checksum Validation** — Detects if migration files have been modified
 - **🔄 Repeatable Migrations** — Support for migrations that run on every upgrade
@@ -21,12 +19,15 @@ Jetbase helps you manage database schema changes (migrations) in a simple, versi
 ### Installation
 
 === "pip"
-    ```bash
+
+    ```shell
     pip install jetbase
     ```
+
 === "uv"
-    ```bash
-    uv pip install jetbase
+
+    ```shell
+    uv add jetbase
     ```
 
 ### Initialize Your Project
@@ -43,11 +44,19 @@ This creates a `jetbase/` directory with:
 
 ### Configure Your Database
 
-Edit `jetbase/env.py` with your database connection string:
+Edit `jetbase/env.py` with your database connection string (currently support for postgres and sqlite):
 
-```python
-sqlalchemy_url = "postgresql://user:password@localhost:5432/mydb"
-```
+=== "PostgreSQL"
+
+    ```python
+    sqlalchemy_url = "postgresql+psycopg2://user:password@localhost:5432/mydb"
+    ```
+
+=== "SQLite"
+
+    ```python
+    sqlalchemy_url = "sqlite:///mydb.db"
+    ```
 
 ### Create Your First Migration
 
@@ -55,7 +64,7 @@ sqlalchemy_url = "postgresql://user:password@localhost:5432/mydb"
 jetbase new "create users table"
 ```
 
-This creates a new SQL file like `V20251225.120000__create_users_table.sql`.
+This creates a new SQL file like `V20251225.120000__create_users_and_items_tables.sql`.
 
 ### Write Your Migration
 
@@ -69,7 +78,13 @@ CREATE TABLE users (
     email VARCHAR(255) UNIQUE NOT NULL
 );
 
+CREATE TABLE items (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+);
+
 -- rollback
+DROP TABLE items;
 DROP TABLE users;
 ```
 
@@ -81,11 +96,22 @@ jetbase upgrade
 
 That's it! Your database is now up to date. 🎉
 
+> **Note:**  
+> Jetbase uses SQLAlchemy under the hood to manage database connections.  
+> For any database other than SQLite, you must install the appropriate Python database driver.  
+> For example, to use Jetbase with PostgreSQL:
+
+```
+pip install psycopg2
+```
+
+You can also use another compatible driver if you prefer (such as `asyncpg`, `pg8000`, etc.).
+
 ## Next Steps
 
 - 📖 [Getting Started Guide](getting-started.md) — More detailed setup instructions
 - 🛠️ [Commands Reference](commands/index.md) — Learn all available commands
-- 📝 [Writing Migrations](migrations/writing-migrations.md) — Best practices for migration files
+- 📝 [Writing Migrations](migrations/index.md) — Best practices for migration files
 - ⚙️ [Configuration](configuration.md) — Customize Jetbase for your needs
 
 ## Supported Databases

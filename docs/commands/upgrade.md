@@ -160,9 +160,3 @@ Jetbase stops safely at the first sign of trouble, preventing partial or out-of-
 - Cannot use both `--count` and `--to-version` together
 - The automatic lock prevents concurrent migrations from causing conflicts
 
-## See Also
-
-- [`rollback`](rollback.md) — Undo migrations
-- [`status`](status.md) — Check pending migrations
-- [`history`](history.md) — View applied migrations
-- [Writing Migrations](../migrations/writing-migrations.md) — Learn migration syntax

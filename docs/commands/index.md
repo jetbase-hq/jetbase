@@ -4,20 +4,22 @@ Jetbase provides a set of intuitive commands to manage your database migrations.
 
 ## Quick Reference
 
-| Command                                       | Description                             |
-| --------------------------------------------- | --------------------------------------- |
-| [`init`](init.md)                             | Initialize Jetbase in current directory |
-| [`new`](new.md)                               | Create a new migration file             |
-| [`upgrade`](upgrade.md)                       | Apply pending migrations                |
-| [`rollback`](rollback.md)                     | Undo migrations                         |
-| [`status`](status.md)                         | Show migration status of all migration files (applied vs. pending)                   |
-| [`history`](history.md)                       | Show migration history                  |
-| [`current`](current.md)                       | Show latest version migrated          |
-| [`lock-status`](lock-status.md)               | Check if migrations are locked          |
-| [`unlock`](unlock.md)                         | Remove migration lock                   |
-| [`validate-checksums`](validate-checksums.md) | Verify migration file integrity         |
-| [`validate-files`](validate-files.md)         | Check for missing migration files       |
-| [`fix`](fix.md)                               | Repair migration issues                 |
+| Command                                       | Description                                                        |
+| --------------------------------------------- | ------------------------------------------------------------------ |
+| [`init`](init.md)                             | Initialize Jetbase in current directory                            |
+| [`new`](new.md)                               | Create a new migration file                                        |
+| [`upgrade`](upgrade.md)                       | Apply pending migrations                                           |
+| [`rollback`](rollback.md)                     | Undo migrations                                                    |
+| [`status`](status.md)                         | Show migration status of all migration files (applied vs. pending) |
+| [`history`](history.md)                       | Show migration history                                             |
+| [`current`](current.md)                       | Show latest version migrated                                       |
+| [`lock-status`](lock-status.md)               | Check if migrations are locked                                     |
+| [`unlock`](unlock.md)                         | Remove migration lock                                              |
+| [`validate-checksums`](validate-checksums.md) | Verify migration file integrity                                    |
+| [`validate-files`](validate-files.md)         | Check for missing migration files                                  |
+| [`fix`](fix.md)                               | Fix migration issues                                               |
+| [`fix-files`](validate-files.md)              | Fix missing migration files (same as `validate-files --fix`)       |
+| [`fix-checksums`](validate-checksums.md)      | Fix migration file checksums (same as `validate-checksums --fix`)  |
 
 ## Command Categories
 
@@ -57,7 +59,6 @@ Commands to validate and fix migration issues:
 - **[`validate-checksums`](validate-checksums.md)** — Check for modified migration files
 - **[`validate-files`](validate-files.md)** — Check for missing files
 - **[`fix`](fix.md)** — Automatically repair common issues
-
 
 ## Getting Help
 

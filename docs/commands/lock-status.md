@@ -58,7 +58,3 @@ For a detailed explanation of how migration locking works, see [Migration Lockin
 - The lock is stored in the `jetbase_lock` database table
 - Locks are automatically released on successful migration completion
 
-## See Also
-
-- [`unlock`](unlock.md) — Manually release a stuck lock
-- [`upgrade`](upgrade.md) — Run migrations

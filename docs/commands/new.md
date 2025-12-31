@@ -102,8 +102,3 @@ Include `-- rollback` sections. This allows you to safely undo migrations if nee
 - Timestamp ensures migrations are always in chronological order
 - Spaces in the description are automatically converted to underscores
 
-## See Also
-
-- [Writing Migrations](../migrations/writing-migrations.md) — Learn how to write migration files
-- [`upgrade`](upgrade.md) — Apply your new migration
-- [`status`](status.md) — See pending migrations

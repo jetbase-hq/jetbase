@@ -196,9 +196,3 @@ jetbase history
 - Rollbacks are applied in reverse chronological order
 - Cannot use both `--count` and `--to-version` together
 
-## See Also
-
-- [`upgrade`](upgrade.md) — Apply migrations
-- [`status`](status.md) — Check current state
-- [`history`](history.md) — View migration history
-- [Writing Migrations](../migrations/writing-migrations.md) — Write effective rollback SQL

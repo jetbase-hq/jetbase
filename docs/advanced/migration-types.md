@@ -1,14 +1,22 @@
 # Migration Types 🔄
 
-Jetbase supports three types of migrations, each suited for different use cases.
+Jetbase supports three flexible types of migrations to fit a variety of database needs: Versioned, Runs Always, and Runs on Change.
+
+<span style="font-size: 1em; font-weight: bold;">FOR ALMOST ALL USE CASES, VERSIONED MIGRATIONS ARE ALL YOU’LL EVER NEED.</span>
+
+- **Versioned** migrations — the standard and most common type, referenced throughout the docs. These are what you’ll use for almost every change to your database.
+- **Runs Always** migrations — designed for cases where you want a migration to run every time you upgrade, perfect for things like refreshing views or permissions.
+- **Runs On Change** migrations — ideal when you want a migration to run only if its contents have been modified, great for managing stored procedures or functions.
+
+
 
 ## Overview
 
-| Type                 | Prefix  | Runs When         | Use Case                        |
-| -------------------- | ------- | ----------------- | ------------------------------- |
-| Versioned            | `V`     | Once, in order    | Schema changes, data migrations |
-| Repeatable Always    | `RA__`  | Every upgrade     | Refreshing views, permissions   |
-| Repeatable On Change | `ROC__` | When file changes | Stored procedures, functions    |
+| Type                 | Prefix  | Runs When         | Notes                         |
+| -------------------- | ------- | ----------------- | ----------------------------- |
+| Versioned            | `V`     | Once, in order    | Perfect for most use cases    |
+| Runs Always          | `RA__`  | Every upgrade     |                               |
+| Runs On Change       | `ROC__` | When file changes |                               |
 
 ## Versioned Migrations (`V`)
 
@@ -68,6 +76,7 @@ These migrations run on **every** upgrade, regardless of whether they've changed
 ```
 RA__{description}.sql
 ```
+Runs Always migrations don’t use a version number - just a clear, descriptive name!
 
 ### Examples
 
@@ -119,6 +128,7 @@ These migrations run only when the file content has changed since the last run.
 ```
 ROC__{description}.sql
 ```
+Runs On Change migrations don’t use a version number - just a clear, descriptive name!
 
 ### Examples
 
@@ -225,7 +235,7 @@ When you run `jetbase upgrade`, migrations execute in this order:
 
 ---
 
-## Choosing the Right Type
+## Choosing the Right Type (Use Versioned migrations for almost all use cases!)
 
 ### Use Versioned (`V`) When:
 
@@ -238,37 +248,11 @@ When you run `jetbase upgrade`, migrations execute in this order:
 
 - Operations need to run every deployment
 - Refreshing cached/computed data
-- Setting up permissions after schema changes
 - Maintenance tasks
 
 ### Use Repeatable On Change (`ROC__`) When:
 
 - Managing stored procedures/functions
-- Creating views
-- Setting up triggers
-- Code that evolves but can be replaced
+- Creating / updating views
 
 ---
-
-## File Organization
-
-Suggested structure for your migrations folder:
-
-```
-migrations/
-├── V20251220.100000__create_users.sql
-├── V20251221.100000__create_orders.sql
-├── V20251222.100000__add_indexes.sql
-├── V20251223.100000__create_products.sql
-├── ROC__order_functions.sql
-├── ROC__user_functions.sql
-├── ROC__triggers.sql
-├── RA__refresh_views.sql
-└── RA__permissions.sql
-```
-
-## See Also
-
-- [Writing Migrations](writing-migrations.md) — Syntax and best practices
-- [`upgrade` Command](../commands/upgrade.md) — Running migrations
-- [`status` Command](../commands/status.md) — Viewing migration status
