@@ -3,8 +3,8 @@ from enum import Enum
 from sqlalchemy import TextClause, text
 from sqlalchemy.engine import make_url
 
+from jetbase.database.queries import default_queries
 from jetbase.enums import DatabaseType, MigrationType
-from jetbase.queries import default_queries
 
 
 class BaseQueries:
