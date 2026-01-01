@@ -7,8 +7,9 @@ permissions:
   contents: write
 
 jobs:
-  deploy:
+  publish-docs:
     runs-on: ubuntu-latest
+    if: github.actor == 'jaz-alli'
     steps:
       - uses: actions/checkout@v4
       
@@ -23,3 +24,4 @@ jobs:
       
       - name: Deploy to GitHub Pages
         run: mkdocs gh-deploy --force
+
