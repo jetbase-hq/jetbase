@@ -1,4 +1,4 @@
-from jetbase.core.models import MigrationRecord
+from jetbase.models import MigrationRecord
 from jetbase.repositories.migrations_repo import fetch_latest_versioned_migration
 
 

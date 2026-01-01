@@ -1,6 +1,9 @@
 import os
 
-from jetbase.core.file_parser import parse_rollback_statements, parse_upgrade_statements
+from jetbase.engine.file_parser import (
+    parse_rollback_statements,
+    parse_upgrade_statements,
+)
 from jetbase.enums import MigrationDirectionType
 
 

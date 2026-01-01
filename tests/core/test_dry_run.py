@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from jetbase.core.dry_run import process_dry_run
+from jetbase.engine.dry_run import process_dry_run
 from jetbase.enums import MigrationDirectionType
 
 
@@ -21,7 +21,7 @@ class TestProcessDryRunStatementCount:
         file_path = os.path.join(temp_dir, "V1__empty.sql")
         version_to_filepath = {"1": file_path}
 
-        with patch("jetbase.core.dry_run.parse_upgrade_statements") as mock_parse:
+        with patch("jetbase.engine.dry_run.parse_upgrade_statements") as mock_parse:
             mock_parse.return_value = []
 
             migration_operation: MigrationDirectionType = MigrationDirectionType.UPGRADE
@@ -36,7 +36,7 @@ class TestProcessDryRunStatementCount:
         file_path = os.path.join(temp_dir, "V1__single.sql")
         version_to_filepath = {"1": file_path}
 
-        with patch("jetbase.core.dry_run.parse_upgrade_statements") as mock_parse:
+        with patch("jetbase.engine.dry_run.parse_upgrade_statements") as mock_parse:
             mock_parse.return_value = ["CREATE TABLE users (id INT PRIMARY KEY)"]
 
             process_dry_run(
@@ -59,7 +59,7 @@ class TestProcessDryRunStatementCount:
             "INSERT INTO posts VALUES (1)",
         ]
 
-        with patch("jetbase.core.dry_run.parse_upgrade_statements") as mock_parse:
+        with patch("jetbase.engine.dry_run.parse_upgrade_statements") as mock_parse:
             mock_parse.return_value = statements
 
             process_dry_run(version_to_filepath, MigrationDirectionType.UPGRADE)
@@ -74,7 +74,7 @@ class TestProcessDryRunStatementCount:
 
         rollback_statements = ["DROP TABLE posts", "DROP TABLE users"]
 
-        with patch("jetbase.core.dry_run.parse_rollback_statements") as mock_parse:
+        with patch("jetbase.engine.dry_run.parse_rollback_statements") as mock_parse:
             mock_parse.return_value = rollback_statements
 
             process_dry_run(version_to_filepath, MigrationDirectionType.ROLLBACK)
@@ -105,7 +105,7 @@ class TestProcessDryRunStatementCount:
                 return []
             return []
 
-        with patch("jetbase.core.dry_run.parse_upgrade_statements") as mock_parse:
+        with patch("jetbase.engine.dry_run.parse_upgrade_statements") as mock_parse:
             mock_parse.side_effect = mock_parse_side_effect
 
             process_dry_run(version_to_filepath, MigrationDirectionType.UPGRADE)
@@ -123,7 +123,7 @@ class TestProcessDryRunStatementCount:
         # Create a list with 15 statements
         statements = [f"INSERT INTO test VALUES ({i})" for i in range(15)]
 
-        with patch("jetbase.core.dry_run.parse_upgrade_statements") as mock_parse:
+        with patch("jetbase.engine.dry_run.parse_upgrade_statements") as mock_parse:
             mock_parse.return_value = statements
 
             process_dry_run(version_to_filepath, MigrationDirectionType.UPGRADE)

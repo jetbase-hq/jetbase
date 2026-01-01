@@ -3,7 +3,7 @@ from typing import Any
 from sqlalchemy import Result, Row
 from sqlalchemy.engine import CursorResult
 
-from jetbase.core.models import LockStatus
+from jetbase.models import LockStatus
 from jetbase.queries.base import QueryMethod
 from jetbase.queries.query_loader import get_query
 from jetbase.repositories.db import get_db_connection

@@ -3,12 +3,12 @@ import os
 from rich.console import Console
 from rich.table import Table
 
-from jetbase.core.file_parser import get_description_from_filename
-from jetbase.core.formatters import get_display_version
-from jetbase.core.models import MigrationRecord
-from jetbase.core.repeatable import get_ra_filenames, get_runs_on_change_filepaths
-from jetbase.core.version import get_migration_filepaths_by_version
+from jetbase.engine.file_parser import get_description_from_filename
+from jetbase.engine.formatters import get_display_version
+from jetbase.engine.repeatable import get_ra_filenames, get_runs_on_change_filepaths
+from jetbase.engine.version import get_migration_filepaths_by_version
 from jetbase.enums import MigrationType
+from jetbase.models import MigrationRecord
 from jetbase.repositories.migrations_repo import (
     create_migrations_table_if_not_exists,
     get_existing_on_change_filenames_to_checksums,
@@ -37,98 +37,117 @@ def status_cmd() -> None:
         versioned_migration_records[-1].version if versioned_migration_records else None
     )
 
-    migration_filepaths_by_version_to_be_migrated: dict[str, str] = (
-        get_migration_filepaths_by_version(
-            directory=os.path.join(os.getcwd(), "migrations"),
-            version_to_start_from=latest_migrated_version,
-        )
+    pending_versioned_filepaths: dict[str, str] = get_migration_filepaths_by_version(
+        directory=os.path.join(os.getcwd(), "migrations"),
+        version_to_start_from=latest_migrated_version,
     )
 
     if latest_migrated_version:
-        migration_filepaths_by_version_to_be_migrated = dict(
-            list(migration_filepaths_by_version_to_be_migrated.items())[1:]
+        pending_versioned_filepaths = dict(
+            list(pending_versioned_filepaths.items())[1:]
         )
 
     all_roc_filenames: list[str] = get_ra_filenames()
 
-    roc_filepaths_changed_only: list[str] = get_runs_on_change_filepaths(
-        directory=os.path.join(os.getcwd(), "migrations"), changed_only=True
-    )
-
     roc_filenames_changed_only: list[str] = [
-        os.path.basename(filepath) for filepath in roc_filepaths_changed_only
+        os.path.basename(filepath)
+        for filepath in get_runs_on_change_filepaths(
+            directory=os.path.join(os.getcwd(), "migrations"), changed_only=True
+        )
     ]
 
     roc_filenames_migrated: list[str] = list(
         get_existing_on_change_filenames_to_checksums().keys()
     )
 
-    all_roc_filepaths: list[str] = get_runs_on_change_filepaths(
-        directory=os.path.join(os.getcwd(), "migrations")
-    )
-
     all_roc_filenames: list[str] = [
-        os.path.basename(filepath) for filepath in all_roc_filepaths
+        os.path.basename(filepath)
+        for filepath in get_runs_on_change_filepaths(
+            directory=os.path.join(os.getcwd(), "migrations")
+        )
     ]
 
     console = Console()
 
-    # Table for applied migrations
-    applied_table = Table(
-        title="Migrations Applied", show_header=True, header_style="bold magenta"
-    )
-    applied_table.add_column("Version", style="cyan")
-    applied_table.add_column("Description", style="green")
+    applied_table: Table = _create_migrations_display_table(title="Migrations Applied")
 
-    for record in migration_records:
-        if record.migration_type == MigrationType.VERSIONED.value:
-            applied_table.add_row(record.version, record.description)
-        else:
-            applied_table.add_row(
-                get_display_version(migration_type=record.migration_type),
-                record.description,
-            )
+    _add_applied_rows(table=applied_table, migration_records=migration_records)
 
     console.print(applied_table)
     console.print()
 
-    # Table for pending migrations
-    pending_table = Table(
-        title="Migrations Pending", show_header=True, header_style="bold magenta"
-    )
-    pending_table.add_column("Version", style="cyan")
-    pending_table.add_column("Description", style="green")
+    pending_table: Table = _create_migrations_display_table(title="Migrations Pending")
 
-    for version, filepath in migration_filepaths_by_version_to_be_migrated.items():
-        pending_table.add_row(
+    _add_pending_rows(
+        table=pending_table,
+        pending_versioned_filepaths=pending_versioned_filepaths,
+        migration_records=migration_records,
+        roc_filenames_changed_only=roc_filenames_changed_only,
+        all_roc_filenames=all_roc_filenames,
+        roc_filenames_migrated=roc_filenames_migrated,
+    )
+
+    console.print(pending_table)
+
+
+def _create_migrations_display_table(title: str) -> Table:
+    display_table: Table = Table(
+        title=title, show_header=True, header_style="bold magenta"
+    )
+    display_table.add_column("Version", style="cyan")
+    display_table.add_column("Description", style="green")
+
+    return display_table
+
+
+def _add_applied_rows(table: Table, migration_records: list[MigrationRecord]) -> None:
+    for record in migration_records:
+        if record.migration_type == MigrationType.VERSIONED.value:
+            table.add_row(record.version, record.description)
+        else:
+            table.add_row(
+                get_display_version(migration_type=record.migration_type),
+                record.description,
+            )
+
+
+def _add_pending_rows(
+    table: Table,
+    pending_versioned_filepaths: dict[str, str],
+    migration_records: list[MigrationRecord],
+    roc_filenames_changed_only: list[str],
+    all_roc_filenames: list[str],
+    roc_filenames_migrated: list[str],
+) -> None:
+    for version, filepath in pending_versioned_filepaths.items():
+        table.add_row(
             version, get_description_from_filename(filename=os.path.basename(filepath))
         )
 
-    # Repeatable always
+    # Runs always
     for ra_filename in get_ra_filenames():
         description: str = get_description_from_filename(filename=ra_filename)
-        pending_table.add_row(
+        table.add_row(
             get_display_version(migration_type=MigrationType.RUNS_ALWAYS.value),
             description,
         )
 
-    # Repeatable on change
+    # Runs on change - changed only
     for record in migration_records:
         if (
             record.migration_type == MigrationType.RUNS_ON_CHANGE.value
             and record.filename in roc_filenames_changed_only
         ):
-            pending_table.add_row(
+            table.add_row(
                 get_display_version(migration_type=MigrationType.RUNS_ON_CHANGE.value),
                 record.description,
             )
 
+    # Runs on change - new
     for filename in all_roc_filenames:
         if filename not in roc_filenames_migrated:
             description: str = get_description_from_filename(filename=filename)
-            pending_table.add_row(
+            table.add_row(
                 get_display_version(migration_type=MigrationType.RUNS_ON_CHANGE.value),
                 description,
             )
-
-    console.print(pending_table)

@@ -4,7 +4,7 @@ from typing import Generator
 
 import pytest
 
-from jetbase.core.file_parser import (
+from jetbase.engine.file_parser import (
     _get_raw_description_from_filename,
     _get_version_from_filename,
     _is_valid_version,

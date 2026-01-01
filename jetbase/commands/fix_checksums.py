@@ -1,11 +1,11 @@
 import os
 
 from jetbase.constants import MIGRATIONS_DIR
-from jetbase.core.checksum import calculate_checksum
-from jetbase.core.file_parser import parse_upgrade_statements
-from jetbase.core.lock import migration_lock
-from jetbase.core.validation import run_migration_validations
-from jetbase.core.version import get_migration_filepaths_by_version
+from jetbase.engine.checksum import calculate_checksum
+from jetbase.engine.file_parser import parse_upgrade_statements
+from jetbase.engine.lock import migration_lock
+from jetbase.engine.validation import run_migration_validations
+from jetbase.engine.version import get_migration_filepaths_by_version
 from jetbase.exceptions import (
     MigrationVersionMismatchError,
 )

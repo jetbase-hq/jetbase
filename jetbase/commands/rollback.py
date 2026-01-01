@@ -1,11 +1,11 @@
 import os
 
-from jetbase.core.dry_run import process_dry_run
-from jetbase.core.file_parser import parse_rollback_statements
-from jetbase.core.lock import (
+from jetbase.engine.dry_run import process_dry_run
+from jetbase.engine.file_parser import parse_rollback_statements
+from jetbase.engine.lock import (
     migration_lock,
 )
-from jetbase.core.version import get_migration_filepaths_by_version
+from jetbase.engine.version import get_migration_filepaths_by_version
 from jetbase.enums import MigrationDirectionType
 from jetbase.exceptions import VersionNotFoundError
 from jetbase.repositories.lock_repo import create_lock_table_if_not_exists

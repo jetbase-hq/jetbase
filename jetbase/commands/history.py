@@ -1,10 +1,8 @@
-import datetime as dt
-
 from rich.console import Console
 from rich.table import Table
 
-from jetbase.core.formatters import get_display_version
-from jetbase.core.models import MigrationRecord
+from jetbase.engine.formatters import format_applied_at, get_display_version
+from jetbase.models import MigrationRecord
 from jetbase.repositories.migrations_repo import (
     get_migration_records,
     migrations_table_exists,
@@ -33,12 +31,11 @@ def history_cmd() -> None:
         >>> history_cmd()
         # Displays a formatted table with migration history
     """
+    console: Console = Console()
     table_exists: bool = migrations_table_exists()
     if not table_exists:
-        print("No migrations have been applied.")
+        console.print("[yellow]No migrations have been applied.[/yellow]")
         return None
-
-    console: Console = Console()
 
     migration_records: list[MigrationRecord] = get_migration_records()
     if not migration_records:
@@ -64,13 +61,3 @@ def history_cmd() -> None:
         )
 
     console.print(migration_history_table)
-
-
-def format_applied_at(applied_at: dt.datetime | str | None) -> str:
-    """Format applied_at timestamp for display, handling both datetime and string (sqlite returns a string)."""
-    if applied_at is None:
-        return ""
-    if isinstance(applied_at, str):
-        # SQLite returns strings - just truncate to match format
-        return applied_at[:22]
-    return applied_at.strftime("%Y-%m-%d %H:%M:%S.%f")[:22]

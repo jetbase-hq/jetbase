@@ -1,19 +1,19 @@
 import os
 
 from jetbase.constants import MIGRATIONS_DIR
-from jetbase.core.dry_run import process_dry_run
-from jetbase.core.file_parser import parse_upgrade_statements
-from jetbase.core.lock import migration_lock
-from jetbase.core.models import MigrationRecord
-from jetbase.core.repeatable import (
+from jetbase.engine.dry_run import process_dry_run
+from jetbase.engine.file_parser import parse_upgrade_statements
+from jetbase.engine.lock import migration_lock
+from jetbase.engine.repeatable import (
     get_repeatable_always_filepaths,
     get_runs_on_change_filepaths,
 )
-from jetbase.core.validation import run_migration_validations
-from jetbase.core.version import (
+from jetbase.engine.validation import run_migration_validations
+from jetbase.engine.version import (
     get_migration_filepaths_by_version,
 )
 from jetbase.enums import MigrationDirectionType, MigrationType
+from jetbase.models import MigrationRecord
 from jetbase.repositories.lock_repo import create_lock_table_if_not_exists
 from jetbase.repositories.migrations_repo import (
     create_migrations_table_if_not_exists,
