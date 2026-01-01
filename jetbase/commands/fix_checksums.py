@@ -55,12 +55,54 @@ def fix_checksums_cmd(audit_only: bool = False) -> None:
         skip_checksum_validation=True,
     )
 
-    versions_and_checksums_to_repair: list[tuple[str, str]] = []
+    versions_and_checksums_to_repair: list[tuple[str, str]] = _find_checksum_mismatches(
+        migrated_versions_and_checksums=migrated_versions_and_checksums,
+        latest_migrated_version=latest_migrated_version,
+    )
 
+    if not versions_and_checksums_to_repair:
+        print("All migration checksums are already valid - no drift detected.")
+        return
+
+    if audit_only:
+        _print_audit_report(
+            versions_and_checksums_to_repair=versions_and_checksums_to_repair
+        )
+        return
+
+    _repair_checksums(versions_and_checksums_to_repair=versions_and_checksums_to_repair)
+
+
+def _print_audit_report(
+    versions_and_checksums_to_repair: list[tuple[str, str]],
+) -> None:
+    print("\nJETBASE - Checksum Audit Report")
+    print("----------------------------------------")
+    print("Changes detected in the following files:")
+    for file_version, _ in versions_and_checksums_to_repair:
+        print(f" → {file_version}")
+
+
+def _repair_checksums(versions_and_checksums_to_repair: list[tuple[str, str]]) -> None:
+    with migration_lock():
+        update_migration_checksums(
+            versions_and_checksums=versions_and_checksums_to_repair
+        )
+        for version, _ in versions_and_checksums_to_repair:
+            print(f"Repaired checksum for version: {version}")
+
+    print("Successfully repaired checksums")
+
+
+def _find_checksum_mismatches(
+    migrated_versions_and_checksums: list[tuple[str, str]], latest_migrated_version: str
+) -> list[tuple[str, str]]:
     migration_filepaths_by_version: dict[str, str] = get_migration_filepaths_by_version(
         directory=os.path.join(os.getcwd(), MIGRATIONS_DIR),
         end_version=latest_migrated_version,
     )
+
+    versions_and_checksums_to_repair: list[tuple[str, str]] = []
 
     for index, (file_version, filepath) in enumerate(
         migration_filepaths_by_version.items()
@@ -82,21 +124,4 @@ def fix_checksums_cmd(audit_only: bool = False) -> None:
                 )
             )
 
-    if not versions_and_checksums_to_repair:
-        print("All migration checksums are already valid - no drift detected.")
-        return
-
-    if audit_only:
-        print("\nJETBASE - Checksum Audit Report")
-        print("----------------------------------------")
-        print("Changes detected in the following files:")
-        for file_version, _ in versions_and_checksums_to_repair:
-            print(f" → {file_version}")
-
-    with migration_lock():
-        update_migration_checksums(
-            versions_and_checksums=versions_and_checksums_to_repair
-        )
-        for version, _ in versions_and_checksums_to_repair:
-            print(f"Repaired checksum for version: {version}")
-            print("Successfully repaired checksums")
+    return versions_and_checksums_to_repair
