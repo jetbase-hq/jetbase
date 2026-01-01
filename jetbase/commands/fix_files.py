@@ -55,32 +55,47 @@ def fix_files_cmd(audit_only: bool = False) -> None:
             missing_repeatables.append(r_migration.filename)
 
     if audit_only:
-        if missing_versions or missing_repeatables:
-            print("The following migrations are missing their corresponding files:")
-            for version in missing_versions:
-                print(f"→ {version}")
-            for r_file in missing_repeatables:
-                print(f"→ {r_file}")
-
-        else:
-            print("All migrations have corresponding files.")
+        _print_audit_report(
+            missing_versions=missing_versions, missing_repeatables=missing_repeatables
+        )
         return
 
-    if not audit_only:
-        if missing_versions or missing_repeatables:
-            with migration_lock():
-                if missing_versions:
-                    delete_missing_versions(versions=missing_versions)
-                    print("Stopped tracking the following missing versions:")
-                    for version in missing_versions:
-                        print(f"→ {version}")
+    _remove_missing_migrations(
+        missing_versions=missing_versions, missing_repeatables=missing_repeatables
+    )
 
-                if missing_repeatables:
-                    delete_missing_repeatables(repeatable_filenames=missing_repeatables)
-                    print(
-                        "Removed the following missing repeatable migrations from the database:"
-                    )
-                    for r_file in missing_repeatables:
-                        print(f"→ {r_file}")
-        else:
-            print("No missing migration files.")
+
+def _print_audit_report(
+    missing_versions: list[str], missing_repeatables: list[str]
+) -> None:
+    if missing_versions or missing_repeatables:
+        print("The following migrations are missing their corresponding files:")
+        for version in missing_versions:
+            print(f"→ {version}")
+        for r_file in missing_repeatables:
+            print(f"→ {r_file}")
+
+    else:
+        print("All migrations have corresponding files.")
+
+
+def _remove_missing_migrations(
+    missing_versions: list[str], missing_repeatables: list[str]
+) -> None:
+    if missing_versions or missing_repeatables:
+        with migration_lock():
+            if missing_versions:
+                delete_missing_versions(versions=missing_versions)
+                print("Stopped tracking the following missing versions:")
+                for version in missing_versions:
+                    print(f"→ {version}")
+
+            if missing_repeatables:
+                delete_missing_repeatables(repeatable_filenames=missing_repeatables)
+                print(
+                    "Removed the following missing repeatable migrations from the database:"
+                )
+                for r_file in missing_repeatables:
+                    print(f"→ {r_file}")
+    else:
+        print("No missing migration files.")
