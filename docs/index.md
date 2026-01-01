@@ -1,6 +1,6 @@
 # Welcome to Jetbase 🚀
 
-**Jetbase** is a friendly, lightweight database migration tool for Python projects.
+**Jetbase** is a simple, lightweight database migration tool for Python projects.
 
 Jetbase helps you manage database migrations in a simple, version-controlled way. Whether you're adding a new table, modifying columns, or need to undo a change, Jetbase makes it super easy!
 
