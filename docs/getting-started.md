@@ -165,20 +165,20 @@ Now that you've set up your first migration, explore these topics:
 
 ## Quick Command Reference
 
-| Command                                       | Description                             |
-| --------------------------------------------- | --------------------------------------- |
-| [`init`](init.md)                             | Initialize Jetbase in current directory |
-| [`new`](new.md)                               | Create a new migration file             |
-| [`upgrade`](upgrade.md)                       | Apply pending migrations                |
-| [`rollback`](rollback.md)                     | Undo migrations                         |
-| [`status`](status.md)                         | Show migration status of all migration files (applied vs. pending)                   |
-| [`history`](history.md)                       | Show migration history                  |
-| [`current`](current.md)                       | Show latest version migrated          |
-| [`lock-status`](lock-status.md)               | Check if migrations are locked          |
-| [`unlock`](unlock.md)                         | Remove migration lock                   |
-| [`validate-checksums`](validate-checksums.md) | Verify migration file integrity         |
-| [`validate-files`](validate-files.md)         | Check for missing migration files       |
-| [`fix`](fix.md)                               | Fix migration issues                 |
-| [`fix-files`](validate-files.md)                     | Fix missing migration files (same as `validate-files --fix`)        |
-| [`fix-checksums`](validate-checksums.md)             | Fix migration file checksums (same as `validate-checksums --fix`) |
+| Command                                                 | Description                             |
+| ------------------------------------------------------- | --------------------------------------- |
+| [`init`](commands/init.md)                              | Initialize Jetbase in current directory |
+| [`new`](commands/new.md)                                | Create a new migration file             |
+| [`upgrade`](commands/upgrade.md)                        | Apply pending migrations                |
+| [`rollback`](commands/rollback.md)                      | Undo migrations                         |
+| [`status`](commands/status.md)                          | Show migration status of all migration files (applied vs. pending) |
+| [`history`](commands/history.md)                        | Show migration history                  |
+| [`current`](commands/current.md)                        | Show latest version migrated            |
+| [`lock-status`](commands/lock-status.md)                | Check if migrations are locked          |
+| [`unlock`](commands/unlock.md)                          | Remove migration lock                   |
+| [`validate-checksums`](commands/validate-checksums.md)  | Verify migration file integrity         |
+| [`validate-files`](commands/validate-files.md)          | Check for missing migration files       |
+| [`fix`](commands/fix.md)                                | Fix migration issues                    |
+| [`fix-files`](commands/validate-files.md)               | Fix missing migration files (same as `validate-files --fix`) |
+| [`fix-checksums`](commands/validate-checksums.md)       | Fix migration file checksums (same as `validate-checksums --fix`) |
 
