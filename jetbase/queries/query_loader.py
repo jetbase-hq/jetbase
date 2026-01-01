@@ -16,13 +16,16 @@ class DatabaseType(Enum):
 
 def get_database_type() -> DatabaseType:
     """
-    Infer the database type from the SQLAlchemy URL.
+    Detect the database type from the configured SQLAlchemy URL.
+
+    Reads the sqlalchemy_url from configuration and determines the
+    database backend type.
 
     Returns:
-        DatabaseType: The detected database type
+        DatabaseType: The detected database type (postgresql or sqlite).
 
     Raises:
-        ValueError: If the database type is not supported
+        ValueError: If the database type is not supported.
     """
     sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
     engine: Engine = create_engine(url=sqlalchemy_url)
@@ -38,10 +41,16 @@ def get_database_type() -> DatabaseType:
 
 def get_queries() -> type[BaseQueries]:
     """
-    Get the appropriate query class based on the database type.
+    Get the appropriate query class for the current database type.
+
+    Returns the PostgresQueries or SQLiteQueries class based on the
+    detected database type.
 
     Returns:
-        type[BaseQueries]: The query class for the detected database
+        type[BaseQueries]: The database-specific query class.
+
+    Raises:
+        ValueError: If the database type is not supported.
     """
     db_type = get_database_type()
 
@@ -58,11 +67,20 @@ def get_query(query_name: QueryMethod, **kwargs) -> TextClause:
     """
     Get a specific query for the current database type.
 
+    Retrieves the appropriate database-specific query by looking up the
+    query method on the correct query class for the current database.
+
     Args:
-        query_name: Name of the query method (e.g., 'latest_version_query')
+        query_name (QueryMethod): The enum value identifying which query
+            to retrieve.
+        **kwargs: Additional arguments to pass to the query method.
 
     Returns:
-        TextClause: The database-specific query
+        TextClause: The database-specific SQLAlchemy TextClause query.
+
+    Example:
+        >>> get_query(QueryMethod.LATEST_VERSION_QUERY)
+        <sqlalchemy.sql.elements.TextClause>
     """
     queries = get_queries()
     method = getattr(queries, query_name.value)

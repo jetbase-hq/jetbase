@@ -13,6 +13,27 @@ from jetbase.constants import ENV_FILE
 
 @dataclass
 class JetbaseConfig:
+    """
+    Configuration settings for Jetbase migrations.
+
+    This dataclass holds all configuration values loaded from env.py,
+    environment variables, or TOML configuration files.
+
+    Attributes:
+        sqlalchemy_url (str): The SQLAlchemy database connection URL.
+        postgres_schema (str | None): Optional PostgreSQL schema to use.
+            Defaults to None.
+        skip_checksum_validation (bool): If True, skips validation that
+            migration files haven't been modified. Defaults to False.
+        skip_file_validation (bool): If True, skips validation that all
+            migration files exist. Defaults to False.
+        skip_validation (bool): If True, skips all validations.
+            Defaults to False.
+
+    Raises:
+        TypeError: If any boolean field receives a non-boolean value.
+    """
+
     sqlalchemy_url: str
     postgres_schema: str | None = None
     skip_checksum_validation: bool = False
@@ -65,31 +86,32 @@ def get_config(
     required: set[str] | None = None,
 ) -> JetbaseConfig:
     """
-    Load configuration values from various sources in priority order.
+    Load configuration from env.py, environment variables, or TOML files.
 
-    Searches for values in the following order:
-    1. config.py file
+    Searches for configuration values in the following priority order:
+    1. env.py file in the current directory
     2. Environment variables (JETBASE_{KEY_IN_UPPERCASE})
     3. jetbase.toml file
-    4. pyproject.toml file
+    4. pyproject.toml [tool.jetbase] section
 
     Args:
-        keys: List of configuration keys to retrieve
-        defaults: Optional dict of default values for keys
-        required: Optional set of keys that must be found (raises ValueError if missing)
+        keys (list[str]): List of configuration keys to retrieve.
+            Defaults to ALL_KEYS.
+        defaults (dict[str, Any] | None): Dictionary of default values
+            for optional configuration keys. Defaults to DEFAULT_VALUES.
+        required (set[str] | None): Set of keys that must be found.
+            Defaults to None.
 
     Returns:
-        dict: Dictionary with all requested configuration values
+        JetbaseConfig: Configuration dataclass with all requested values.
 
     Raises:
-        ValueError: If a required key is not found in any source
+        ValueError: If a required key is not found in any configuration source.
 
     Example:
-        config = get_config(
-            keys=["sqlalchemy_url", "postgres_schema", "enforce_checksum_validation"],
-            defaults={"enforce_checksum_validation": True},
-            required={"sqlalchemy_url"}
-        )
+        >>> config = get_config(required={"sqlalchemy_url"})
+        >>> config.sqlalchemy_url
+        'postgresql://localhost/mydb'
     """
     defaults = defaults or {}
     required = required or set()
@@ -113,13 +135,17 @@ def get_config(
 
 def _get_config_value(key: str) -> Any | None:
     """
-    Get a single configuration value from all sources in priority order.
+    Get a configuration value from all sources in priority order.
+
+    Checks env.py, environment variables, jetbase.toml, and pyproject.toml
+    in that order, returning the first value found.
 
     Args:
-        key: The configuration key to retrieve
+        key (str): The configuration key to retrieve.
 
     Returns:
-        The configuration value from the first available source, or None
+        Any | None: The configuration value from the first available source,
+            or None if not found in any source.
     """
     # Try env.py
     value = _get_config_from_env_py(key)
@@ -152,12 +178,16 @@ def _get_config_from_env_py(key: str, filepath: str = ENV_FILE) -> Any | None:
     """
     Load a configuration value from the env.py file.
 
+    Dynamically imports the env.py file and retrieves the specified attribute.
+
     Args:
-        key: The configuration key to retrieve
-        filepath: Path to the config file
+        key (str): The configuration key to retrieve.
+        filepath (str): Path to the env.py file relative to current directory.
+            Defaults to ENV_FILE.
 
     Returns:
-        Any | None: The configuration value if found, otherwise None
+        Any | None: The configuration value if the attribute exists,
+            otherwise None.
     """
     config_path: str = os.path.join(os.getcwd(), filepath)
 
@@ -186,11 +216,11 @@ def _get_config_from_jetbase_toml(
     Load a configuration value from the jetbase.toml file.
 
     Args:
-        key: The configuration key to retrieve
-        filepath: Path to the jetbase.toml file
+        key (str): The configuration key to retrieve.
+        filepath (str): Path to the jetbase.toml file. Defaults to "jetbase.toml".
 
     Returns:
-        Any | None: The configuration value if found, otherwise None
+        Any | None: The configuration value if found, otherwise None.
     """
     if not os.path.exists(filepath):
         return None
@@ -205,14 +235,15 @@ def _get_config_from_jetbase_toml(
 
 def _get_config_from_pyproject_toml(key: str, filepath: Path) -> Any | None:
     """
-    Load a configuration value from the pyproject.toml file.
+    Load a configuration value from the pyproject.toml [tool.jetbase] section.
 
     Args:
-        key: The configuration key to retrieve
-        filepath: Path to the pyproject.toml file
+        key (str): The configuration key to retrieve.
+        filepath (Path): Path to the pyproject.toml file.
 
     Returns:
-        Any | None: The configuration value if found, otherwise None
+        Any | None: The configuration value if found in the [tool.jetbase]
+            section, otherwise None.
     """
     with open(filepath, "rb") as f:
         pyproject_data = tomli.load(f)
@@ -226,19 +257,18 @@ def _get_config_from_pyproject_toml(key: str, filepath: Path) -> Any | None:
 
 def _find_pyproject_toml(start: Path | None = None) -> Path | None:
     """
-    Locate the directory containing pyproject.toml by traversing upward from a starting directory.
+    Find pyproject.toml by traversing up from the starting directory.
 
-    This function walks up the directory tree from the specified starting point (or current
-    working directory if not specified) until it finds a pyproject.toml file or reaches the
-    filesystem root.
+    Walks up the directory tree from the specified starting point until
+    it finds a pyproject.toml file or reaches the filesystem root.
 
     Args:
-        start (Path | None, optional): The directory to start searching from. If None,
-            uses the current working directory. Defaults to None.
+        start (Path | None): The directory to start searching from.
+            Defaults to None, which uses the current working directory.
 
     Returns:
-        Path | None: The Path object pointing to the directory containing pyproject.toml
-            if found, otherwise None if the file is not found before reaching the root.
+        Path | None: The directory containing pyproject.toml if found,
+            otherwise None.
     """
     if start is None:
         start = Path.cwd()
@@ -258,15 +288,17 @@ def _find_pyproject_toml(start: Path | None = None) -> Path | None:
 
 def _get_config_from_env_var(key: str) -> Any | None:
     """
-    Load a configuration value from an environment variable.
+    Load a configuration value from a JETBASE_{KEY} environment variable.
 
-    The environment variable name is constructed as JETBASE_{KEY_IN_UPPERCASE}.
+    Converts "true" and "false" string values to boolean True and False.
 
     Args:
-        key: The configuration key to retrieve
+        key (str): The configuration key to retrieve. Will be converted
+            to uppercase and prefixed with "JETBASE_".
 
     Returns:
-        Any | None: The configuration value if found, otherwise None
+        Any | None: The environment variable value if set, otherwise None.
+            Boolean strings are converted to Python booleans.
     """
     env_var_name = f"JETBASE_{key.upper()}"
     config_value: str | None = os.getenv(env_var_name, None)
@@ -280,14 +312,17 @@ def _get_config_from_env_var(key: str) -> Any | None:
 
 def _get_config_help_message(key: str) -> str:
     """
-    Return a formatted help message for configuring a specific key.
+    Return a formatted help message for configuring a missing key.
+
+    Provides examples showing all the different methods available to
+    configure the specified key.
 
     Args:
-        key: The configuration key that was not found
+        key (str): The configuration key that was not found.
 
     Returns:
-        str: A multi-line help message describing the different methods
-            to configure the specified key.
+        str: Multi-line help message with examples for env.py, environment
+            variables, jetbase.toml, and pyproject.toml configuration.
     """
     env_var_name = f"JETBASE_{key.upper()}"
     return (

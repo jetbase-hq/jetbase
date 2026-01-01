@@ -11,18 +11,19 @@ from jetbase.queries.base import detect_db
 @contextmanager
 def get_db_connection() -> Generator[Connection, None, None]:
     """
-    Context manager that yields a database connection for use in database operations.
+    Context manager that yields a database connection with a transaction.
 
-    This function retrieves the current SQLAlchemy database URL from configuration,
-    creates an engine, and yields a connection with a transaction opened. For PostgreSQL,
-    if a schema is specified in the config, it sets the search_path accordingly.
+    Creates a database connection using the configured SQLAlchemy URL,
+    opens a transaction, and yields the connection. For PostgreSQL,
+    sets the search_path if a schema is configured.
 
     Yields:
-        Connection: A SQLAlchemy Connection object.
+        Connection: A SQLAlchemy Connection object within an active
+            transaction.
 
-    Usage:
-        with get_db_connection() as conn:
-            # Use conn to interact with the database
+    Example:
+        >>> with get_db_connection() as conn:
+        ...     conn.execute(query)
     """
     sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
     engine: Engine = create_engine(url=sqlalchemy_url)

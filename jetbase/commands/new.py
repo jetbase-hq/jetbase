@@ -8,20 +8,24 @@ from jetbase.exceptions import DirectoryNotFoundError
 def generate_new_migration_file_cmd(description: str) -> None:
     """
     Generate a new migration file with a timestamped filename.
-    This function creates a new SQL migration file in the migrations directory with
-    a filename format of V{timestamp}__{description}.sql. The timestamp is in the
-    format YYYYMMDD.HHMMSS.
+
+    Creates a new SQL migration file in the migrations directory with a
+    filename format of V{timestamp}__{description}.sql. The file contains
+    template sections for upgrade and rollback SQL statements.
+
     Args:
-        description (str): A description for the migration file.
-            Spaces in the description will be replaced with underscores in the
-            filename.
-    Raises:
-        DirectoryNotFoundError: If the migrations directory is not found.
+        description (str): A human-readable description for the migration.
+            Spaces will be replaced with underscores in the filename.
+
     Returns:
-        None
-    Examples:
+        None: Prints the created filename to stdout.
+
+    Raises:
+        DirectoryNotFoundError: If the migrations directory does not exist.
+
+    Example:
         >>> generate_new_migration_file_cmd("create users table")
-        Created migration file: jetbase/migrations/V20251201.120000__create_users_table.sql
+        Created migration file: V20251201.120000__create_users_table.sql
     """
 
     migrations_dir_path: str = os.path.join(os.getcwd(), MIGRATIONS_DIR)
@@ -42,11 +46,20 @@ def generate_new_migration_file_cmd(description: str) -> None:
 
 def _generate_new_filename(description: str) -> str:
     """
-    Generate a new filename for a migration file.
+    Generate a timestamped filename for a migration.
+
+    Creates a filename using the current timestamp in YYYYMMDD.HHMMSS format
+    followed by the description with spaces converted to underscores.
+
     Args:
-        description (str): A description for the migration file.
+        description (str): A human-readable description for the migration.
+
     Returns:
-        str: A new filename for the migration file.
+        str: Formatted filename like "V20251201.120000__description.sql".
+
+    Example:
+        >>> _generate_new_filename("add users")
+        'V20251201.120000__add_users.sql'
     """
     timestamp = dt.datetime.now().strftime("%Y%m%d.%H%M%S")
     return f"V{timestamp}__{description.replace(' ', '_')}.sql"

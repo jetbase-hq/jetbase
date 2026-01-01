@@ -4,6 +4,20 @@ from jetbase.exceptions import DirectoryNotFoundError
 
 
 def validate_jetbase_directory() -> None:
+    """
+    Ensure command is run from jetbase directory with migrations folder.
+
+    Validates that the current working directory is named 'jetbase' and
+    contains a 'migrations' subdirectory. This validation is required
+    before running most Jetbase CLI commands.
+
+    Returns:
+        None: Returns silently if validation passes.
+
+    Raises:
+        DirectoryNotFoundError: If the current directory is not named
+            'jetbase' or if the 'migrations' subdirectory does not exist.
+    """
     current_dir = Path.cwd()
 
     # Check if current directory is named 'jetbase'

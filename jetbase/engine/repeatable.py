@@ -12,6 +12,22 @@ from jetbase.repositories.migrations_repo import (
 
 
 def get_repeatable_always_filepaths(directory: str) -> list[str]:
+    """
+    Get file paths for all runs-always (RA__) migrations in a directory.
+
+    Scans the directory for migration files starting with the RA__ prefix
+    and validates their filename format.
+
+    Args:
+        directory (str): Path to the migrations directory to scan.
+
+    Returns:
+        list[str]: Sorted list of absolute file paths for RA__ migrations.
+
+    Raises:
+        InvalidMigrationFilenameError: If any file has an invalid format.
+        MigrationFilenameTooLongError: If any filename exceeds 512 characters.
+    """
     repeatable_always_filepaths: list[str] = []
     for root, _, files in os.walk(directory):
         for filename in files:
@@ -27,6 +43,25 @@ def get_repeatable_always_filepaths(directory: str) -> list[str]:
 def get_runs_on_change_filepaths(
     directory: str, changed_only: bool = False
 ) -> list[str]:
+    """
+    Get file paths for runs-on-change (ROC__) migrations in a directory.
+
+    Scans the directory for migration files starting with the ROC__ prefix.
+    Optionally filters to only include files whose checksums have changed
+    since they were last applied.
+
+    Args:
+        directory (str): Path to the migrations directory to scan.
+        changed_only (bool): If True, only returns files that have been
+            modified since last migration. Defaults to False.
+
+    Returns:
+        list[str]: Sorted list of absolute file paths for ROC__ migrations.
+
+    Raises:
+        InvalidMigrationFilenameError: If any file has an invalid format.
+        MigrationFilenameTooLongError: If any filename exceeds 512 characters.
+    """
     runs_on_change_filepaths: list[str] = []
     for root, _, files in os.walk(directory):
         for filename in files:
@@ -54,14 +89,13 @@ def get_runs_on_change_filepaths(
 
 def get_ra_filenames() -> list[str]:
     """
-    Retrieve all Repeatable Always (RA) migration filenames from the migrations directory.
+    Get all runs-always (RA__) migration filenames from the migrations directory.
 
-    This function scans the 'migrations' directory in the current working directory
-    for files that follow the Repeatable Always naming convention (starting with 'RA__').
-    It returns a list of these filenames.
+    Scans the 'migrations' subdirectory in the current working directory
+    for files starting with the RA__ prefix.
 
     Returns:
-        list[str]: A list of Repeatable Always migration filenames.
+        list[str]: List of RA__ migration filenames (not full paths).
     """
     ra_filenames: list[str] = []
     for root, _, files in os.walk(os.path.join(os.getcwd(), "migrations")):
@@ -73,14 +107,13 @@ def get_ra_filenames() -> list[str]:
 
 def get_repeatable_filenames() -> list[str]:
     """
-    Retrieve all Repeatable migration filenames from the migrations directory.
+    Get all repeatable migration filenames from the migrations directory.
 
-    This function scans the 'migrations' directory in the current working directory
-    for files that follow the Repeatable naming convention (starting with 'RA__' or 'RC__').
-    It returns a list of these filenames.
+    Scans the 'migrations' subdirectory in the current working directory
+    for files starting with either RA__ or ROC__ prefix.
 
     Returns:
-        list[str]: A list of Repeatable migration filenames.
+        list[str]: List of all repeatable migration filenames (not full paths).
     """
     repeatable_filenames: list[str] = []
     for root, _, files in os.walk(os.path.join(os.getcwd(), "migrations")):

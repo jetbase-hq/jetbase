@@ -189,6 +189,12 @@ def new(
 
 
 def main() -> None:
+    """
+    Entry point for the Jetbase CLI application.
+
+    Initializes and runs the Typer application that handles all CLI commands
+    including migrations, rollbacks, and database management operations.
+    """
     app()
 
 

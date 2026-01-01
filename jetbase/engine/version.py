@@ -18,28 +18,23 @@ from jetbase.exceptions import (
 
 def _get_version_key_from_filename(filename: str) -> str:
     """
-    Extract and normalize version key from a filename.
+    Extract and normalize the version key from a migration filename.
 
-    The function extracts the version part from a filename that follows the format:
-    'V{version}__{description}.sql' where version can be like '1', '1_1', or '1.1'.
+    Parses the version portion between 'V' and '__', then normalizes
+    underscores to periods for consistent version comparison.
 
     Args:
-        filename (str): The filename to extract version from.
-            Must follow pattern like 'V1__description.sql' or 'V1_1__description.sql'
+        filename (str): The migration filename to parse.
 
     Returns:
-        str: Normalized version string where underscores are replaced with periods.
+        str: Normalized version string with periods as separators.
 
     Raises:
         ValueError: If the filename doesn't follow the expected format.
 
-    Examples:
-        >>> _get_version_key_from_filename("V1__my_description.sql")
-        '1'
-        >>> _get_version_key_from_filename("V1_1__my_description.sql")
-        '1.1'
-        >>> _get_version_key_from_filename("V1.1__my_description.sql")
-        '1.1'
+    Example:
+        >>> _get_version_key_from_filename("V1_2__desc.sql")
+        '1.2'
     """
     try:
         version = filename.split("__")[0][1:]
@@ -58,34 +53,33 @@ def get_migration_filepaths_by_version(
     end_version: str | None = None,
 ) -> dict[str, str]:
     """
-    Retrieve migration file paths organized by version number.
+    Get versioned migration file paths sorted by version number.
 
-    Walks through the specified directory to find SQL migration files and creates
-    a dictionary mapping version strings to their file paths. Files are validated
-    for proper naming format and length. Results can be filtered by version range.
+    Scans the directory for SQL migration files, validates their format,
+    and returns a dictionary mapping version strings to file paths.
+    Results can be filtered by version range.
 
     Args:
-        directory (str): The directory path to search for SQL migration files.
-        version_to_start_from (str | None): Optional minimum version (inclusive).
-            Only files with versions >= this value are included. Defaults to None.
-        end_version (str | None): Optional maximum version (exclusive).
-            Only files with versions < this value are included. Defaults to None.
+        directory (str): Path to the migrations directory to scan.
+        version_to_start_from (str | None): Minimum version to include
+            (inclusive). If provided, only files with versions >= this
+            are returned. Defaults to None.
+        end_version (str | None): Maximum version to include (inclusive).
+            If provided, only files with versions <= this are returned.
+            Defaults to None.
 
     Returns:
-        dict[str, str]: Dictionary mapping version strings to file paths,
-            sorted in ascending order by version number.
+        dict[str, str]: Dictionary mapping normalized version strings
+            to their absolute file paths, sorted by version number.
 
     Raises:
-        InvalidMigrationFilenameError: If a filename doesn't match the required format.
-        MigrationFilenameTooLongError: If a filename exceeds the maximum length of 512 characters.
-        DuplicateMigrationVersionError: If duplicate migration versions are detected.
+        InvalidMigrationFilenameError: If a file has an invalid format.
+        MigrationFilenameTooLongError: If a filename exceeds 512 characters.
+        DuplicateMigrationVersionError: If duplicate versions are detected.
 
     Example:
-        >>> get_migration_filepaths_by_version('/path/to/migrations')
-        {'1.0.0': '/path/to/migrations/V1_0_0__init.sql',
-         '1.2.0': '/path/to/migrations/V1_2_0__add_users.sql'}
-        >>> get_migration_filepaths_by_version('/path/to/migrations', version_to_start_from='1.1.0')
-        {'1.2.0': '/path/to/migrations/V1_2_0__add_users.sql'}
+        >>> get_migration_filepaths_by_version('/migrations')
+        {'1.0': '/migrations/V1__init.sql', '1.1': '/migrations/V1_1__add.sql'}
     """
     version_to_filepath_dict: dict[str, str] = {}
     seen_versions: set[str] = set()

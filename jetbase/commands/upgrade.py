@@ -34,12 +34,35 @@ def upgrade_cmd(
     skip_file_validation: bool = False,
 ) -> None:
     """
-    Run database migrations by applying all pending SQL migration files.
-    Executes migration files in order starting from the last migrated version + 1,
-    updating the jetbase_migrations table after each successful migration.
+    Apply pending migrations to the database.
+
+    Executes all pending versioned migrations in order, followed by any
+    repeatable migrations (runs-always and runs-on-change). Validates
+    migration files and checksums before execution unless validation
+    is explicitly skipped.
+
+    Args:
+        count (int | None): Maximum number of versioned migrations to apply.
+            Cannot be used with to_version. Defaults to None (apply all).
+        to_version (str | None): Apply migrations up to and including this
+            version. Cannot be used with count. Defaults to None.
+        dry_run (bool): If True, shows a preview of the SQL that would be
+            executed without actually running it. Defaults to False.
+        skip_validation (bool): If True, skips both checksum and file
+            validation. Defaults to False.
+        skip_checksum_validation (bool): If True, skips validation that
+            checks if migration files have been modified. Defaults to False.
+        skip_file_validation (bool): If True, skips validation that checks
+            for missing or out-of-order files. Defaults to False.
 
     Returns:
-        None
+        None: Prints migration status for each applied migration to stdout.
+
+    Raises:
+        ValueError: If both count and to_version are specified, or if count
+            is not a positive integer.
+        FileNotFoundError: If to_version is specified but not found in
+            pending migrations.
     """
 
     if count is not None and to_version is not None:

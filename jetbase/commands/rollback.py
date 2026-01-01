@@ -19,6 +19,28 @@ from jetbase.repositories.migrations_repo import (
 def rollback_cmd(
     count: int | None = None, to_version: str | None = None, dry_run: bool = False
 ) -> None:
+    """
+    Rollback applied migrations.
+
+    Reverts previously applied migrations by executing their rollback SQL
+    statements in reverse order. Can rollback a specific number of migrations
+    or all migrations after a specified version.
+
+    Args:
+        count (int | None): Number of migrations to rollback. If None and
+            to_version is also None, defaults to 1. Defaults to None.
+        to_version (str | None): Rollback all migrations applied after this
+            version. Cannot be used with count. Defaults to None.
+        dry_run (bool): If True, shows a preview of the rollback SQL without
+            executing it. Defaults to False.
+
+    Returns:
+        None: Prints rollback status for each migration to stdout.
+
+    Raises:
+        ValueError: If both count and to_version are specified.
+        VersionNotFoundError: If a required migration file is missing.
+    """
     create_migrations_table_if_not_exists()
     create_lock_table_if_not_exists()
 
