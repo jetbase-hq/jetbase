@@ -18,12 +18,12 @@ Jetbase helps you manage database migrations in a simple, version-controlled way
 
 ### Installation
 
-**pip:**
+**Using pip:**
 ```shell
 pip install jetbase
 ```
 
-**uv:**
+**Using uv:**
 ```shell
 uv add jetbase
 ```
@@ -44,12 +44,12 @@ This creates a `jetbase/` directory with:
 
 Edit `jetbase/env.py` with your database connection string (currently support for postgres and sqlite):
 
-**PostgreSQL:**
+**PostgreSQL example:**
 ```python
 sqlalchemy_url = "postgresql+psycopg2://user:password@localhost:5432/mydb"
 ```
 
-**SQLite:**
+**SQLite example:**
 ```python
 sqlalchemy_url = "sqlite:///mydb.db"
 ```
@@ -61,6 +61,10 @@ jetbase new "create users table"
 ```
 
 This creates a new SQL file like `V20251225.120000__create_users_and_items_tables.sql`.
+
+> **Tip:**  
+> You can also create migrations manually by adding SQL files in the `jetbase/migrations` directory, using the `V<version>__<description>.sql` naming convention (e.g., `V1__add_users_table.sql`, `V2.4__add_users_table.sql`).
+
 
 ### Write Your Migration
 
