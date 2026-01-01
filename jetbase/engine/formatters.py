@@ -1,3 +1,6 @@
+import datetime as dt
+
+
 def get_display_version(
     migration_type: str,
     version: str | None = None,
@@ -22,3 +25,13 @@ def get_display_version(
     elif migration_type.lower() == "runs_on_change":
         return "RUNS_ON_CHANGE"
     raise ValueError("Invalid migration type for display version.")
+
+
+def format_applied_at(applied_at: dt.datetime | str | None) -> str:
+    """Format applied_at timestamp for display, handling both datetime and string (sqlite returns a string)."""
+    if applied_at is None:
+        return ""
+    if isinstance(applied_at, str):
+        # SQLite returns strings - just truncate to match format
+        return applied_at[:22]
+    return applied_at.strftime("%Y-%m-%d %H:%M:%S.%f")[:22]

@@ -4,10 +4,10 @@ from packaging.version import parse as parse_version
 
 from jetbase.config import get_config
 from jetbase.constants import MIGRATIONS_DIR
-from jetbase.core.checksum import calculate_checksum
-from jetbase.core.file_parser import parse_upgrade_statements
-from jetbase.core.repeatable import get_repeatable_filenames
-from jetbase.core.version import (
+from jetbase.engine.checksum import calculate_checksum
+from jetbase.engine.file_parser import parse_upgrade_statements
+from jetbase.engine.repeatable import get_repeatable_filenames
+from jetbase.engine.version import (
     get_migration_filepaths_by_version,
 )
 from jetbase.exceptions import (

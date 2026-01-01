@@ -1,7 +1,7 @@
 import os
 import tempfile
 
-from jetbase.core.version import (
+from jetbase.engine.version import (
     _get_version_key_from_filename,
     get_migration_filepaths_by_version,
 )

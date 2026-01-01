@@ -3,7 +3,6 @@ import typer
 from jetbase.commands.current import current_cmd
 from jetbase.commands.fix_checksums import fix_checksums_cmd
 from jetbase.commands.fix_files import fix_files_cmd
-from jetbase.commands.helpers import validate_jetbase_directory
 from jetbase.commands.history import history_cmd
 from jetbase.commands.init import initialize_cmd
 from jetbase.commands.lock_status import lock_status_cmd
@@ -12,6 +11,7 @@ from jetbase.commands.rollback import rollback_cmd
 from jetbase.commands.status import status_cmd
 from jetbase.commands.unlock import unlock_cmd
 from jetbase.commands.upgrade import upgrade_cmd
+from jetbase.commands.validators import validate_jetbase_directory
 
 app = typer.Typer(help="Jetbase CLI")
 
@@ -182,12 +182,6 @@ def status() -> None:
 @app.command()
 def new(
     description: str = typer.Argument(..., help="Description of the migration"),
-    # migration_type: str = typer.Option(
-    #     "V",
-    #     "--type",
-    #     "-t",
-    #     help="Specify migration type (V, ROC, RA)",
-    # ),
 ) -> None:
     """Create a new migration file with a timestamp-based version and the provided description."""
     validate_jetbase_directory()

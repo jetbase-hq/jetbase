@@ -5,7 +5,10 @@ from packaging.version import parse as parse_version
 from jetbase.constants import (
     VERSION_FILE_PREFIX,
 )
-from jetbase.core.file_parser import is_filename_format_valid, is_filename_length_valid
+from jetbase.engine.file_parser import (
+    is_filename_format_valid,
+    is_filename_length_valid,
+)
 from jetbase.exceptions import (
     DuplicateMigrationVersionError,
     InvalidMigrationFilenameError,

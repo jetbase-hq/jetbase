@@ -1,8 +1,8 @@
 import os
 
 from jetbase.constants import RUNS_ALWAYS_FILE_PREFIX, RUNS_ON_CHANGE_FILE_PREFIX
-from jetbase.core.checksum import calculate_checksum
-from jetbase.core.file_parser import (
+from jetbase.engine.checksum import calculate_checksum
+from jetbase.engine.file_parser import (
     parse_upgrade_statements,
     validate_filename_format,
 )

@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from jetbase.commands.current import current_cmd
-from jetbase.core.models import MigrationRecord
+from jetbase.models import MigrationRecord
 
 
 @pytest.mark.parametrize(
