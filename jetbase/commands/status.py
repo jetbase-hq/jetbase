@@ -18,6 +18,16 @@ from jetbase.repositories.migrations_repo import (
 
 
 def status_cmd() -> None:
+    """
+    Display applied and pending migrations.
+
+    Shows two tables: one listing all migrations that have been applied to
+    the database, and another listing pending migrations that are available
+    in the migrations directory but have not yet been applied.
+
+    Returns:
+        None: Prints formatted tables to stdout showing migration status.
+    """
     is_migrations_table: bool = migrations_table_exists()
     if not is_migrations_table:
         create_migrations_table_if_not_exists()
@@ -91,6 +101,18 @@ def status_cmd() -> None:
 
 
 def _create_migrations_display_table(title: str) -> Table:
+    """
+    Create a rich Table for displaying migrations.
+
+    Configures a table with styled columns for displaying migration
+    version numbers and descriptions.
+
+    Args:
+        title (str): The title to display above the table.
+
+    Returns:
+        Table: A configured rich Table with Version and Description columns.
+    """
     display_table: Table = Table(
         title=title, show_header=True, header_style="bold magenta"
     )
@@ -101,6 +123,21 @@ def _create_migrations_display_table(title: str) -> Table:
 
 
 def _add_applied_rows(table: Table, migration_records: list[MigrationRecord]) -> None:
+    """
+    Add applied migration rows to the table.
+
+    Populates the table with rows for each applied migration, displaying
+    the version number and description for both versioned and repeatable
+    migrations.
+
+    Args:
+        table (Table): The rich Table to add rows to.
+        migration_records (list[MigrationRecord]): List of migration records
+            that have been applied to the database.
+
+    Returns:
+        None: Modifies the table in place.
+    """
     for record in migration_records:
         if record.migration_type == MigrationType.VERSIONED.value:
             table.add_row(record.version, record.description)
@@ -119,6 +156,28 @@ def _add_pending_rows(
     all_roc_filenames: list[str],
     roc_filenames_migrated: list[str],
 ) -> None:
+    """
+    Add pending migration rows to the table.
+
+    Populates the table with rows for each pending migration including
+    versioned migrations, runs-always migrations, and runs-on-change
+    migrations that have been modified or not yet applied.
+
+    Args:
+        table (Table): The rich Table to add rows to.
+        pending_versioned_filepaths (dict[str, str]): Mapping of version
+            strings to file paths for pending versioned migrations.
+        migration_records (list[MigrationRecord]): All migration records
+            from the database.
+        roc_filenames_changed_only (list[str]): Filenames of runs-on-change
+            migrations that have been modified since last applied.
+        all_roc_filenames (list[str]): All runs-on-change migration filenames.
+        roc_filenames_migrated (list[str]): Runs-on-change migrations that
+            have been previously applied.
+
+    Returns:
+        None: Modifies the table in place.
+    """
     for version, filepath in pending_versioned_filepaths.items():
         table.add_row(
             version, get_description_from_filename(filename=os.path.basename(filepath))

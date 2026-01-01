@@ -3,16 +3,19 @@ import hashlib
 
 def calculate_checksum(sql_statements: list[str]) -> str:
     """
-    Calculate a checksum for a list of SQL statements.
+    Calculate SHA256 checksum for a list of SQL statements.
+
+    Joins all statements with newlines and computes a SHA256 hash to create
+    a unique fingerprint of the migration content.
 
     Args:
-        sql_statements (list[str]): The list of SQL statements to calculate the checksum for
+        sql_statements (list[str]): List of SQL statements to hash.
 
     Returns:
-        str: The hexadecimal checksum string
+        str: 64-character hexadecimal SHA256 checksum string.
 
     Example:
-        >>> calculate_checksum(["SELECT * FROM users", "INSERT INTO logs VALUES (1)"])
+        >>> calculate_checksum(["SELECT 1", "SELECT 2"])
         'a1b2c3d4e5f6...'
     """
     formatted_sql_statements: str = "\n".join(sql_statements)

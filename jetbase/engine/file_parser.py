@@ -13,6 +13,20 @@ from jetbase.exceptions import (
 
 
 def parse_upgrade_statements(file_path: str, dry_run: bool = False) -> list[str]:
+    """
+    Parse SQL statements from the upgrade section of a migration file.
+
+    Reads the migration file and extracts all SQL statements that appear
+    before the '-- rollback' marker. Statements are split on semicolons.
+
+    Args:
+        file_path (str): Path to the migration SQL file.
+        dry_run (bool): If True, preserves formatting for display.
+            If False, joins lines for execution. Defaults to False.
+
+    Returns:
+        list[str]: List of SQL statements.
+    """
     statements = []
     current_statement = []
 
@@ -47,6 +61,20 @@ def parse_upgrade_statements(file_path: str, dry_run: bool = False) -> list[str]
 
 
 def parse_rollback_statements(file_path: str, dry_run: bool = False) -> list[str]:
+    """
+    Parse SQL statements from the rollback section of a migration file.
+
+    Reads the migration file and extracts all SQL statements that appear
+    after the '-- rollback' marker. Statements are split on semicolons.
+
+    Args:
+        file_path (str): Path to the migration SQL file.
+        dry_run (bool): If True, preserves formatting for display.
+            If False, joins lines for execution. Defaults to False.
+
+    Returns:
+        list[str]: List of SQL statements (without trailing semicolons).
+    """
     statements = []
     current_statement = []
     in_rollback_section = False
@@ -88,21 +116,21 @@ def parse_rollback_statements(file_path: str, dry_run: bool = False) -> list[str
 
 def is_filename_format_valid(filename: str) -> bool:
     """
-    Validates if a filename follows the expected migration file naming convention.
-    A valid filename must:
-    - Start with "V"
-    - Have a valid version number following "V"
-    - Contain "__" (double underscore)
-    - End with ".sql"
-    - Have a valid version number extractable from the filename
+    Check if filename follows the migration naming convention.
+
+    Valid filenames must start with 'V', 'RA__', or 'ROC__', contain '__',
+    end with '.sql', and have a non-empty description.
+
     Args:
         filename (str): The filename to validate.
+
     Returns:
-        bool: True if the filename meets all validation criteria, False otherwise.
+        bool: True if the filename matches the convention, False otherwise.
+
     Example:
-        >>> is_valid_filename_format("V1__initial_migration.sql")
+        >>> is_filename_format_valid("V1__init.sql")
         True
-        >>> is_valid_filename_format("migration.sql")
+        >>> is_filename_format_valid("invalid.sql")
         False
     """
     if not filename.endswith(".sql"):
@@ -128,11 +156,18 @@ def get_description_from_filename(filename: str) -> str:
     """
     Extract and format the description from a migration filename.
 
+    Extracts the portion after '__' and before '.sql', then replaces
+    underscores with spaces for human-readable display.
+
     Args:
-        filename: The migration filename (e.g., "V1_2_0__add_feature.sql")
+        filename (str): The migration filename to parse.
 
     Returns:
-        str: The formatted description string (e.g., "add feature")
+        str: Human-readable description with spaces.
+
+    Example:
+        >>> get_description_from_filename("V1__add_users.sql")
+        'add users'
     """
 
     raw_description: str = _get_raw_description_from_filename(filename=filename)
@@ -142,14 +177,14 @@ def get_description_from_filename(filename: str) -> str:
 
 def is_filename_length_valid(filename: str, max_length: int = 512) -> bool:
     """
-    Check if the filename length is within the specified maximum length.
+    Check if the filename length is within the allowed maximum.
 
     Args:
-        filename: The migration filename to check.
-        max_length: The maximum allowed length for the filename.
+        filename (str): The filename to check.
+        max_length (int): Maximum allowed character length. Defaults to 512.
 
     Returns:
-        bool: True if the filename length is within the maximum length, False otherwise.
+        bool: True if the filename length is <= max_length.
     """
     return len(filename) <= max_length
 
@@ -158,11 +193,13 @@ def _get_version_from_filename(filename: str) -> str:
     """
     Extract the version string from a migration filename.
 
+    Parses the portion between 'V' and '__' to get the raw version.
+
     Args:
-        filename: The migration filename (e.g., "V1_2_0__add_feature.sql")
+        filename (str): The migration filename to parse.
 
     Returns:
-        str: The extracted version string (e.g., "1_2_0")
+        str: Raw version string (e.g., "1_2_0" from "V1_2_0__desc.sql").
     """
 
     version: str = filename[1 : filename.index("__")]
@@ -171,13 +208,15 @@ def _get_version_from_filename(filename: str) -> str:
 
 def _get_raw_description_from_filename(filename: str) -> str:
     """
-    Extract the description string from a migration filename.
+    Extract the raw description from a migration filename.
+
+    Returns the portion between '__' and '.sql' without any formatting.
 
     Args:
-        filename: The migration filename (e.g., "V1_2_0__add_feature.sql")
+        filename (str): The migration filename to parse.
 
     Returns:
-        str: The extracted description string (e.g., "add_feature")
+        str: Raw description with underscores preserved.
     """
 
     description: str = filename[
@@ -190,19 +229,20 @@ def _is_valid_version(version: str) -> bool:
     """
     Validate that a version string follows the correct format.
 
-    Rules:
-    - Must start and end with a number
-    - Can be any length (1 or greater)
-    - Can contain periods (.) or underscores (_) between numbers
-
-    Valid examples: "1", "1.2", "1_2", "1.2.3", "1_2_3", "10.20.30"
-    Invalid examples: ".1", "1.", "_1", "1_", "1..2", "1__2", "abc", ""
+    Valid versions contain digits separated by periods or underscores.
+    Must start and end with a digit.
 
     Args:
-        version: The version string to validate
+        version (str): The version string to validate.
 
     Returns:
-        bool: True if version is valid, False otherwise
+        bool: True if the version format is valid.
+
+    Example:
+        >>> _is_valid_version("1.2.3")
+        True
+        >>> _is_valid_version("1__2")
+        False
     """
     if not version:
         return False
@@ -214,22 +254,21 @@ def _is_valid_version(version: str) -> bool:
 
 def validate_filename_format(filename: str) -> None:
     """
-    Validates if a filename follows the expected migration file naming convention.
-    A valid filename must:
-    - Start with "V"
-    - Have a valid version number following "V"
-    - Contain "__" (double underscore)
-    - End with ".sql"
-    - Have a valid version number extractable from the filename
+    Validate filename format, raising an exception if invalid.
+
+    Checks that the filename follows the migration naming convention
+    and does not exceed the maximum length.
+
     Args:
         filename (str): The filename to validate.
+
     Returns:
-        bool: True if the filename meets all validation criteria, False otherwise.
-    Example:
-        >>> is_valid_filename_format("V1__initial_migration.sql")
-        True
-        >>> is_valid_filename_format("migration.sql")
-        False
+        None: Returns silently if validation passes.
+
+    Raises:
+        InvalidMigrationFilenameError: If the filename doesn't match
+            the required naming convention.
+        MigrationFilenameTooLongError: If the filename exceeds 512 characters.
     """
     is_valid_filename: bool = True
     if not filename.endswith(".sql"):
@@ -264,6 +303,19 @@ def validate_filename_format(filename: str) -> None:
 
 
 def _validate_filename_length(filename: str, max_length: int = 512) -> None:
+    """
+    Validate that the filename does not exceed the maximum length.
+
+    Args:
+        filename (str): The filename to validate.
+        max_length (int): Maximum allowed character length. Defaults to 512.
+
+    Returns:
+        None: Returns silently if validation passes.
+
+    Raises:
+        MigrationFilenameTooLongError: If the filename exceeds max_length.
+    """
     if len(filename) > max_length:
         raise MigrationFilenameTooLongError(
             f"Migration filename too long: {filename}.\n"

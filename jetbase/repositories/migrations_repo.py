@@ -20,12 +20,26 @@ def run_migration(
     migration_type: MigrationType = MigrationType.VERSIONED,
 ) -> None:
     """
-    Execute a database migration by running SQL statements and recording the migration version.
+    Execute SQL statements and record the migration in the database.
+
+    Runs all SQL statements within a transaction, then either inserts
+    (for upgrade) or deletes (for rollback) the migration record.
+
     Args:
-        sql_statements (list[str]): List of SQL statements to execute as part of the migration
-        version (str): Version identifier to record after successful migration
+        sql_statements (list[str]): List of SQL statements to execute.
+        version (str | None): Version string for the migration. Required
+            for versioned migrations, can be None for repeatables.
+        migration_operation (MigrationDirectionType): Whether this is an
+            UPGRADE or ROLLBACK operation.
+        filename (str): The migration filename, used to extract description.
+        migration_type (MigrationType): Type of migration (VERSIONED,
+            RUNS_ALWAYS, or RUNS_ON_CHANGE). Defaults to VERSIONED.
+
     Returns:
-        None
+        None: Migration is executed and recorded as a side effect.
+
+    Raises:
+        ValueError: If filename is None for an upgrade operation.
     """
 
     if migration_operation == MigrationDirectionType.UPGRADE and filename is None:
@@ -64,6 +78,21 @@ def run_update_repeatable_migration(
     filename: str,
     migration_type: MigrationType,
 ) -> None:
+    """
+    Execute and update an existing repeatable migration record.
+
+    Runs the SQL statements and updates the existing migration record
+    with a new checksum and applied_at timestamp.
+
+    Args:
+        sql_statements (list[str]): List of SQL statements to execute.
+        filename (str): The migration filename to update.
+        migration_type (MigrationType): Type of repeatable migration
+            (RUNS_ALWAYS or RUNS_ON_CHANGE).
+
+    Returns:
+        None: Migration is executed and record is updated as a side effect.
+    """
     checksum: str = calculate_checksum(sql_statements=sql_statements)
 
     with get_db_connection() as connection:
@@ -82,11 +111,14 @@ def run_update_repeatable_migration(
 
 def fetch_latest_versioned_migration() -> MigrationRecord | None:
     """
-    Retrieves the latest version from the database.
-    This function connects to the database, executes a query to get the most recent version,
-    and returns that version as a string.
+    Get the most recently applied versioned migration from the database.
+
+    Queries the jetbase_migrations table for the versioned migration
+    with the most recent applied_at timestamp.
+
     Returns:
-        str | None: The latest version string if available, None if no version was found.
+        MigrationRecord | None: The most recent migration record if any
+            migrations have been applied, otherwise None.
     """
 
     table_exists: bool = migrations_table_exists()
@@ -109,10 +141,13 @@ def fetch_latest_versioned_migration() -> MigrationRecord | None:
 
 def create_migrations_table_if_not_exists() -> None:
     """
-    Creates the migrations table in the database
-    if it does not already exist.
+    Create the jetbase_migrations table if it doesn't already exist.
+
+    Creates the table used to track applied migrations, including
+    columns for version, description, filename, checksum, and timestamps.
+
     Returns:
-        None
+        None: Table is created as a side effect.
     """
 
     with get_db_connection() as connection:
@@ -125,11 +160,25 @@ def get_latest_versions(
     limit: int | None = None, starting_version: str | None = None
 ) -> list[str]:
     """
-    Retrieve the latest N migration versions from the database.
+    Get recent migration versions from the database.
+
+    Retrieves either the N most recent versions or all versions applied
+    after a specified starting version.
+
     Args:
-        limit (int): The number of latest versions to retrieve
+        limit (int | None): Maximum number of versions to return.
+            Cannot be used with starting_version. Defaults to None.
+        starting_version (str | None): Return all versions applied after
+            this version. Cannot be used with limit. Defaults to None.
+
     Returns:
-        list[str]: A list of the latest migration version strings
+        list[str]: List of version strings in descending order by
+            application time.
+
+    Raises:
+        ValueError: If both limit and starting_version are specified,
+            or if neither is specified.
+        VersionNotFoundError: If starting_version has not been applied.
     """
 
     if limit and starting_version:
@@ -179,6 +228,10 @@ def get_latest_versions(
 def migrations_table_exists() -> bool:
     """
     Check if the jetbase_migrations table exists in the database.
+
+    Queries the database metadata to determine if the migrations
+    tracking table has been created.
+
     Returns:
         bool: True if the jetbase_migrations table exists, False otherwise.
     """
@@ -193,9 +246,14 @@ def migrations_table_exists() -> bool:
 
 def get_migration_records() -> list[MigrationRecord]:
     """
-    Retrieve the full migration history from the database.
+    Get all migration records from the database.
+
+    Retrieves the complete migration history including versioned
+    and repeatable migrations, ordered by application time.
+
     Returns:
-        list[MigrationRecord]: A list of MigrationRecord containing migration details.
+        list[MigrationRecord]: List of all migration records in
+            chronological order.
     """
     with get_db_connection() as connection:
         results: Result[tuple[str, int, str]] = connection.execute(
@@ -219,9 +277,14 @@ def get_migration_records() -> list[MigrationRecord]:
 
 def get_checksums_by_version() -> list[tuple[str, str]]:
     """
-    Retrieve all migration versions along with their corresponding checksums from the database.
+    Get version and checksum pairs for all versioned migrations.
+
+    Retrieves the checksum stored for each version when it was
+    originally applied, ordered by execution order.
+
     Returns:
-        tuple[str, str]: A tuple containing migration version and its checksum.
+        list[tuple[str, str]]: List of (version, checksum) tuples
+            in order of application.
     """
     with get_db_connection() as connection:
         results: Result[tuple[str, str]] = connection.execute(
@@ -236,9 +299,13 @@ def get_checksums_by_version() -> list[tuple[str, str]]:
 
 def get_migrated_versions() -> list[str]:
     """
-    Retrieve all migrated versions from the database.
+    Get all applied versioned migration versions from the database.
+
+    Returns the version string for each versioned migration that
+    has been applied, in order of application.
+
     Returns:
-        list[str]: A list of migrated version strings.
+        list[str]: List of version strings in order of application.
     """
     with get_db_connection() as connection:
         results: Result[tuple[str]] = connection.execute(
@@ -250,6 +317,19 @@ def get_migrated_versions() -> list[str]:
 
 
 def update_migration_checksums(versions_and_checksums: list[tuple[str, str]]) -> None:
+    """
+    Update stored checksums for specified migration versions.
+
+    Updates the checksum values in the database for migrations
+    whose files have been modified since they were applied.
+
+    Args:
+        versions_and_checksums (list[tuple[str, str]]): List of
+            (version, new_checksum) tuples to update.
+
+    Returns:
+        None: Checksums are updated as a side effect.
+    """
     with get_db_connection() as connection:
         for version, checksum in versions_and_checksums:
             connection.execute(
@@ -259,6 +339,16 @@ def update_migration_checksums(versions_and_checksums: list[tuple[str, str]]) ->
 
 
 def get_existing_on_change_filenames_to_checksums() -> dict[str, str]:
+    """
+    Get filename to checksum mapping for runs-on-change migrations.
+
+    Retrieves the checksums stored for each runs-on-change migration
+    when it was last applied.
+
+    Returns:
+        dict[str, str]: Dictionary mapping filenames to their stored
+            checksum values.
+    """
     with get_db_connection() as connection:
         results: Result[tuple[str, str]] = connection.execute(
             statement=get_query(QueryMethod.GET_RUNS_ON_CHANGE_MIGRATIONS_QUERY),
@@ -271,6 +361,15 @@ def get_existing_on_change_filenames_to_checksums() -> dict[str, str]:
 
 
 def get_existing_repeatable_always_migration_filenames() -> set[str]:
+    """
+    Get filenames of all runs-always migrations in the database.
+
+    Retrieves the filenames of all runs-always migrations that have
+    been applied at least once.
+
+    Returns:
+        set[str]: Set of runs-always migration filenames.
+    """
     with get_db_connection() as connection:
         results: Result[tuple[str]] = connection.execute(
             statement=get_query(QueryMethod.GET_RUNS_ALWAYS_MIGRATIONS_QUERY),
@@ -281,6 +380,18 @@ def get_existing_repeatable_always_migration_filenames() -> set[str]:
 
 
 def delete_missing_versions(versions: list[str]) -> None:
+    """
+    Delete migration records for specified versions.
+
+    Removes records from the jetbase_migrations table for versioned
+    migrations whose files no longer exist.
+
+    Args:
+        versions (list[str]): List of version strings to delete.
+
+    Returns:
+        None: Records are deleted as a side effect.
+    """
     with get_db_connection() as connection:
         for version in versions:
             connection.execute(
@@ -290,6 +401,18 @@ def delete_missing_versions(versions: list[str]) -> None:
 
 
 def delete_missing_repeatables(repeatable_filenames: list[str]) -> None:
+    """
+    Delete migration records for specified repeatable filenames.
+
+    Removes records from the jetbase_migrations table for repeatable
+    migrations whose files no longer exist.
+
+    Args:
+        repeatable_filenames (list[str]): List of filenames to delete.
+
+    Returns:
+        None: Records are deleted as a side effect.
+    """
     with get_db_connection() as connection:
         for r_file in repeatable_filenames:
             connection.execute(
@@ -299,6 +422,15 @@ def delete_missing_repeatables(repeatable_filenames: list[str]) -> None:
 
 
 def fetch_repeatable_migrations() -> list[MigrationRecord]:
+    """
+    Get all repeatable migration records from the database.
+
+    Retrieves all runs-always and runs-on-change migrations that
+    have been applied.
+
+    Returns:
+        list[MigrationRecord]: List of all repeatable migration records.
+    """
     with get_db_connection() as connection:
         results: Result[tuple[str]] = connection.execute(
             statement=get_query(

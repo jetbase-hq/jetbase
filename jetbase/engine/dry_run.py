@@ -13,6 +13,28 @@ def process_dry_run(
     repeatable_always_filepaths: list[str] | None = None,
     runs_on_change_filepaths: list[str] | None = None,
 ) -> None:
+    """
+    Preview migrations without executing them.
+
+    Parses and displays the SQL statements that would be executed for
+    each migration, without actually running them against the database.
+
+    Args:
+        version_to_filepath (dict[str, str]): Mapping of version strings
+            to migration file paths for versioned migrations.
+        migration_operation (MigrationDirectionType): Whether this is an
+            UPGRADE or ROLLBACK operation.
+        repeatable_always_filepaths (list[str] | None): File paths for
+            runs-always migrations. Defaults to None.
+        runs_on_change_filepaths (list[str] | None): File paths for
+            runs-on-change migrations. Defaults to None.
+
+    Returns:
+        None: Prints SQL preview to stdout.
+
+    Raises:
+        NotImplementedError: If migration_operation is not UPGRADE or ROLLBACK.
+    """
     print("\nJETBASE - Dry Run Mode")
     print("No SQL will be executed. This is a preview of what would happen.")
     print("----------------------------------------\n\n")
@@ -62,6 +84,19 @@ def process_dry_run(
 
 
 def print_migration_preview(filename: str, sql_statements: list[str]) -> None:
+    """
+    Print SQL statements for a migration file preview.
+
+    Displays the filename, statement count, and full SQL content for
+    each statement in a formatted output.
+
+    Args:
+        filename (str): The name of the migration file being previewed.
+        sql_statements (list[str]): List of SQL statements to display.
+
+    Returns:
+        None: Prints formatted preview to stdout.
+    """
     print(
         f"\nSQL Preview for Repeatable On Change Migration {filename} ({len(sql_statements)} {'statements' if len(sql_statements) != 1 else 'statement'})\n"
     )

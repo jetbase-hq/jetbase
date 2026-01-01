@@ -17,30 +17,23 @@ from jetbase.repositories.migrations_repo import (
 
 def fix_checksums_cmd(audit_only: bool = False) -> None:
     """
-    Fix or audit checksums for applied database migrations.
-    This function validates and optionally repairs checksums for all migrations that have
-    been applied to the database up to the latest migrated version. It detects drift between
-    the current migration files and their recorded checksums in the migration history table.
+    Fix or audit checksums for applied migrations.
+
+    Compares the checksums stored in the database against the current checksums
+    of migration files on disk. Detects drift where files have been modified
+    after being applied to the database.
+
     Args:
-        audit_only (bool, optional): If True, only reports checksum mismatches without
-            making any repairs. If False, updates the database with corrected checksums.
-            Defaults to False.
+        audit_only (bool): If True, only reports checksum mismatches without
+            making any changes to the database. If False, updates the stored
+            checksums to match the current file contents. Defaults to False.
+
     Returns:
-        None
+        None: Prints audit report or repair status to stdout.
+
     Raises:
-        MigrationVersionMismatchError: If there's a mismatch between expected and actual
-            migration versions during processing.
-    Notes:
-        - If no migrations have been applied, the function exits early with a message.
-        - The function acquires a migration lock before updating checksums to prevent
-          concurrent modifications.
-        - Checksum validation is skipped during the initial upgrade validation to allow
-          the repair process to proceed.
-        - In audit mode, the function prints a report of files with checksum drift
-          without modifying the database.
-    Example:
-        >>> fix_checksums_cmd(audit_only=True)  # Check for drift only
-        >>> fix_checksums_cmd()  # Repair detected drift
+        MigrationVersionMismatchError: If there is a mismatch between expected
+            and actual migration versions during processing.
     """
 
     migrated_versions_and_checksums: list[tuple[str, str]] = get_checksums_by_version()
@@ -76,6 +69,19 @@ def fix_checksums_cmd(audit_only: bool = False) -> None:
 def _print_audit_report(
     versions_and_checksums_to_repair: list[tuple[str, str]],
 ) -> None:
+    """
+    Print a formatted report of migrations with checksum drift.
+
+    Outputs a list of migration versions whose file contents have changed
+    since they were originally applied to the database.
+
+    Args:
+        versions_and_checksums_to_repair (list[tuple[str, str]]): List of tuples
+            containing (version, new_checksum) for migrations with detected drift.
+
+    Returns:
+        None: Prints the audit report to stdout.
+    """
     print("\nJETBASE - Checksum Audit Report")
     print("----------------------------------------")
     print("Changes detected in the following files:")
@@ -84,6 +90,19 @@ def _print_audit_report(
 
 
 def _repair_checksums(versions_and_checksums_to_repair: list[tuple[str, str]]) -> None:
+    """
+    Update checksums in the database for migrations with detected drift.
+
+    Acquires a migration lock and updates the stored checksums in the
+    jetbase_migrations table to match the current file contents.
+
+    Args:
+        versions_and_checksums_to_repair (list[tuple[str, str]]): List of tuples
+            containing (version, new_checksum) for migrations to update.
+
+    Returns:
+        None: Prints repair status for each version to stdout.
+    """
     with migration_lock():
         update_migration_checksums(
             versions_and_checksums=versions_and_checksums_to_repair
@@ -97,6 +116,30 @@ def _repair_checksums(versions_and_checksums_to_repair: list[tuple[str, str]]) -
 def _find_checksum_mismatches(
     migrated_versions_and_checksums: list[tuple[str, str]], latest_migrated_version: str
 ) -> list[tuple[str, str]]:
+    """
+    Find migrations where the file checksum differs from the stored checksum.
+
+    Compares the current checksum of each migration file against the checksum
+    stored in the database when the migration was originally applied.
+
+    Args:
+        migrated_versions_and_checksums (list[tuple[str, str]]): List of tuples
+            containing (version, stored_checksum) from the database.
+        latest_migrated_version (str): The most recent version that has been
+            migrated, used to limit the scope of files checked.
+
+    Returns:
+        list[tuple[str, str]]: List of (version, new_checksum) tuples for
+            migrations where the file has changed since being applied.
+
+    Raises:
+        MigrationVersionMismatchError: If the file versions do not match the
+            expected sequence of migrated versions.
+
+    Example:
+        >>> _find_checksum_mismatches([("1.0", "abc123")], "1.0")
+        [("1.0", "def456")]  # If file changed
+    """
     migration_filepaths_by_version: dict[str, str] = get_migration_filepaths_by_version(
         directory=os.path.join(os.getcwd(), MIGRATIONS_DIR),
         end_version=latest_migrated_version,

@@ -8,12 +8,13 @@ sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
 
 def lock_status_cmd() -> None:
     """
-    Check and display the current lock status of the database migration system.
-    This function queries the current lock status. It prints whether the database
-    migrations are locked or unlocked, and if locked, displays the timestamp
-    when it was locked.
+    Display whether the migration lock is currently held.
+
+    Queries the jetbase_lock table to check if migrations are currently
+    locked. If locked, displays the timestamp when the lock was acquired.
+
     Returns:
-        None: Prints the lock status directly to stdout.
+        None: Prints "LOCKED" with timestamp or "UNLOCKED" to stdout.
     """
 
     if not lock_table_exists() or not migrations_table_exists():

@@ -9,13 +9,16 @@ from jetbase.repositories.lock_repo import lock_database, release_lock
 
 def acquire_lock() -> str:
     """
-    Attempt to acquire the migration lock immediately.
+    Acquire the migration lock immediately.
+
+    Attempts to acquire the database migration lock using a unique process ID.
+    The lock prevents concurrent migrations from running.
 
     Returns:
-        process_id: Unique identifier for this lock acquisition
+        str: Unique UUID process identifier for this lock acquisition.
 
     Raises:
-        RuntimeError: If lock is already held by another process
+        RuntimeError: If the lock is already held by another process.
     """
     process_id = str(uuid.uuid4())
 
@@ -37,12 +40,21 @@ def acquire_lock() -> str:
 @contextmanager
 def migration_lock() -> Generator[None, None, None]:
     """
-    Context manager for acquiring and releasing migration lock.
-    Fails immediately if lock is already held.
+    Context manager for acquiring and releasing the migration lock.
 
-    Usage:
-        with migration_lock():
-            # Run migrations
+    Acquires the lock on entry and ensures it is released on exit,
+    even if an exception occurs. Fails immediately if the lock is
+    already held by another process.
+
+    Yields:
+        None: Yields control to the context block.
+
+    Raises:
+        RuntimeError: If the lock is already held by another process.
+
+    Example:
+        >>> with migration_lock():
+        ...     run_migration()
     """
     process_id: str | None = None
     try:

@@ -18,17 +18,19 @@ from jetbase.repositories.migrations_repo import (
 
 def fix_files_cmd(audit_only: bool = False) -> None:
     """
-    Fix migration tracking by removing database records for missing migration files.
+    Remove database records for missing migration files.
 
-    This function reconciles the migration state between the database and the filesystem
-    by identifying and optionally removing records of migrations whose corresponding
-    files no longer exist. It handles both versioned and repeatable migrations.
+    Reconciles the migration state between the database and the filesystem
+    by identifying migrations whose corresponding files no longer exist.
+    Handles both versioned and repeatable migrations.
+
     Args:
-        audit_only (bool, optional): If True, only reports missing migration files
-            without making any changes to the database. If False, removes database
-            records for missing migrations. Defaults to False.
+        audit_only (bool): If True, only reports missing migration files
+            without making any changes to the database. If False, removes
+            database records for missing migrations. Defaults to False.
+
     Returns:
-        None: This function prints its results to stdout and does not return a value.
+        None: Prints audit report or removal status to stdout.
     """
 
     create_lock_table_if_not_exists()
@@ -68,6 +70,21 @@ def fix_files_cmd(audit_only: bool = False) -> None:
 def _print_audit_report(
     missing_versions: list[str], missing_repeatables: list[str]
 ) -> None:
+    """
+    Print a formatted report of migrations with missing files.
+
+    Lists all versioned and repeatable migrations that are tracked in the
+    database but no longer have corresponding files on disk.
+
+    Args:
+        missing_versions (list[str]): List of version strings for versioned
+            migrations with missing files.
+        missing_repeatables (list[str]): List of filenames for repeatable
+            migrations with missing files.
+
+    Returns:
+        None: Prints the audit report to stdout.
+    """
     if missing_versions or missing_repeatables:
         print("The following migrations are missing their corresponding files:")
         for version in missing_versions:
@@ -82,6 +99,21 @@ def _print_audit_report(
 def _remove_missing_migrations(
     missing_versions: list[str], missing_repeatables: list[str]
 ) -> None:
+    """
+    Delete database records for migrations whose files no longer exist.
+
+    Acquires a migration lock and removes records from the jetbase_migrations
+    table for both versioned and repeatable migrations that are missing files.
+
+    Args:
+        missing_versions (list[str]): List of version strings for versioned
+            migrations to remove from tracking.
+        missing_repeatables (list[str]): List of filenames for repeatable
+            migrations to remove from tracking.
+
+    Returns:
+        None: Prints removal status for each migration to stdout.
+    """
     if missing_versions or missing_repeatables:
         with migration_lock():
             if missing_versions:

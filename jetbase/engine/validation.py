@@ -27,15 +27,23 @@ def validate_current_migration_files_match_checksums(
     migrated_versions_and_checksums: list[tuple[str, str]],
 ) -> None:
     """
-    Validates that current migration files match their stored checksums.
+    Validate that migration files have not been modified since being applied.
+
+    Compares the current checksum of each migration file against the
+    checksum stored in the database when the migration was applied.
 
     Args:
-        migrated_filepaths_by_version: Dictionary mapping version strings to file paths
-        migrated_versions_and_checksums: List of tuples containing version and checksum pairs
+        migrated_filepaths_by_version (dict[str, str]): Mapping of version
+            strings to file paths for migrations to check.
+        migrated_versions_and_checksums (list[tuple[str, str]]): List of
+            (version, checksum) tuples from the database.
+
+    Returns:
+        None: Returns silently if all checksums match.
 
     Raises:
-        MigrationVersionMismatchError: If version mismatch is detected
-        ChecksumMismatchError: If checksum doesn't match
+        ChecksumMismatchError: If any migration file's current checksum
+            differs from its stored checksum.
     """
     versions_changed: list[str] = []
     for index, (file_version, filepath) in enumerate(
@@ -60,22 +68,22 @@ def validate_migrated_versions_in_current_migration_files(
     current_migration_filepaths_by_version: dict[str, str],
 ) -> None:
     """
-    Validates that all migrated versions have corresponding migration files.
+    Ensure all migrated versions have corresponding migration files.
 
-    This function checks that every version that has been previously migrated
-    still has a corresponding migration file present in the current migration
-    files directory.
+    Verifies that every version recorded in the database still has
+    its migration file present in the migrations directory.
 
     Args:
-        migrated_versions: A list of version strings that have been previously
-            migrated to the database.
-        current_migration_filepaths_by_version: A dictionary mapping version
-            strings to their corresponding migration file paths.
+        migrated_versions (list[str]): List of version strings that have
+            been applied to the database.
+        current_migration_filepaths_by_version (dict[str, str]): Mapping
+            of version strings to file paths for existing files.
+
+    Returns:
+        None: Returns silently if all files are present.
 
     Raises:
-        FileNotFoundError: If a migrated version is not found in the current
-            migration files, indicating that a migration file has been removed
-            or is missing.
+        FileNotFoundError: If any migrated version is missing its file.
     """
     for migrated_version in migrated_versions:
         if migrated_version not in current_migration_filepaths_by_version:
@@ -90,13 +98,23 @@ def validate_no_new_migration_files_with_lower_version_than_latest_migration(
     latest_migrated_version: str,
 ) -> None:
     """
-    Validates that no new migration files have been added with a version lower than the latest migrated version.
+    Ensure no new migration files have versions lower than the latest applied.
+
+    Prevents out-of-order migrations by checking that all new migration
+    files have version numbers higher than the most recently applied version.
+
     Args:
-        current_migration_filepaths_by_version: Dictionary mapping version strings to file paths
-        migrated_versions: List of versions that have already been migrated
-        latest_migrated_version: The most recent version that has been migrated
+        current_migration_filepaths_by_version (dict[str, str]): Mapping
+            of version strings to file paths for all migration files.
+        migrated_versions (list[str]): List of versions already applied.
+        latest_migrated_version (str): The most recently applied version.
+
+    Returns:
+        None: Returns silently if validation passes.
+
     Raises:
-        ValueError: If a new migration file has a version lower than the latest migrated version
+        OutOfOrderMigrationError: If a new migration file has a version
+            lower than the latest migrated version.
     """
     for file_version, filepath in current_migration_filepaths_by_version.items():
         if (
@@ -115,15 +133,21 @@ def validate_no_duplicate_migration_file_versions(
     current_migration_filepaths_by_version: dict[str, str],
 ) -> None:
     """
-    Validates that there are no duplicate migration file versions in the provided dictionary.
+    Ensure no duplicate migration versions exist in the migrations directory.
+
+    Checks that each version number appears only once across all
+    migration files.
 
     Args:
-        current_migration_filepaths_by_version (dict[str, str]): A dictionary mapping migration
-            file versions (as strings) to their corresponding file paths.
+        current_migration_filepaths_by_version (dict[str, str]): Mapping
+            of version strings to file paths for all migration files.
+
+    Returns:
+        None: Returns silently if validation passes.
 
     Raises:
-        DuplicateMigrationVersionError: If a duplicate migration file version is detected. The error message includes
-            the duplicate version number converted to a readable format.
+        DuplicateMigrationVersionError: If two or more files share
+            the same version number.
     """
     seen_versions: set[str] = set()
     for file_version in current_migration_filepaths_by_version.keys():
@@ -140,6 +164,24 @@ def validate_migrated_repeatable_versions_in_migration_files(
     migrated_repeatable_filenames: list[str],
     all_repeatable_filenames: list[str],
 ) -> None:
+    """
+    Ensure all migrated repeatable migrations have corresponding files.
+
+    Verifies that every repeatable migration recorded in the database
+    still has its file present in the migrations directory.
+
+    Args:
+        migrated_repeatable_filenames (list[str]): List of repeatable
+            migration filenames from the database.
+        all_repeatable_filenames (list[str]): List of all repeatable
+            migration filenames currently in the migrations directory.
+
+    Returns:
+        None: Returns silently if all files are present.
+
+    Raises:
+        FileNotFoundError: If any migrated repeatable file is missing.
+    """
     missing_filenames: list[str] = []
     for r_file in migrated_repeatable_filenames:
         if r_file not in all_repeatable_filenames:
@@ -157,7 +199,30 @@ def run_migration_validations(
     skip_file_validation: bool = False,
 ) -> None:
     """
-    Run validations on migration files before performing upgrade.
+    Run all migration validations before performing an upgrade.
+
+    Executes validation checks including duplicate version detection,
+    file presence verification, out-of-order detection, and checksum
+    validation. Validations can be skipped via parameters or config.
+
+    Args:
+        latest_migrated_version (str): The most recently applied version,
+            used to check for out-of-order migrations.
+        skip_validation (bool): If True, skips all validations except
+            duplicate version check. Defaults to False.
+        skip_checksum_validation (bool): If True, skips checksum validation.
+            Defaults to False.
+        skip_file_validation (bool): If True, skips file presence and
+            out-of-order validations. Defaults to False.
+
+    Returns:
+        None: Returns silently if all validations pass.
+
+    Raises:
+        DuplicateMigrationVersionError: If duplicate versions are found.
+        FileNotFoundError: If migration files are missing.
+        OutOfOrderMigrationError: If out-of-order migrations are detected.
+        ChecksumMismatchError: If file checksums don't match stored values.
     """
 
     skip_validation_config: bool = get_config().skip_validation

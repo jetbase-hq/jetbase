@@ -8,19 +8,13 @@ from jetbase.constants import BASE_DIR, ENV_FILE, ENV_FILE_CONTENT, MIGRATIONS_D
 
 def initialize_cmd() -> None:
     """
-    Create the basic directory structure for a new Jetbase project.
+    Create the directory structure for a new Jetbase project.
 
-    This function creates:
-    - A migrations directory
-    - An env.py file with default content
-
-    After creating the structure, it prints a confirmation message.
-
-    Args:
-        base_path (str): The base path where the Jetbase project structure will be created
+    Creates a 'jetbase' directory containing a 'migrations' subdirectory
+    and an 'env.py' configuration file with a template database URL.
 
     Returns:
-        None
+        None: Prints a confirmation message with the project location.
     """
     migrations_dir: Path = Path(BASE_DIR) / MIGRATIONS_DIR
     migrations_dir.mkdir(parents=True, exist_ok=True)

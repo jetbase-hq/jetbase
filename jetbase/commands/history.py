@@ -13,23 +13,13 @@ def history_cmd() -> None:
     """
     Display the migration history in a formatted table.
 
-    This command retrieves and displays all applied migrations from the database
-    in a rich-formatted table showing version numbers, execution order, and
-    descriptions.
-
-    The table includes:
-        - Version: The migration version identifier
-        - Order Executed: The sequential order in which migrations were applied
-        - Description: A brief description of what the migration does
-
-    If no migrations have been applied, displays a message indicating that.
+    Retrieves all applied migrations from the database and displays them
+    in a rich-formatted table showing version numbers, execution order,
+    descriptions, and timestamps.
 
     Returns:
-        None
-
-    Example:
-        >>> history_cmd()
-        # Displays a formatted table with migration history
+        None: Prints a formatted table to stdout, or a message if no
+            migrations have been applied.
     """
     console: Console = Console()
     table_exists: bool = migrations_table_exists()
