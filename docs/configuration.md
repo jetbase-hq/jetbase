@@ -82,7 +82,7 @@ postgres_schema = "my_schema"
 
 ### `skip_checksum_validation` (Optional)
 
-Skips [checksum validations](../validations/index.md#checksum-validation)
+Skips [checksum validations](validations/index.md#checksum-validation)
 
 ```python
 skip_checksum_validation = False  # Default
@@ -93,7 +93,7 @@ Only set this to `True` if you intentionally modified a migration file and want 
 
 ### `skip_file_validation` (Optional)
 
-Skip file validations (see [File Validations](../validations/index.md#file-validations) for details).
+Skip file validations (see [File Validations](validations/index.md#file-validations) for details).
 
 ```python
 skip_file_validation = False  # Default
@@ -101,7 +101,7 @@ skip_file_validation = False  # Default
 
 ### `skip_validation` (Optional)
 
-Skips both checksum and file validation checks when running migrations. See [Validation Types](../validations/index.md#validation-types) for details. **Use with caution!**
+Skips both checksum and file validation checks when running migrations. See [Validation Types](validations/index.md#validation-types) for details. **Use with caution!**
 
 ```python
 skip_validation = False  # Default
@@ -181,8 +181,3 @@ Jetbase creates two tables in your database to track migrations:
 | `jetbase_lock`       | Prevents concurrent migrations from running                     |
 
 These tables are created automatically when you run your first migration.
-
-## Next Steps
-
-- [Writing Migrations](migrations/writing-migrations.md) — Learn how to write effective migration files
-- [Commands Reference](commands/index.md) — Explore all available commands

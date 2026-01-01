@@ -120,7 +120,3 @@ Jetbase currently supports:
 
 - ✅ PostgreSQL
 - ✅ SQLite
-
-## Need Help?
-
-Check out the [troubleshooting guide](troubleshooting.md) or open an issue on GitHub!
