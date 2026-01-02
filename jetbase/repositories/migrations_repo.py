@@ -1,5 +1,8 @@
 from sqlalchemy import Result, Row, text
 
+from jetbase.database.connection import get_db_connection
+from jetbase.database.queries.base import QueryMethod
+from jetbase.database.queries.query_loader import get_query
 from jetbase.engine.checksum import calculate_checksum
 from jetbase.engine.file_parser import (
     get_description_from_filename,
@@ -7,9 +10,6 @@ from jetbase.engine.file_parser import (
 from jetbase.enums import MigrationDirectionType, MigrationType
 from jetbase.exceptions import VersionNotFoundError
 from jetbase.models import MigrationRecord
-from jetbase.queries.base import QueryMethod
-from jetbase.queries.query_loader import get_query
-from jetbase.repositories.db import get_db_connection
 
 
 def run_migration(

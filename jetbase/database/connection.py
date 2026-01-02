@@ -4,8 +4,8 @@ from typing import Generator
 from sqlalchemy import Connection, Engine, create_engine, text
 
 from jetbase.config import get_config
+from jetbase.database.queries.base import detect_db
 from jetbase.enums import DatabaseType
-from jetbase.queries.base import detect_db
 
 
 @contextmanager

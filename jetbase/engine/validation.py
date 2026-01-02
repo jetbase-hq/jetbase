@@ -12,7 +12,6 @@ from jetbase.engine.version import (
 )
 from jetbase.exceptions import (
     ChecksumMismatchError,
-    DuplicateMigrationVersionError,
     OutOfOrderMigrationError,
 )
 from jetbase.repositories.migrations_repo import (
@@ -129,37 +128,6 @@ def validate_no_new_migration_files_with_lower_version_than_latest_migration(
             )
 
 
-def validate_no_duplicate_migration_file_versions(
-    current_migration_filepaths_by_version: dict[str, str],
-) -> None:
-    """
-    Ensure no duplicate migration versions exist in the migrations directory.
-
-    Checks that each version number appears only once across all
-    migration files.
-
-    Args:
-        current_migration_filepaths_by_version (dict[str, str]): Mapping
-            of version strings to file paths for all migration files.
-
-    Returns:
-        None: Returns silently if validation passes.
-
-    Raises:
-        DuplicateMigrationVersionError: If two or more files share
-            the same version number.
-    """
-    seen_versions: set[str] = set()
-    for file_version in current_migration_filepaths_by_version.keys():
-        if file_version in seen_versions:
-            raise DuplicateMigrationVersionError(
-                f"Duplicate migration version detected: {file_version}.\n"
-                "Each file must have a unique version.\n"
-                "Please rename the file to have a unique version."
-            )
-        seen_versions.add(file_version)
-
-
 def validate_migrated_repeatable_versions_in_migration_files(
     migrated_repeatable_filenames: list[str],
     all_repeatable_filenames: list[str],
@@ -233,9 +201,6 @@ def run_migration_validations(
 
     migration_filepaths_by_version: dict[str, str] = get_migration_filepaths_by_version(
         directory=migrations_directory_path
-    )
-    validate_no_duplicate_migration_file_versions(
-        current_migration_filepaths_by_version=migration_filepaths_by_version
     )
 
     if not skip_validation and not skip_validation_config:
