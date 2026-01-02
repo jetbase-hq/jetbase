@@ -8,13 +8,11 @@ from jetbase.engine.validation import (
     validate_current_migration_files_match_checksums,
     validate_migrated_repeatable_versions_in_migration_files,
     validate_migrated_versions_in_current_migration_files,
-    validate_no_duplicate_migration_file_versions,
     validate_no_new_migration_files_with_lower_version_than_latest_migration,
 )
 from jetbase.exceptions import (
     ChecksumMismatchError,
     DirectoryNotFoundError,
-    DuplicateMigrationVersionError,
     OutOfOrderMigrationError,
 )
 
@@ -82,20 +80,6 @@ class TestValidateNoNewMigrationFilesWithLowerVersion:
             validate_no_new_migration_files_with_lower_version_than_latest_migration(
                 filepaths, migrated_versions, latest_version
             )
-
-
-class TestValidateNoDuplicateMigrationFileVersions:
-    def test_passes_with_unique_versions(self) -> None:
-        """Test validation passes when all versions are unique."""
-        filepaths = {"1": "/path/V1__test.sql", "2": "/path/V2__test.sql"}
-
-        validate_no_duplicate_migration_file_versions(filepaths)
-
-    def test_raises_with_duplicate_versions(self) -> None:
-        """Test validation fails when duplicate versions exist."""
-        # Note: dict can't have duplicate keys, but the function iterates
-        # and tracks seen versions - this tests edge case behavior
-        pass  # Can't test with dict, duplicates are handled by dict construction
 
 
 class TestValidateMigratedRepeatableVersionsInMigrationFiles:

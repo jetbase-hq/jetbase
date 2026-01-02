@@ -53,7 +53,7 @@ jobs:
         run: uv sync --dev
 
       - name: Run unit tests
-        run: uv run pytest tests/core/ -v
+        run: uv run pytest tests/unit/ -v
 
   postgres-cli-tests:
     runs-on: ubuntu-latest
