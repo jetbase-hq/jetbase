@@ -127,7 +127,16 @@ def upgrade_cmd(
     )
 
     if not dry_run:
+        if (
+            not all_versions
+            and not repeatable_always_filepaths
+            and not runs_on_change_filepaths
+        ):
+            print("Migrations are up to date.")
+            return
+
         with migration_lock():
+            print("Starting migrations...")
             for version, file_path in all_versions.items():
                 sql_statements: list[str] = parse_upgrade_statements(
                     file_path=file_path
@@ -191,6 +200,7 @@ def upgrade_cmd(
                             migration_type=MigrationType.RUNS_ON_CHANGE,
                         )
                         print(f"Migration applied successfully: {filename}")
+            print("Migrations completed successfully.")
     else:
         process_dry_run(
             version_to_filepath=all_versions,

@@ -54,7 +54,9 @@ def fix_checksums_cmd(audit_only: bool = False) -> None:
     )
 
     if not versions_and_checksums_to_repair:
-        print("All migration checksums are already valid - no drift detected.")
+        print(
+            "All migration checksums are valid - no altered upgrade statments detected."
+        )
         return
 
     if audit_only:
