@@ -128,6 +128,7 @@ def fix() -> None:
     validate_jetbase_directory()
     fix_files_cmd(audit_only=False)
     fix_checksums_cmd(audit_only=False)
+    print("Fix completed successfully.")
 
 
 @app.command()

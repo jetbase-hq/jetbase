@@ -98,7 +98,7 @@ def print_migration_preview(filename: str, sql_statements: list[str]) -> None:
         None: Prints formatted preview to stdout.
     """
     print(
-        f"\nSQL Preview for Repeatable On Change Migration {filename} ({len(sql_statements)} {'statements' if len(sql_statements) != 1 else 'statement'})\n"
+        f"SQL Preview for {filename} ({len(sql_statements)} {'statements' if len(sql_statements) != 1 else 'statement'})\n"
     )
     for statement in sql_statements:
         print(f"{statement}\n")

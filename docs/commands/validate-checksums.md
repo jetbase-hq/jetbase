@@ -63,7 +63,7 @@ jetbase validate-checksums
 **If all checksums match:**
 
 ```
-All migration checksums are already valid - no drift detected.
+All migration checksums are valid - no altered upgrade statments detected.
 ```
 
 **If mismatches are found:**

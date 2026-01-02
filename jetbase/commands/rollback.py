@@ -80,6 +80,7 @@ def rollback_cmd(
 
     if not dry_run:
         with migration_lock():
+            print("Starting rollback...")
             for version, file_path in versions_to_rollback.items():
                 sql_statements: list[str] = parse_rollback_statements(
                     file_path=file_path
@@ -95,6 +96,7 @@ def rollback_cmd(
                 filename: str = os.path.basename(file_path)
 
                 print(f"Rollback applied successfully: {filename}")
+            print("Rollbacks completed successfully.")
 
     else:
         process_dry_run(
