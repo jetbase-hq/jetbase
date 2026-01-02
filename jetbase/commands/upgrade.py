@@ -34,35 +34,18 @@ def upgrade_cmd(
     skip_file_validation: bool = False,
 ) -> None:
     """
-    Apply pending migrations to the database.
-
-    Executes all pending versioned migrations in order, followed by any
-    repeatable migrations (runs-always and runs-on-change). Validates
-    migration files and checksums before execution unless validation
-    is explicitly skipped.
+    Apply pending migrations to the database in order.
 
     Args:
-        count (int | None): Maximum number of versioned migrations to apply.
-            Cannot be used with to_version. Defaults to None (apply all).
-        to_version (str | None): Apply migrations up to and including this
-            version. Cannot be used with count. Defaults to None.
-        dry_run (bool): If True, shows a preview of the SQL that would be
-            executed without actually running it. Defaults to False.
-        skip_validation (bool): If True, skips both checksum and file
-            validation. Defaults to False.
-        skip_checksum_validation (bool): If True, skips validation that
-            checks if migration files have been modified. Defaults to False.
-        skip_file_validation (bool): If True, skips validation that checks
-            for missing or out-of-order files. Defaults to False.
-
-    Returns:
-        None: Prints migration status for each applied migration to stdout.
+        count (int | None): Maximum number of migrations to apply.
+        to_version (str | None): Apply migrations up to this version.
+        dry_run (bool): Preview SQL without executing.
+        skip_validation (bool): Skip all validations.
+        skip_checksum_validation (bool): Skip checksum validation only.
+        skip_file_validation (bool): Skip file validation only.
 
     Raises:
-        ValueError: If both count and to_version are specified, or if count
-            is not a positive integer.
-        FileNotFoundError: If to_version is specified but not found in
-            pending migrations.
+        ValueError: If both count and to_version are specified.
     """
 
     if count is not None and to_version is not None:
@@ -88,33 +71,14 @@ def upgrade_cmd(
             skip_file_validation=skip_file_validation,
         )
 
-    all_versions: dict[str, str] = get_migration_filepaths_by_version(
-        directory=os.path.join(os.getcwd(), MIGRATIONS_DIR),
-        version_to_start_from=latest_migration.version if latest_migration else None,
+    filepaths_by_version: dict[str, str] = _get_filepaths_by_version(
+        latest_migration=latest_migration,
+        count=count,
+        to_version=to_version,
     )
-
-    if latest_migration:
-        all_versions = dict(list(all_versions.items())[1:])
-
-    if count:
-        all_versions = dict(list(all_versions.items())[:count])
-    elif to_version:
-        if all_versions.get(to_version) is None:
-            raise FileNotFoundError(
-                f"The specified to_version '{to_version}' does not exist among pending migrations."
-            )
-        all_versions_list = []
-        for file_version, file_path in all_versions.items():
-            all_versions_list.append((file_version, file_path))
-            if file_version == to_version:
-                break
-        all_versions = dict(all_versions_list)
 
     repeatable_always_filepaths: list[str] = get_repeatable_always_filepaths(
         directory=os.path.join(os.getcwd(), MIGRATIONS_DIR)
-    )
-    existing_repeatable_always_filenames: set[str] = (
-        get_existing_repeatable_always_migration_filenames()
     )
 
     runs_on_change_filepaths: list[str] = get_runs_on_change_filepaths(
@@ -122,13 +86,9 @@ def upgrade_cmd(
         changed_only=True,
     )
 
-    existing_runs_on_change_filenames: list[str] = list(
-        get_existing_on_change_filenames_to_checksums().keys()
-    )
-
     if not dry_run:
         if (
-            not all_versions
+            not filepaths_by_version
             and not repeatable_always_filepaths
             and not runs_on_change_filepaths
         ):
@@ -137,74 +97,152 @@ def upgrade_cmd(
 
         with migration_lock():
             print("Starting migrations...")
-            for version, file_path in all_versions.items():
-                sql_statements: list[str] = parse_upgrade_statements(
-                    file_path=file_path
-                )
-                filename: str = os.path.basename(file_path)
 
-                run_migration(
-                    sql_statements=sql_statements,
-                    version=version,
-                    migration_operation=MigrationDirectionType.UPGRADE,
-                    filename=filename,
-                )
+            _run_versioned_migrations(filepaths_by_version=filepaths_by_version)
 
-                print(f"Migration applied successfully: {filename}")
+            _run_repeatable_always_migrations(
+                repeatable_always_filepaths=repeatable_always_filepaths
+            )
 
-            if repeatable_always_filepaths:
-                for filepath in repeatable_always_filepaths:
-                    sql_statements: list[str] = parse_upgrade_statements(
-                        file_path=filepath
-                    )
-                    filename: str = os.path.basename(filepath)
+            _run_repeatable_on_change_migrations(
+                runs_on_change_filepaths=runs_on_change_filepaths
+            )
 
-                    if filename in existing_repeatable_always_filenames:
-                        run_update_repeatable_migration(
-                            sql_statements=sql_statements,
-                            filename=filename,
-                            migration_type=MigrationType.RUNS_ALWAYS,
-                        )
-                        print(f"Migration applied successfully: {filename}")
-                    else:
-                        run_migration(
-                            sql_statements=sql_statements,
-                            version=None,
-                            migration_operation=MigrationDirectionType.UPGRADE,
-                            filename=filename,
-                            migration_type=MigrationType.RUNS_ALWAYS,
-                        )
-                        print(f"Migration applied successfully: {filename}")
-
-            if runs_on_change_filepaths:
-                for filepath in runs_on_change_filepaths:
-                    sql_statements: list[str] = parse_upgrade_statements(
-                        file_path=filepath
-                    )
-                    filename: str = os.path.basename(filepath)
-
-                    if filename in existing_runs_on_change_filenames:
-                        # update migration
-                        run_update_repeatable_migration(
-                            sql_statements=sql_statements,
-                            filename=filename,
-                            migration_type=MigrationType.RUNS_ON_CHANGE,
-                        )
-                        print(f"Migration applied successfully: {filename}")
-                    else:
-                        run_migration(
-                            sql_statements=sql_statements,
-                            version=None,
-                            migration_operation=MigrationDirectionType.UPGRADE,
-                            filename=filename,
-                            migration_type=MigrationType.RUNS_ON_CHANGE,
-                        )
-                        print(f"Migration applied successfully: {filename}")
             print("Migrations completed successfully.")
     else:
         process_dry_run(
-            version_to_filepath=all_versions,
+            version_to_filepath=filepaths_by_version,
             migration_operation=MigrationDirectionType.UPGRADE,
             repeatable_always_filepaths=repeatable_always_filepaths,
             runs_on_change_filepaths=runs_on_change_filepaths,
         )
+
+
+def _get_filepaths_by_version(
+    latest_migration: MigrationRecord | None,
+    count: int | None = None,
+    to_version: str | None = None,
+) -> dict[str, str]:
+    """
+    Get pending migration file paths filtered by count or target version.
+
+    Args:
+        latest_migration (MigrationRecord | None): The most recently
+            applied migration, or None if no migrations applied.
+        count (int | None): Limit to this many migrations. Defaults to None.
+        to_version (str | None): Include migrations up to this version.
+            Defaults to None.
+
+    Returns:
+        dict[str, str]: Mapping of version to file path for pending migrations.
+
+    Raises:
+        FileNotFoundError: If to_version is not found in pending migrations.
+    """
+    filepaths_by_version: dict[str, str] = get_migration_filepaths_by_version(
+        directory=os.path.join(os.getcwd(), MIGRATIONS_DIR),
+        version_to_start_from=latest_migration.version if latest_migration else None,
+    )
+
+    if latest_migration:
+        filepaths_by_version = dict(list(filepaths_by_version.items())[1:])
+
+    if count:
+        filepaths_by_version = dict(list(filepaths_by_version.items())[:count])
+    elif to_version:
+        if filepaths_by_version.get(to_version) is None:
+            raise FileNotFoundError(
+                f"The specified to_version '{to_version}' does not exist among pending migrations."
+            )
+        seen_versions: dict[str, str] = {}
+        for file_version, file_path in filepaths_by_version.items():
+            seen_versions[file_version] = file_path
+            if file_version == to_version:
+                break
+        filepaths_by_version = seen_versions
+
+    return filepaths_by_version
+
+
+def _run_versioned_migrations(filepaths_by_version: dict[str, str]) -> None:
+    """
+    Execute versioned (V__) migrations.
+
+    Args:
+        filepaths_by_version (dict[str, str]): Mapping of version to file path.
+    """
+    for version, file_path in filepaths_by_version.items():
+        sql_statements: list[str] = parse_upgrade_statements(file_path=file_path)
+        filename: str = os.path.basename(file_path)
+
+        run_migration(
+            sql_statements=sql_statements,
+            version=version,
+            migration_operation=MigrationDirectionType.UPGRADE,
+            filename=filename,
+        )
+
+        print(f"Migration applied successfully: {filename}")
+
+
+def _run_repeatable_always_migrations(
+    repeatable_always_filepaths: list[str],
+) -> None:
+    """
+    Execute runs-always (RA__) migrations.
+
+    Args:
+        repeatable_always_filepaths (list[str]): List of RA__ file paths.
+    """
+    if repeatable_always_filepaths:
+        for filepath in repeatable_always_filepaths:
+            sql_statements: list[str] = parse_upgrade_statements(file_path=filepath)
+            filename: str = os.path.basename(filepath)
+
+            if filename in get_existing_repeatable_always_migration_filenames():
+                run_update_repeatable_migration(
+                    sql_statements=sql_statements,
+                    filename=filename,
+                    migration_type=MigrationType.RUNS_ALWAYS,
+                )
+                print(f"Migration applied successfully: {filename}")
+            else:
+                run_migration(
+                    sql_statements=sql_statements,
+                    version=None,
+                    migration_operation=MigrationDirectionType.UPGRADE,
+                    filename=filename,
+                    migration_type=MigrationType.RUNS_ALWAYS,
+                )
+                print(f"Migration applied successfully: {filename}")
+
+
+def _run_repeatable_on_change_migrations(runs_on_change_filepaths: list[str]) -> None:
+    """
+    Execute runs-on-change (ROC__) migrations.
+
+    Args:
+        runs_on_change_filepaths (list[str]): List of ROC__ file paths.
+    """
+    if runs_on_change_filepaths:
+        for filepath in runs_on_change_filepaths:
+            sql_statements: list[str] = parse_upgrade_statements(file_path=filepath)
+            filename: str = os.path.basename(filepath)
+
+            if filename in list(get_existing_on_change_filenames_to_checksums().keys()):
+                # update migration
+                run_update_repeatable_migration(
+                    sql_statements=sql_statements,
+                    filename=filename,
+                    migration_type=MigrationType.RUNS_ON_CHANGE,
+                )
+                print(f"Migration applied successfully: {filename}")
+            else:
+                run_migration(
+                    sql_statements=sql_statements,
+                    version=None,
+                    migration_operation=MigrationDirectionType.UPGRADE,
+                    filename=filename,
+                    migration_type=MigrationType.RUNS_ON_CHANGE,
+                )
+                print(f"Migration applied successfully: {filename}")
