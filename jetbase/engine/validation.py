@@ -12,7 +12,6 @@ from jetbase.engine.version import (
 )
 from jetbase.exceptions import (
     ChecksumMismatchError,
-    DuplicateMigrationVersionError,
     OutOfOrderMigrationError,
 )
 from jetbase.repositories.migrations_repo import (
