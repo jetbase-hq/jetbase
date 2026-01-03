@@ -3,8 +3,6 @@ from jetbase.models import LockStatus
 from jetbase.repositories.lock_repo import fetch_lock_status, lock_table_exists
 from jetbase.repositories.migrations_repo import migrations_table_exists
 
-sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
-
 
 def lock_status_cmd() -> None:
     """
