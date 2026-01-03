@@ -14,6 +14,8 @@ Jetbase helps you manage database migrations in a simple, version-controlled way
 - **✅ Checksum Validation** — Detects if migration files have been modified
 - **🔄 Repeatable Migrations** — Support for migrations that run on every upgrade
 
+[📚 Full Documentation](https://jetbase-hq.github.io/jetbase/)
+
 ## Quick Start 🏃‍♂️
 
 ### Installation
