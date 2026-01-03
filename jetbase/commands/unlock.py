@@ -1,4 +1,3 @@
-from jetbase.config import get_config
 from jetbase.repositories.lock_repo import (
     lock_table_exists,
     unlock_database,
