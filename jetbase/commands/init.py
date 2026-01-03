@@ -2,9 +2,6 @@ from pathlib import Path
 
 from jetbase.constants import BASE_DIR, ENV_FILE, ENV_FILE_CONTENT, MIGRATIONS_DIR
 
-# def initialize_cmd() -> None:
-#     create_directory_structure(base_path=BASE_DIR)
-
 
 def initialize_cmd() -> None:
     """

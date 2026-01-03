@@ -3,7 +3,7 @@ repos:
     rev: v0.14.1
     hooks:
       - id: ruff-check
-        args: ["--select", "I", "--fix"]
+        args: ["I", "--fix"]
       - id: ruff-format
 
   - repo: https://github.com/facebook/pyrefly-pre-commit
