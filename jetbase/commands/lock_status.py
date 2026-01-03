@@ -1,4 +1,3 @@
-from jetbase.config import get_config
 from jetbase.models import LockStatus
 from jetbase.repositories.lock_repo import fetch_lock_status, lock_table_exists
 from jetbase.repositories.migrations_repo import migrations_table_exists
