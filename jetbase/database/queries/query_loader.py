@@ -6,12 +6,13 @@ from jetbase.config import get_config
 from jetbase.database.queries.base import BaseQueries, QueryMethod
 from jetbase.database.queries.postgres import PostgresQueries
 from jetbase.database.queries.sqlite import SQLiteQueries
+from jetbase.database.queries.snowflake import SnowflakeQueries
 
 
 class DatabaseType(Enum):
     POSTGRESQL = "postgresql"
     SQLITE = "sqlite"
-    MYSQL = "mysql"
+    SNOWFLAKE = "snowflake"
 
 
 def get_database_type() -> DatabaseType:
@@ -35,6 +36,8 @@ def get_database_type() -> DatabaseType:
         return DatabaseType.POSTGRESQL
     elif dialect_name == "sqlite":
         return DatabaseType.SQLITE
+    elif dialect_name == "snowflake":
+        return DatabaseType.SNOWFLAKE
     else:
         raise ValueError(f"Unsupported database type: {dialect_name}")
 
@@ -58,6 +61,8 @@ def get_queries() -> type[BaseQueries]:
         return PostgresQueries
     elif db_type == DatabaseType.SQLITE:
         return SQLiteQueries
+    elif db_type == DatabaseType.SNOWFLAKE:
+        return SnowflakeQueries
     else:
         raise ValueError(f"Unsupported database type: {db_type}")
 

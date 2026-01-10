@@ -8,6 +8,7 @@ authors = [
 ]
 requires-python = ">=3.10"
 dependencies = [
+    "cryptography>=46.0.3",
     "packaging>=25.0",
     "rich>=12.2.0",
     "sqlalchemy>=2.0.10",
@@ -31,7 +32,14 @@ dev = [
     "pyrefly>=0.38.2",
     "pytest>=8.4.2",
     "ruff>=0.14.2",
+    "snowflake-sqlalchemy>=1.8.2",
 ]
+
+[project.optional-dependencies]
+snowflake = [
+    "snowflake-sqlalchemy>=1.8.2",
+]
+
 
 [tool.pytest.ini_options]
 markers = [

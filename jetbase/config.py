@@ -39,6 +39,8 @@ class JetbaseConfig:
     skip_checksum_validation: bool = False
     skip_file_validation: bool = False
     skip_validation: bool = False
+    snowflake_private_key: str | None = None
+    snowflake_private_key_password: str | None = None
 
     def __post_init__(self):
         # Validate skip_checksum_validation
@@ -73,6 +75,8 @@ DEFAULT_VALUES: dict[str, Any] = {
     "skip_file_validation": False,
     "skip_validation": False,
     "postgres_schema": None,
+    "snowflake_private_key": None,
+    "snowflake_private_key_password": None,
 }
 
 REQUIRED_KEYS: set[str] = {

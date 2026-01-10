@@ -5,6 +5,8 @@ from pathlib import Path
 import pytest
 from sqlalchemy import create_engine, text
 from typer.testing import CliRunner
+from jetbase.enums import DatabaseType
+from jetbase.database.queries.base import detect_db
 
 
 @pytest.fixture
@@ -34,15 +36,25 @@ def test_db_url(tmp_path):
 
 
 @pytest.fixture
-def migrations_fixture_dir():
+def migrations_fixture_dir(test_db_url):
     """Path to the fixtures migrations directory."""
-    return Path(__file__).parent / "cli" / "migrations"
+    base_path: Path = Path(__file__).parent / "cli"
+
+    if detect_db(test_db_url) == DatabaseType.SNOWFLAKE:
+        return base_path / "migrations_snowflake"
+
+    return base_path / "migrations"
 
 
 @pytest.fixture
-def migrations_versions_only_fixture_dir():
+def migrations_versions_only_fixture_dir(test_db_url):
     """Path to the fixtures migrations directory."""
-    return Path(__file__).parent / "cli" / "migrations_versions_only"
+    base_path = Path(__file__).parent / "cli"
+
+    if detect_db(test_db_url) == DatabaseType.SNOWFLAKE:
+        return base_path / "migrations_snowflake_versions_only"
+
+    return base_path / "migrations_versions_only"
 
 
 @pytest.fixture
