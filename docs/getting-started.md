@@ -7,8 +7,8 @@ This guide will walk you through setting up Jetbase from scratch. By the end, yo
 Before you begin, make sure you have:
 
 - **Python 3.10+** installed
-- A **database** (PostgreSQL or SQLite)
-- **pip** for installing packages
+- A **database** (PostgreSQL, SQLite, Snowflake)
+- **pip** or **uv** for installing packages
 
 ## Installation
 
@@ -17,6 +17,13 @@ Install Jetbase using pip:
 ```bash
 pip install jetbase
 ```
+
+> **Note for Snowflake Users:**  
+> To use Jetbase with Snowflake, install the Snowflake extras:
+>
+> ```shell
+> pip install "jetbase[snowflake]"
+> ```
 
 Verify the installation:
 
