@@ -147,21 +147,21 @@ def _find_checksum_mismatches(
         end_version=latest_migrated_version,
     )
 
+    db_checksums_by_version: dict[str, str] = dict(migrated_versions_and_checksums)
+
     versions_and_checksums_to_repair: list[tuple[str, str]] = []
 
-    for index, (file_version, filepath) in enumerate(
-        migration_filepaths_by_version.items()
-    ):
+    for file_version, filepath in migration_filepaths_by_version.items():
+        # this should never be hit because of the validation check above
+        if file_version not in db_checksums_by_version:
+            raise MigrationVersionMismatchError(
+                f"Version {file_version} found in files but not in database."
+            )
+
         sql_statements: list[str] = parse_upgrade_statements(file_path=filepath)
         checksum: str = calculate_checksum(sql_statements=sql_statements)
 
-        # this should never be hit because of the validation check above
-        if file_version != migrated_versions_and_checksums[index][0]:
-            raise MigrationVersionMismatchError(
-                f"Version mismatch123: expected {migrated_versions_and_checksums[index][0]}, found {file_version}."
-            )
-
-        if checksum != migrated_versions_and_checksums[index][1]:
+        if checksum != db_checksums_by_version[file_version]:
             versions_and_checksums_to_repair.append(
                 (
                     file_version,
