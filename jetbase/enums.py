@@ -36,7 +36,9 @@ class DatabaseType(Enum):
     Attributes:
         POSTGRESQL: PostgreSQL database.
         SQLITE: SQLite database.
+        SNOWFLAKE: Snowflake database.
     """
 
     POSTGRESQL = "postgresql"
     SQLITE = "sqlite"
+    SNOWFLAKE = "snowflake"

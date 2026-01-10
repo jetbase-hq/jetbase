@@ -40,6 +40,19 @@ class TestGetDatabaseType:
 
     @patch("jetbase.database.queries.query_loader.create_engine")
     @patch("jetbase.database.queries.query_loader.get_config")
+    def test_returns_snowflake(self, mock_config: Mock, mock_engine: Mock) -> None:
+        """Test that Snowflake dialect is detected correctly."""
+        mock_config.return_value.sqlalchemy_url = (
+            "snowflake://user:pass@account/db/schema"
+        )
+        mock_engine.return_value.dialect.name = "snowflake"
+
+        result = get_database_type()
+
+        assert result == DatabaseType.SNOWFLAKE
+
+    @patch("jetbase.database.queries.query_loader.create_engine")
+    @patch("jetbase.database.queries.query_loader.get_config")
     def test_raises_for_unsupported(self, mock_config: Mock, mock_engine: Mock) -> None:
         """Test that unsupported dialects raise ValueError."""
         mock_config.return_value.sqlalchemy_url = "mysql://localhost/db"
