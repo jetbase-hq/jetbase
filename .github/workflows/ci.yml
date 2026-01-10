@@ -116,52 +116,52 @@ jobs:
       - name: Run CLI tests
         run: uv run pytest tests/cli/ -v
 
-    snowflake-cli-tests:
-      runs-on: ubuntu-latest
+  snowflake-cli-tests:
+    runs-on: ubuntu-latest
 
-      env:
-        JETBASE_SQLALCHEMY_URL: ${{ secrets.SNOWFLAKE_USER_PW_SQLALCHEMY_URL }}
+    env:
+      JETBASE_SQLALCHEMY_URL: ${{ secrets.SNOWFLAKE_USER_PW_SQLALCHEMY_URL }}
 
-      steps:
-        - uses: actions/checkout@v5
+    steps:
+      - uses: actions/checkout@v5
 
-        - name: Set up Python
-          uses: actions/setup-python@v5
-          with:
-            python-version: "3.10"
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
 
-        - name: Install uv
-          uses: astral-sh/setup-uv@v6
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
 
-        - name: Install dependencies
-          run: uv sync --dev
+      - name: Install dependencies
+        run: uv sync --dev
 
-        - name: Run CLI tests
-          run: uv run pytest tests/cli/ -v
-    
-    snowflake-integration-tests:
-      runs-on: ubuntu-latest
-      env:
-        JETBASE_SNOWFLAKE_PRIVATE_KEY: ${{ secrets.SF_PRIVATE_KEY }}
-        TEST_SF_USER_PASS_URL: ${{ secrets.SNOWFLAKE_USER_PW_SQLALCHEMY_URL }}
-        TEST_SF_KEY_AUTH_URL: ${{ secrets.TEST_SF_KEY_AUTH_URL }}
-        
-      steps:
-        - uses: actions/checkout@v5
+      - name: Run CLI tests
+        run: uv run pytest tests/cli/ -v
+  
+  snowflake-integration-tests:
+    runs-on: ubuntu-latest
+    env:
+      JETBASE_SNOWFLAKE_PRIVATE_KEY: ${{ secrets.SF_PRIVATE_KEY }}
+      TEST_SF_USER_PASS_URL: ${{ secrets.SNOWFLAKE_USER_PW_SQLALCHEMY_URL }}
+      TEST_SF_KEY_AUTH_URL: ${{ secrets.TEST_SF_KEY_AUTH_URL }}
+      
+    steps:
+      - uses: actions/checkout@v5
 
-        - name: Set up Python
-          uses: actions/setup-python@v5
-          with:
-            python-version: "3.10"
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
 
-        - name: Install uv
-          uses: astral-sh/setup-uv@v6
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
 
-        - name: Install dependencies
-          run: uv sync --dev
+      - name: Install dependencies
+        run: uv sync --dev
 
-        - name: Run integration tests
-          run: uv run pytest tests/integration/ -v
+      - name: Run integration tests
+        run: uv run pytest tests/integration/ -v
 
   integration-tests:
     runs-on: ubuntu-latest
