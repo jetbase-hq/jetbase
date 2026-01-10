@@ -109,26 +109,12 @@ def setup_migrations_versions_only(tmp_path, migrations_versions_only_fixture_di
 def clean_db(test_db_url):
     """Clean up database before and after tests."""
     engine = create_engine(test_db_url)
-    is_snowflake = "snowflake" in test_db_url.lower()
 
     def cleanup():
         with engine.begin() as connection:
-            if is_snowflake:
-                # TRUNCATE is faster and avoids metadata propagation issues
-                for table in [
-                    "test_users",
-                    "users",
-                    "test_posts",
-                    "jetbase_migrations",
-                    "jetbase_lock",
-                ]:
-                    connection.execute(text(f"TRUNCATE TABLE IF EXISTS {table}"))
-            else:
-                connection.execute(text("DROP TABLE IF EXISTS test_users"))
-                connection.execute(text("DROP TABLE IF EXISTS users"))
-                connection.execute(text("DROP TABLE IF EXISTS test_posts"))
-                connection.execute(text("DROP TABLE IF EXISTS jetbase_migrations"))
-                connection.execute(text("DROP TABLE IF EXISTS jetbase_lock"))
+            connection.execute(text("DROP TABLE IF EXISTS users"))
+            connection.execute(text("DROP TABLE IF EXISTS jetbase_migrations"))
+            connection.execute(text("DROP TABLE IF EXISTS jetbase_lock"))
 
     cleanup()
     yield engine
