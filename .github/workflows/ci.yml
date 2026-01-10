@@ -7,6 +7,7 @@ on:
       - ".github/workflows/ci-pr.yml" # rerun if this workflow changes
       - "pyproject.toml" # rerun if deps/config change
       - "uv.lock" # rerun if lockfile changes
+      - "tests/**" # also run when tests change
   workflow_dispatch: {}
 jobs:
   lint-type-format-checks:
@@ -138,7 +139,28 @@ jobs:
 
       - name: Run CLI tests
         run: uv run pytest tests/cli/ -m "snowflake" -v
-  
+
+  db-dependencies-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Install dependencies
+        run: uv add "jetbase[snowflake]"
+
+      - name: Run db dependencies tests
+        run: uv run pytest tests/db_dependencies/ -v
+
+
   snowflake-integration-tests:
     runs-on: ubuntu-latest
     env:
