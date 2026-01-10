@@ -145,6 +145,8 @@ jobs:
       JETBASE_SNOWFLAKE_PRIVATE_KEY: ${{ secrets.SF_PRIVATE_KEY }}
       TEST_SF_USER_PASS_URL: ${{ secrets.SNOWFLAKE_USER_PW_SQLALCHEMY_URL }}
       TEST_SF_KEY_AUTH_URL: ${{ secrets.TEST_SF_KEY_AUTH_URL }}
+      TEST_SF_PRIVATE_KEY_PASSWORD: ${{ secrets.TEST_SF_PRIVATE_KEY_PASSWORD }}
+      TEST_SF_ENCRYPTED_PRIVATE_KEY: ${{ secrets.TEST_SF_ENCRYPTED_PRIVATE_KEY }}
       
     steps:
       - uses: actions/checkout@v5
