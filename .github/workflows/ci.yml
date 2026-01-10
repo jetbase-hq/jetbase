@@ -7,6 +7,7 @@ on:
       - ".github/workflows/ci-pr.yml" # rerun if this workflow changes
       - "pyproject.toml" # rerun if deps/config change
       - "uv.lock" # rerun if lockfile changes
+      - "tests/**" # also run when tests change
   workflow_dispatch: {}
 jobs:
   lint-type-format-checks:
