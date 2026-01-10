@@ -17,6 +17,11 @@ class TestDetectDb:
         result = detect_db("sqlite:///path/to/db.sqlite")
         assert result == DatabaseType.SQLITE
 
+    def test_detects_snowflake(self) -> None:
+        """Test that Snowflake URLs are detected correctly."""
+        result = detect_db("snowflake://user:pass@account/db/schema")
+        assert result == DatabaseType.SNOWFLAKE
+
     def test_raises_for_unsupported_database(self) -> None:
         """Test that unsupported databases raise ValueError."""
         with pytest.raises(ValueError, match="Unsupported database"):

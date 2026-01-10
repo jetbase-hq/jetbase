@@ -419,7 +419,6 @@ name = "jetbase"
 version = "0.12.2"
 source = { editable = "." }
 dependencies = [
-    { name = "cryptography" },
     { name = "packaging" },
     { name = "rich" },
     { name = "sqlalchemy" },
@@ -429,11 +428,13 @@ dependencies = [
 
 [package.optional-dependencies]
 snowflake = [
+    { name = "cryptography" },
     { name = "snowflake-sqlalchemy" },
 ]
 
 [package.dev-dependencies]
 dev = [
+    { name = "cryptography" },
     { name = "psycopg2-binary" },
     { name = "pyrefly" },
     { name = "pytest" },
@@ -443,7 +444,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "cryptography", specifier = ">=46.0.3" },
+    { name = "cryptography", marker = "extra == 'snowflake'", specifier = ">=46.0.3" },
     { name = "packaging", specifier = ">=25.0" },
     { name = "rich", specifier = ">=12.2.0" },
     { name = "snowflake-sqlalchemy", marker = "extra == 'snowflake'", specifier = ">=1.8.2" },
@@ -455,6 +456,7 @@ provides-extras = ["snowflake"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "cryptography", specifier = ">=46.0.3" },
     { name = "psycopg2-binary", specifier = ">=2.9.11" },
     { name = "pyrefly", specifier = ">=0.38.2" },
     { name = "pytest", specifier = ">=8.4.2" },
