@@ -75,9 +75,12 @@ def _get_snowflake_private_key_der() -> bytes:
             "Snowflake private key is not set. You can set it as JETBASE_SNOWFLAKE_PRIVATE_KEY in an evironment variable. \n Alternatively, you can set the password in the SQLAlchemy URL."
         )
 
+    password_str: str | None = get_config().snowflake_private_key_password
+    password: bytes | None = password_str.encode("utf-8") if password_str else None
+
     private_key: PrivateKeyTypes = serialization.load_pem_private_key(
         snowflake_private_key.encode("utf-8"),
-        password=get_config().snowflake_private_key_password,
+        password=password,
         backend=default_backend(),
     )
 
