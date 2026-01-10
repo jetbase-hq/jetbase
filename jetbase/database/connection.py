@@ -72,7 +72,9 @@ def _get_snowflake_private_key_der() -> bytes:
 
     if not snowflake_private_key:
         raise ValueError(
-            "Snowflake private key is not set. You can set it as JETBASE_SNOWFLAKE_PRIVATE_KEY in an evironment variable. \n Alternatively, you can set the password in the SQLAlchemy URL."
+            "Snowflake private key is not set. "
+            "You can set it as 'JETBASE_SNOWFLAKE_PRIVATE_KEY' in an environment variable. "
+            "Alternatively, you can add the password to the SQLAlchemy URL."
         )
 
     password_str: str | None = get_config().snowflake_private_key_password
