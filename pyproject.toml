@@ -47,5 +47,6 @@ markers = [
     "basic: tests commands with no params",
     "count: tests --count param", 
     "to_version: tests --to-version param",
-    "dry_run: tests --dry-run param"
+    "dry_run: tests --dry-run param",
+    "snowflake: tests for snowflake database",
 ]

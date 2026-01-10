@@ -3,8 +3,10 @@ import os
 from sqlalchemy import text
 
 from jetbase.cli.main import app
+import pytest
 
 
+@pytest.mark.snowflake
 def test_fix_files_success(
     runner, test_db_url, clean_db, setup_migrations_versions_only
 ):

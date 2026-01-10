@@ -4,8 +4,10 @@ from sqlalchemy import text
 
 from jetbase.cli.main import app
 from jetbase.exceptions import VersionNotFoundError
+import pytest
 
 
+@pytest.mark.snowflake
 def test_rollback(runner, test_db_url, clean_db, setup_migrations):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 

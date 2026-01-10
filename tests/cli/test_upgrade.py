@@ -1,5 +1,5 @@
 import os
-
+import pytest
 from sqlalchemy import text
 
 from jetbase.cli.main import app
@@ -272,6 +272,7 @@ def test_upgrade_skip_checksum_validation(
         assert count == 5
 
 
+@pytest.mark.snowflake
 def test_upgrade_repeatables(runner, test_db_url, clean_db, setup_migrations):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 

@@ -6,8 +6,10 @@ from jetbase.cli.main import app
 from jetbase.exceptions import (
     ChecksumMismatchError,
 )
+import pytest
 
 
+@pytest.mark.snowflake
 def test_fix_checksums_success(
     runner, test_db_url, clean_db, setup_migrations_versions_only
 ):

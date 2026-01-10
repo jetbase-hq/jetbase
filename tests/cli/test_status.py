@@ -1,6 +1,7 @@
 import os
 
 from jetbase.cli.main import app
+import pytest
 
 
 def test_status_success_all_applied_versions(
@@ -32,6 +33,7 @@ def test_status_success_all_applied_versions(
     assert "mi21" not in pending_section
 
 
+@pytest.mark.snowflake
 def test_status_success_repeatables(runner, test_db_url, clean_db, setup_migrations):
     os.chdir("jetbase")
     result = runner.invoke(app, ["upgrade"])
