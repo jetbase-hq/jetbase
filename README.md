@@ -30,6 +30,15 @@ pip install jetbase
 uv add jetbase
 ```
 
+> **Note for Snowflake Users:**  
+> To use Jetbase with Snowflake, install the Snowflake extras:
+>
+> ```shell
+> pip install "jetbase[snowflake]"
+> ```
+
+
+
 ### Initialize Your Project
 
 ```bash
@@ -44,7 +53,7 @@ This creates a `jetbase/` directory with:
 
 ### Configure Your Database
 
-Edit `jetbase/env.py` with your database connection string (currently support for postgres and sqlite):
+Edit `jetbase/env.py` with your database connection string (currently support for postgres, sqlite, and snowflake):
 
 **PostgreSQL example:**
 ```python
@@ -115,6 +124,7 @@ Jetbase currently supports:
 
 - ✅ PostgreSQL
 - ✅ SQLite
+- ✅ Snowflake
 
 ## Need Help?
 
