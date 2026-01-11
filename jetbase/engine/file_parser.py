@@ -147,7 +147,7 @@ def is_filename_format_valid(filename: str) -> bool:
     if filename.startswith((RUNS_ON_CHANGE_FILE_PREFIX, RUNS_ALWAYS_FILE_PREFIX)):
         return True
     raw_version: str = _get_version_from_filename(filename=filename)
-    if not _is_valid_version(version=raw_version):
+    if not is_valid_version(version=raw_version):
         return False
     return True
 
@@ -225,7 +225,7 @@ def _get_raw_description_from_filename(filename: str) -> str:
     return description
 
 
-def _is_valid_version(version: str) -> bool:
+def is_valid_version(version: str) -> bool:
     """
     Validate that a version string follows the correct format.
 
@@ -239,9 +239,9 @@ def _is_valid_version(version: str) -> bool:
         bool: True if the version format is valid.
 
     Example:
-        >>> _is_valid_version("1.2.3")
+        >>> is_valid_version("1.2.3")
         True
-        >>> _is_valid_version("1__2")
+        >>> is_valid_version("1__2")
         False
     """
     if not version:
@@ -284,7 +284,7 @@ def validate_filename_format(filename: str) -> None:
         is_valid_filename = False
     if filename.startswith(VERSION_FILE_PREFIX):
         raw_version: str = _get_version_from_filename(filename=filename)
-        if not _is_valid_version(version=raw_version):
+        if not is_valid_version(version=raw_version):
             is_valid_filename = False
 
     if not is_valid_filename:

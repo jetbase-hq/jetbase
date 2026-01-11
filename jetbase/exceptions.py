@@ -85,3 +85,11 @@ class DirectoryNotFoundError(Exception):
     """
 
     pass
+
+
+class InvalidVersionError(Exception):
+    """
+    Raised when a version is not valid.
+    """
+
+    pass
