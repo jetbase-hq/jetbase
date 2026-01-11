@@ -68,10 +68,10 @@ sqlalchemy_url = "sqlite:///mydb.db"
 ### Create Your First Migration
 
 ```bash
-jetbase new "create users table"
+jetbase new "create users table" -v 1
 ```
 
-This creates a new SQL file like `V20251225.120000__create_users_and_items_tables.sql`.
+This creates a new SQL file called `V1__create_users_table.sql`.
 
 > **Tip:**  
 > You can also create migrations manually by adding SQL files in the `jetbase/migrations` directory, using the `V<version>__<description>.sql` naming convention (e.g., `V1__add_users_table.sql`, `V2.4__add_users_table.sql`).

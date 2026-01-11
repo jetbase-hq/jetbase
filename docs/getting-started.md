@@ -80,16 +80,16 @@ Open `env.py` and update the `sqlalchemy_url` with your database connection stri
 Use the `new` command to create a migration file:
 
 ```bash
-jetbase new "create users table"
+jetbase new "create users table" -v 1
 ```
 
 This creates a file like:
 
 ```
-migrations/V20251225.143022__create_users_table.sql
+migrations/V1__create_users_table.sql
 ```
 
-The filename format is: `V{timestamp}__{description}.sql`
+The filename format is: `V{version}__{description}.sql`
 
 !!! tip "Manual Migration Files"
 You can also create migration files manually if you prefer! Simply add your migration file to the `jetbase/migrations/` folder and follow the required filename format:  
@@ -136,7 +136,7 @@ jetbase upgrade
 Output:
 
 ```
-Migration applied successfully: V20251225.143022__create_users_table.sql
+Migration applied successfully: V1__create_users_table.sql
 ```
 
 > **Note:**  

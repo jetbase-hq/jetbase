@@ -75,7 +75,7 @@ cd jetbase
 # (use your favorite editor)
 
 # 4. Create your first migration
-jetbase new "create users table"
+jetbase new "create users table" -v 1
 
 # 5. Apply migrations
 jetbase upgrade

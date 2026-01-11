@@ -21,10 +21,13 @@ You can create migrations in two ways:
 **Option 1: Using the CLI**
 
 ```bash
+jetbase new "create users table" -v 1
+
+# if you want a timestamp-based version, do not specify a version
 jetbase new "create users table"
 ```
 
-This automatically generates a properly formatted migration file with a timestamp.
+This automatically generates a properly formatted migration file.
 
 **Option 2: Creating files manually**
 
@@ -156,7 +159,7 @@ jetbase upgrade
 
 | Type                 | Pattern                    | Example                              |
 | -------------------- | -------------------------- | ------------------------------------ |
-| Versioned            | `V{timestamp}__{desc}.sql` | `V20251225.143022__create_users.sql` |
+| Versioned            | `V{version}__{desc}.sql` | `V1__create_users.sql` |
 | Runs Always          | `RA__{desc}.sql`           | `RA__refresh_views.sql`              |
 | Runs On Change       | `ROC__{desc}.sql`          | `ROC__functions.sql`                 |
 
