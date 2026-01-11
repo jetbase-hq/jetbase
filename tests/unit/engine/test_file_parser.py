@@ -7,7 +7,7 @@ import pytest
 from jetbase.engine.file_parser import (
     _get_raw_description_from_filename,
     _get_version_from_filename,
-    _is_valid_version,
+    is_valid_version,
     get_description_from_filename,
     is_filename_format_valid,
     is_filename_length_valid,
@@ -465,21 +465,21 @@ class TestParseRollbackStatements:
         assert is_filename_length_valid(valid_filename) is True
         assert is_filename_length_valid(long_filename) is False
 
-    def test_is_valid_version(self) -> None:
+    def testis_valid_version(self) -> None:
         """Test validation of version strings."""
-        assert _is_valid_version("1") is True
-        assert _is_valid_version("1.0") is True
-        assert _is_valid_version("1.0.0") is True
-        assert _is_valid_version("10.2.3") is True
-        assert _is_valid_version("0.1") is True
-        assert _is_valid_version("0.0.1") is True
-        assert _is_valid_version("1..2") is False
-        assert _is_valid_version("1.2.") is False
-        assert _is_valid_version(".1.2") is False
-        assert _is_valid_version("1.2.a") is False
-        assert _is_valid_version("a.b.c") is False
-        assert _is_valid_version("") is False
-        assert _is_valid_version("1_2_3") is True
+        assert is_valid_version("1") is True
+        assert is_valid_version("1.0") is True
+        assert is_valid_version("1.0.0") is True
+        assert is_valid_version("10.2.3") is True
+        assert is_valid_version("0.1") is True
+        assert is_valid_version("0.0.1") is True
+        assert is_valid_version("1..2") is False
+        assert is_valid_version("1.2.") is False
+        assert is_valid_version(".1.2") is False
+        assert is_valid_version("1.2.a") is False
+        assert is_valid_version("a.b.c") is False
+        assert is_valid_version("") is False
+        assert is_valid_version("1_2_3") is True
 
     def test_get_version_from_filename(self) -> None:
         """Test extraction of version from migration filenames."""

@@ -183,10 +183,13 @@ def status() -> None:
 @app.command()
 def new(
     description: str = typer.Argument(..., help="Description of the migration"),
+    version: str = typer.Option(
+        None, "--version", "-v", help="Version of the migration"
+    ),
 ) -> None:
     """Create a new migration file with a timestamp-based version and the provided description."""
     validate_jetbase_directory()
-    generate_new_migration_file_cmd(description=description)
+    generate_new_migration_file_cmd(description=description, version=version)
 
 
 def main() -> None:
