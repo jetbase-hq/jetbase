@@ -61,10 +61,10 @@ Edit `jetbase/env.py` with your database connection string (currently support fo
 ### Create Your First Migration
 
 ```bash
-jetbase new "create users table"
+jetbase new "create users table" -v 1
 ```
 
-This creates a new SQL file like `V20251225.120000__create_users_and_items_tables.sql`.
+This creates a new SQL file called `V1__create_users_table.sql`.
 
 ### Write Your Migration
 

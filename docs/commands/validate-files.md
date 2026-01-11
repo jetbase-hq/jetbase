@@ -57,8 +57,8 @@ All migrations have corresponding files.
 
 ```
 The following migrations are missing their corresponding files:
-→ 20251225.143022
-→ 20251225.150000
+→ 4
+→ 9
 ```
 
 ### Fix Mode
@@ -73,8 +73,8 @@ Output:
 
 ```
 Stopped tracking the following missing versions:
-→ 20251225.143022
-→ 20251225.150000
+→ 4
+→ 9
 ```
 
 

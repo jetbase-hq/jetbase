@@ -26,17 +26,17 @@ jetbase status
 ┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Version           ┃ Description                          ┃
 ┡━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ 20251220.100000   │ create_users_table                   │
-│ 20251221.093000   │ add_email_to_users                   │
-│ 20251222.140000   │ create_orders_table                  │
+│ 1                 │ create_users_table                   │
+│ 2                 │ add_email_to_users                   │
+│ 3                 │ create_orders_table                  │
 └───────────────────┴──────────────────────────────────────┘
 
                     Migrations Pending
 ┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Version           ┃ Description                          ┃
 ┡━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ 20251223.110000   │ add_products_table                   │
-│ 20251224.090000   │ add_shipping_info                    │
+│ 4                 │ add_products_table                   │
+│ 5                 │ add_shipping_info                    │
 └───────────────────┴──────────────────────────────────────┘
 ```
 
@@ -47,8 +47,8 @@ jetbase status
 ┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Version           ┃ Description                          ┃
 ┡━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ 20251220.100000   │ create_users_table                   │
-│ 20251221.093000   │ add_email_to_users                   │
+│ 1                 │ create_users_table                   │
+│ 2                 │ add_email_to_users                   │
 └───────────────────┴──────────────────────────────────────┘
 
                     Migrations Pending
@@ -84,7 +84,7 @@ The status command shows different prefixes for migration types:
 
 | Prefix            | Meaning                        |
 | ----------------- | ------------------------------ |
-| `20251225.143022` | Versioned migration (standard) |
+| `1` | Versioned migration (standard) |
 | `RUNS_ALWAYS`            | Runs Always migration    |
 | `RUNS_ON_CHANGE`           | Runs On Change migration |
 
@@ -94,9 +94,9 @@ Example:
 ┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Version           ┃ Description                  ┃
 ┡━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ 20251225.143022   │ create_users_table           │
-│ 20251225.144500   │ add_email_to_users           │
-│ 20251225.150000   │ create_orders_table          │
+│ 1                 │ create_users_table           │
+│ 2                 │ add_email_to_users           │
+│ 3                 │ create_orders_table          │
 │ RUNS_ALWAYS       │ refresh_materialized_views   │ 
 │ RUNS_ON_CHANGE    │ stored_procedures            │
 └───────────────────┴──────────────────────────────┘

@@ -45,7 +45,7 @@ jetbase rollback
 Output:
 
 ```
-Rollback applied successfully: V20251225.150000__add_email_to_users.sql
+Rollback applied successfully: V10__add_email_to_users.sql
 ```
 
 ### Rollback Multiple Migrations
@@ -58,16 +58,16 @@ jetbase rollback --count 3
 Output:
 
 ```
-Rollback applied successfully: V20251225.150000__add_email_to_users.sql
-Rollback applied successfully: V20251225.144500__add_index_on_users.sql
-Rollback applied successfully: V20251225.143022__create_users_table.sql
+Rollback applied successfully: V10__add_email_to_users.sql
+Rollback applied successfully: V9__add_index_on_users.sql
+Rollback applied successfully: V8__create_users_table.sql
 ```
 
 ### Roll Back to a Specific Version
 
 ```bash
 # Roll back everything after version 20251225.143022
-jetbase rollback --to-version 20251225.143022
+jetbase rollback --to-version 5
 ```
 
 !!! note
@@ -85,7 +85,7 @@ Output:
 === DRY RUN MODE ===
 The following migrations would be rolled back:
 
---- V20251225.150000__add_email_to_users.sql ---
+--- V10__add_email_to_users.sql ---
 ALTER TABLE users DROP COLUMN email;
 
 === END DRY RUN ===
@@ -105,7 +105,7 @@ jetbase rollback --count 2 --dry-run
 Rollback requires the original migration files to be present. If a file is missing:
 
 ```
-Migration file for version '20251225.143022' not found. Cannot proceed with rollback.
+Migration file for version '7' not found. Cannot proceed with rollback.
 Please restore the missing migration file and try again, or run 'jetbase fix'
 to synchronize the migrations table with existing files before retrying the rollback.
 ```

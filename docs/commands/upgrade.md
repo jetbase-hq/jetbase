@@ -43,8 +43,8 @@ jetbase upgrade --count 2
 ### Apply Up to a Specific Version
 
 ```bash
-# Apply all migrations up to and including version 20251225.150000
-jetbase upgrade --to-version 20251225.150000
+# Apply all migrations up to and including version 5
+jetbase upgrade --to-version 5
 ```
 
 
@@ -62,13 +62,13 @@ Output example:
 === DRY RUN MODE ===
 The following migrations would be applied:
 
---- V20251225.143022__create_users_table.sql ---
+--- V1__create_users_table.sql ---
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(50) NOT NULL
 );
 
---- V20251225.144500__add_email_to_users.sql ---
+--- V2__add_email_to_users.sql ---
 ALTER TABLE users ADD COLUMN email VARCHAR(255);
 
 === END DRY RUN ===

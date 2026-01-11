@@ -72,8 +72,8 @@ All migration checksums are valid - no altered upgrade statments detected.
 JETBASE - Checksum Audit Report
 ----------------------------------------
 Changes detected in the following files:
- → 20251225.143022
- → 20251225.150000
+ → 3
+ → 7
 ```
 
 ### Fix Mode
@@ -87,8 +87,8 @@ jetbase validate-checksums --fix
 Output:
 
 ```
-Fixed checksum for version: 20251225.143022
-Fixed checksum for version: 20251225.150000
+Fixed checksum for version: 3
+Fixed checksum for version: 7
 ```
 
 
