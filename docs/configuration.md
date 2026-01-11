@@ -9,6 +9,9 @@
 | `skip_validation` | `JETBASE_SKIP_VALIDATION` | `True` / `False` | `False` |
 | `skip_checksum_validation` | `JETBASE_SKIP_CHECKSUM_VALIDATION` | `True` / `False` | `False` |
 | `skip_file_validation` | `JETBASE_SKIP_FILE_VALIDATION` | `True` / `False` | `False` |
+| `snowflake_private_key` | `JETBASE_SNOWFLAKE_PRIVATE_KEY` | PEM/multi-line string | `None` |
+| `snowflake_private_key_password` | `JETBASE_SNOWFLAKE_PRIVATE_KEY_PASSWORD` | password string | `None` |
+
 
 ---
 
@@ -72,7 +75,8 @@ The database connection string in SQLAlchemy format.
     ```
 
 
-### `postgres_schema` (Optional, even if using a PostgreSQL database)
+### `postgres_schema` 
+**Optional (even for PostgreSQL databases)**
 
 Specify a PostgreSQL schema to use for migrations if using a PostgreSQL database. If not set, uses the default `public` schema.
 
@@ -80,7 +84,8 @@ Specify a PostgreSQL schema to use for migrations if using a PostgreSQL database
 postgres_schema = "my_schema"
 ```
 
-### `skip_checksum_validation` (Optional)
+### `skip_checksum_validation` 
+**(Optional)**
 
 Skips [checksum validations](validations/index.md#checksum-validation)
 
@@ -91,7 +96,8 @@ skip_checksum_validation = False  # Default
 !!! warning "When to use this"
 Only set this to `True` if you intentionally modified a migration file and want to skip the checksum check. It's generally better to use `jetbase fix-checksums` instead.
 
-### `skip_file_validation` (Optional)
+### `skip_file_validation` 
+**(Optional)**
 
 Skip file validations (see [File Validations](validations/index.md#file-validations) for details).
 
@@ -99,7 +105,8 @@ Skip file validations (see [File Validations](validations/index.md#file-validati
 skip_file_validation = False  # Default
 ```
 
-### `skip_validation` (Optional)
+### `skip_validation` 
+**(Optional)**
 
 Skips both checksum and file validation checks when running migrations. See [Validation Types](validations/index.md#validation-types) for details. **Use with caution!**
 
@@ -109,51 +116,31 @@ skip_validation = False  # Default
 
 When set to `True`, skips both checksum and file validation.
 
-## Full Configuration Example
 
-Here's a complete `env.py` with all options:
+### `snowflake_private_key` 
+**(Optional, for Snowflake key pair authentication)**
 
-```python
-# Jetbase Configuration
+This is only needed if connecting to Snowflake and you're using private key authentication instead of username/password.
 
-# Database connection (required)
-sqlalchemy_url = "postgresql://myuser:mypassword@localhost:5432/myapp_dev"
-
-# PostgreSQL schema (optional, defaults to 'public')
-postgres_schema = "migrations"
-
-# Validation settings (all optional, default to False)
-skip_validation = False
-skip_checksum_validation = False
-skip_file_validation = False
+```bash
+export JETBASE_SNOWFLAKE_PRIVATE_KEY="""-----BEGIN PRIVATE KEY-----
+MIIEvQIBADANBgkqhkiG9w0BAQEFA...
+-----END PRIVATE KEY-----"""
 ```
 
-## Environment-Specific Configuration
+!!! tip
+    It's best to use environment variable for this and read your private key file in as the environment variable.
+    ```bash
+    export JETBASE_SNOWFLAKE_PRIVATE_KEY=$(cat snowflake_private_key.pem)
+    ```
 
-You can use environment variables for sensitive data:
+### `snowflake_private_key_password`  
+**(Optional, for encrypted keys)**
 
-```python
-import os
-
-sqlalchemy_url = os.getenv(
-    "DATABASE_URL",
-    "postgresql://user:password@localhost:5432/mydb"  # fallback for development
-)
-```
-
-Or use different configurations based on environment:
+The password to decrypt your PEM-encoded private key if it is password-protected.
 
 ```python
-import os
-
-env = os.getenv("ENV", "development")
-
-if env == "production":
-    sqlalchemy_url = os.getenv("DATABASE_URL")
-elif env == "staging":
-    sqlalchemy_url = "postgresql://user:pass@staging-db:5432/myapp"
-else:
-    sqlalchemy_url = "postgresql://postgres:postgres@localhost:5432/myapp_dev"
+export SNOWFLAKE_PRIVATE_KEY_PASSWORD=my-secret-password
 ```
 
 ## Command-Line Overrides
