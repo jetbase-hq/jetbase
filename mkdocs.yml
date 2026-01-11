@@ -41,6 +41,7 @@ repo_name: jaz-alli/jetbase
 nav:
   - Home: index.md
   - Getting Started: getting-started.md
+  - Database Connections: database-connections.md
   - Commands:
       - commands/index.md
       - init: commands/init.md
