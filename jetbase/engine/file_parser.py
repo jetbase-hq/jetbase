@@ -1,6 +1,7 @@
 import re
 
 from jetbase.constants import (
+    DEFAULT_DELIMITER,
     RUNS_ALWAYS_FILE_PREFIX,
     RUNS_ON_CHANGE_FILE_PREFIX,
     VERSION_FILE_PREFIX,
@@ -27,6 +28,9 @@ def parse_upgrade_statements(file_path: str, dry_run: bool = False) -> list[str]
     Returns:
         list[str]: List of SQL statements.
     """
+    delimiter: str = _extract_delimiter_from_file(file_path=file_path)
+    print(f"HELLO DELIMTER: {delimiter}")
+
     statements = []
     current_statement = []
 
@@ -47,12 +51,12 @@ def parse_upgrade_statements(file_path: str, dry_run: bool = False) -> list[str]
                 continue
             current_statement.append(line)
 
-            if line.strip().endswith(";"):
+            if line.strip().endswith(delimiter):
                 if not dry_run:
                     statement = " ".join(current_statement)
                 else:
                     statement = "\n".join(current_statement)
-                statement = statement.rstrip(";").strip()
+                statement = statement.rstrip(delimiter).strip()
                 if statement:
                     statements.append(statement)
                 current_statement = []
@@ -75,6 +79,7 @@ def parse_rollback_statements(file_path: str, dry_run: bool = False) -> list[str
     Returns:
         list[str]: List of SQL statements (without trailing semicolons).
     """
+    delimiter: str = _extract_delimiter_from_file(file_path=file_path)
     statements = []
     current_statement = []
     in_rollback_section = False
@@ -101,17 +106,49 @@ def parse_rollback_statements(file_path: str, dry_run: bool = False) -> list[str
                     continue
                 current_statement.append(line)
 
-                if line.strip().endswith(";"):
+                if line.strip().endswith(delimiter):
                     if not dry_run:
                         statement = " ".join(current_statement)
                     else:
                         statement = "\n".join(current_statement)
-                    statement = statement.rstrip(";").strip()
+                    statement = statement.rstrip(delimiter).strip()
                     if statement:
                         statements.append(statement)
                     current_statement = []
 
     return statements
+
+
+def _extract_delimiter_from_file(file_path: str) -> str:
+    """
+    Extract custom delimiter from a migration file if specified.
+
+    Looks for a comment line in the format:
+    -- jetbase: delimiter=<char>
+
+    Args:
+        file_path (str): Path to the migration SQL file.
+
+    Returns:
+        str: The custom delimiter if found, otherwise the default semicolon.
+    """
+    import re
+
+    delimiter_pattern: re.Pattern[str] = re.compile(
+        r"^--\s*jetbase:\s*delimiter=(.+)$", re.IGNORECASE
+    )
+
+    with open(file_path, "r") as file:
+        for line in file:
+            line = line.strip()
+            match: re.Match[str] | None = delimiter_pattern.match(line)
+            if match:
+                return match.group(1).strip()
+            # Stop looking after first non-comment, non-empty line
+            if line and not line.startswith("--"):
+                break
+
+    return DEFAULT_DELIMITER
 
 
 def is_filename_format_valid(filename: str) -> bool:
