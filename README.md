@@ -4,6 +4,13 @@
 
 Jetbase helps you manage database migrations in a simple, version-controlled way. Whether you're adding a new table, modifying columns, or need to undo a change, Jetbase makes it super easy!
 
+---
+
+**Created and maintained by [Jaz](https://github.com/jaz-alli) 🛠️**
+
+---
+
+
 ### Key Features ✨
 
 - **📦 Simple Setup** — Get started with just one command
