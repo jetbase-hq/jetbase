@@ -170,3 +170,58 @@ jetbase upgrade
 3. **Use descriptive names** — Future you will thank you
 4. **Test locally first** — Use dry-run before production
 5. **Don't modify applied migrations** — Create new ones instead
+
+## In-File Configuration
+
+### Custom Delimiter
+
+By default, Jetbase splits SQL statements on semicolons (`;`). However, when working with stored procedures, functions, or triggers that contain semicolons in their body, you may need a custom delimiter.
+
+Add a special comment at the top of your migration file to specify a custom delimiter:
+
+
+```sql
+-- jetbase: delimiter=<delimiter>
+```
+
+**In this example below, the delimiter to split SQL statements on in the file will be ~**
+```sql
+-- jetbase: delimiter=~
+```
+
+In this example, the delimiter to split SQL statements on in the file will be ~
+
+**Example file:**
+
+```sql
+-- jetbase: delimiter=~
+
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    email TEXT NOT NULL,
+    updated_at TIMESTAMP
+);~
+
+CREATE OR REPLACE FUNCTION set_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;~
+
+CREATE TRIGGER users_updated_at
+BEFORE UPDATE ON users
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();~
+
+-- rollback
+DROP TRIGGER IF EXISTS users_updated_at ON users;~
+DROP FUNCTION IF EXISTS set_updated_at();~
+DROP TABLE IF EXISTS users;~
+```
+
+
+!!! note
+    The `-- jetbase: delimiter=` directive must appear before any SQL statements (comments are okay).
+

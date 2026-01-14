@@ -13,6 +13,7 @@ from jetbase.engine.file_parser import (
     is_filename_length_valid,
     parse_rollback_statements,
     parse_upgrade_statements,
+    _extract_delimiter_from_file,
 )
 
 
@@ -234,6 +235,40 @@ class TestParseUpgradeStatements:
 
         assert result == []
 
+    def test_parse_upgrade_statements_with_custom_delimiter(
+        self, temp_dir: str
+    ) -> None:
+        """Test parsing statements with custom delimiter."""
+        sql_content = """-- jetbase: delimiter=~
+
+        CREATE TABLE users (
+            id SERIAL PRIMARY KEY,
+            email TEXT NOT NULL,
+            updated_at TIMESTAMP
+        );~
+        CREATE OR REPLACE FUNCTION set_updated_at()
+        RETURNS TRIGGER AS $$
+        BEGIN
+            NEW.updated_at = NOW();
+            RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql;~
+
+        CREATE TRIGGER users_updated_at
+        BEFORE UPDATE ON users
+        FOR EACH ROW
+        EXECUTE FUNCTION set_updated_at();~
+        """
+        sql_file = Path(temp_dir) / "test.sql"
+        sql_file.write_text(sql_content)
+        result = parse_upgrade_statements(str(sql_file))
+
+        assert len(result) == 3
+        assert "CREATE TABLE users" in result[0]
+        assert "CREATE OR REPLACE FUNCTION set_updated_at()" in result[1]
+        assert "NEW.updated_at = NOW();" in result[1]  # Internal semicolon preserved
+        assert "CREATE TRIGGER users_updated_at" in result[2]
+
 
 class TestParseRollbackStatements:
     @pytest.fixture
@@ -438,6 +473,44 @@ class TestParseRollbackStatements:
         assert result[1] == "DROP INDEX idx_users_name"
         assert result[2] == "DROP TABLE users"
 
+    def test_parse_rollback_statements_with_custom_delimiter(
+        self, temp_dir: str
+    ) -> None:
+        """Test parsing rollback statements with custom delimiter for functions containing semicolons."""
+        sql_content = """-- jetbase: delimiter=~
+
+        CREATE TABLE users (
+            id SERIAL PRIMARY KEY,
+            email TEXT NOT NULL,
+            updated_at TIMESTAMP
+        );~
+        CREATE OR REPLACE FUNCTION set_updated_at()
+        RETURNS TRIGGER AS $$
+        BEGIN
+            NEW.updated_at = NOW();
+            RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql;~
+
+        CREATE TRIGGER users_updated_at
+        BEFORE UPDATE ON users
+        FOR EACH ROW
+        EXECUTE FUNCTION set_updated_at();~
+
+        -- rollback
+        DROP TRIGGER IF EXISTS users_updated_at ON users;~
+        DROP FUNCTION IF EXISTS set_updated_at();~
+        DROP TABLE IF EXISTS users;~
+        """
+        sql_file = Path(temp_dir) / "test.sql"
+        sql_file.write_text(sql_content)
+        result = parse_rollback_statements(str(sql_file))
+
+        assert len(result) == 3
+        assert result[0] == "DROP TRIGGER IF EXISTS users_updated_at ON users;"
+        assert result[1] == "DROP FUNCTION IF EXISTS set_updated_at();"
+        assert result[2] == "DROP TABLE IF EXISTS users;"
+
     def test_is_filename_format_valid(self) -> None:
         """Test validation of migration filenames."""
         assert is_filename_format_valid("V1__initial_setup.sql") is True
@@ -527,3 +600,75 @@ class TestParseRollbackStatements:
         )
         assert get_description_from_filename("V0_1__.sql") == ""
         assert get_description_from_filename("V0_1__    .sql") == ""
+
+
+class TestExtractDelimiterFromFile:
+    @pytest.fixture
+    def temp_dir(self) -> Generator[str, None, None]:
+        """Create a temporary directory for testing."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            yield temp_dir
+
+    def test_extract_delimiter_default_when_not_specified(self, temp_dir: str) -> None:
+        """Test that default delimiter (;) is returned when not specified."""
+        sql_content = "CREATE TABLE users (id INT PRIMARY KEY);"
+        sql_file = Path(temp_dir) / "test.sql"
+        sql_file.write_text(sql_content)
+        result = _extract_delimiter_from_file(str(sql_file))
+
+        assert result == ";"
+
+    def test_extract_delimiter_custom_single_char(self, temp_dir: str) -> None:
+        """Test extraction of a single character custom delimiter."""
+        sql_content = """-- jetbase: delimiter=~
+CREATE TABLE users (id INT PRIMARY KEY)~
+"""
+        sql_file = Path(temp_dir) / "test.sql"
+        sql_file.write_text(sql_content)
+        result = _extract_delimiter_from_file(str(sql_file))
+
+        assert result == "~"
+
+    def test_extract_delimiter_custom_multi_char(self, temp_dir: str) -> None:
+        """Test extraction of a multi-character custom delimiter."""
+        sql_content = """-- jetbase: delimiter=$$
+CREATE FUNCTION test() RETURNS void$$
+"""
+        sql_file = Path(temp_dir) / "test.sql"
+        sql_file.write_text(sql_content)
+        result = _extract_delimiter_from_file(str(sql_file))
+
+        assert result == "$$"
+
+    def test_extract_delimiter_case_insensitive(self, temp_dir: str) -> None:
+        """Test that the jetbase directive is case insensitive."""
+        sql_content = """-- JETBASE: DELIMITER=|
+CREATE TABLE users (id INT PRIMARY KEY)|
+"""
+        sql_file = Path(temp_dir) / "test.sql"
+        sql_file.write_text(sql_content)
+        result = _extract_delimiter_from_file(str(sql_file))
+
+        assert result == "|"
+
+    def test_extract_delimiter_stops_at_non_comment_line(self, temp_dir: str) -> None:
+        """Test that delimiter search stops after first non-comment line."""
+        sql_content = """CREATE TABLE users (id INT PRIMARY KEY);
+-- jetbase: delimiter=~
+"""
+        sql_file = Path(temp_dir) / "test.sql"
+        sql_file.write_text(sql_content)
+        result = _extract_delimiter_from_file(str(sql_file))
+
+        assert result == ";"
+
+        def test_extract_delimiter_random_case(self, temp_dir: str) -> None:
+            """Test extraction where the delimiter directive uses random upper/lowercase letters."""
+            sql_content = """-- JeTbAsE: DelImItEr=~
+CREATE TABLE users (id INT PRIMARY KEY)~
+"""
+            sql_file = Path(temp_dir) / "test.sql"
+            sql_file.write_text(sql_content)
+            result = _extract_delimiter_from_file(str(sql_file))
+
+            assert result == "~"
