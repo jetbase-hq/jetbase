@@ -1,6 +1,6 @@
 [project]
 name = "jetbase"
-version = "0.15.0"
+version = "0.16.0"
 description = "Jetbase is a Python database migration tool"
 readme = "README.md"
 authors = [

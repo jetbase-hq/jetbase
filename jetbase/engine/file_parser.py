@@ -29,7 +29,6 @@ def parse_upgrade_statements(file_path: str, dry_run: bool = False) -> list[str]
         list[str]: List of SQL statements.
     """
     delimiter: str = _extract_delimiter_from_file(file_path=file_path)
-    print(f"HELLO DELIMTER: {delimiter}")
 
     statements = []
     current_statement = []
