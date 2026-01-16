@@ -5,12 +5,12 @@ import pytest
 from jetbase.database.queries.base import QueryMethod
 from jetbase.database.queries.postgres import PostgresQueries
 from jetbase.database.queries.query_loader import (
-    DatabaseType,
     get_database_type,
     get_queries,
     get_query,
 )
 from jetbase.database.queries.sqlite import SQLiteQueries
+from jetbase.enums import DatabaseType
 
 
 class TestGetDatabaseType:
