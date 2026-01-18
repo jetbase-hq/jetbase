@@ -93,6 +93,43 @@ jobs:
       - name: Run CLI tests
         run: uv run pytest tests/cli/ -v
 
+  mysql-cli-tests:
+    runs-on: ubuntu-latest
+
+    env:
+      JETBASE_SQLALCHEMY_URL: mysql+pymysql://root:mysql@localhost:3306/test_db
+
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: mysql
+          MYSQL_DATABASE: test_db
+        options: >-
+          --health-cmd "mysqladmin ping -h localhost"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 3306:3306
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      - name: Run CLI tests
+        run: uv run pytest tests/cli/ -v
+
   sqlite-cli-tests:
     runs-on: ubuntu-latest
 

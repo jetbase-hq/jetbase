@@ -31,15 +31,17 @@ def test_current_success_versions_only(
 def test_current_success_repeatables(runner, test_db_url, clean_db, setup_migrations):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
-    with clean_db.begin() as connection:
-        os.chdir("jetbase")
-        result = runner.invoke(app, ["upgrade"])
-        assert result.exit_code == 0
+    # with clean_db.begin() as connection:
+    os.chdir("jetbase")
+    result = runner.invoke(app, ["upgrade"])
+    assert result.exit_code == 0
 
-        result = runner.invoke(app, ["current"])
-        assert result.exit_code == 0
+    result = runner.invoke(app, ["current"])
+    assert result.exit_code == 0
 
-        assert "21" in result.output
+    assert "21" in result.output
+
+    with clean_db.connect() as connection:
         result = connection.execute(
             text(
                 """SELECT version FROM jetbase_migrations WHERE migration_type = 'VERSIONED' ORDER BY applied_at DESC LIMIT 1"""

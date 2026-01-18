@@ -29,7 +29,7 @@ class MySQLQueries(BaseQueries):
                 description VARCHAR(500) NOT NULL,
                 filename VARCHAR(512) NOT NULL,
                 migration_type VARCHAR(32) NOT NULL,
-                applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                applied_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6) NOT NULL,
                 checksum VARCHAR(64) NOT NULL
             )
             """
@@ -91,7 +91,7 @@ class MySQLQueries(BaseQueries):
             CREATE TABLE IF NOT EXISTS jetbase_lock (
                 id INT PRIMARY KEY CHECK (id = 1),
                 is_locked BOOLEAN NOT NULL DEFAULT FALSE,
-                locked_at TIMESTAMP NULL,
+                locked_at TIMESTAMP(6) NULL,
                 process_id VARCHAR(36)
             )
             """
@@ -115,3 +115,48 @@ class MySQLQueries(BaseQueries):
             VALUES (1, FALSE)
             """
         )
+
+    @staticmethod
+    def acquire_lock_stmt() -> TextClause:
+        """
+        Get MySQL statement to atomically acquire the migration lock.
+
+        Uses CURRENT_TIMESTAMP(6) for microsecond precision.
+
+        Returns:
+            TextClause: SQLAlchemy text clause with :process_id parameter.
+        """
+        return text(
+            """
+            UPDATE jetbase_lock
+            SET is_locked = TRUE,
+                locked_at = CURRENT_TIMESTAMP(6),
+                process_id = :process_id
+            WHERE id = 1 AND is_locked = FALSE
+            """
+        )
+
+    # @staticmethod
+    # def migration_records_query(
+    #     ascending: bool = True,
+    #     all_repeatables: bool = False,
+    #     migration_type: MigrationType | None = None,
+    # ) -> TextClause:
+    #     query: str = f"""
+    #         SELECT
+    #             order_executed,
+    #             version,
+    #             description,
+    #             filename,
+    #             migration_type,
+    #             applied_at,
+    #             checksum
+    #         FROM
+    #             jetbase_migrations
+    #         {"WHERE migration_type = " + f"'{migration_type.value}'" if migration_type else ""}
+    #         {"WHERE migration_type IN ('RUNS_ON_CHANGE', 'RUNS_ALWAYS')" if all_repeatables else ""}
+    #         ORDER BY
+    #             order_executed {"ASC" if ascending else "DESC"}
+    #     """
+
+    #     return text(query)

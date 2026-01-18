@@ -33,6 +33,7 @@ dev = [
     "ruff>=0.14.2",
     "snowflake-sqlalchemy>=1.8.2",
     "cryptography>=46.0.3",
+    "pymysql>=1.1.2",
 ]
 
 [project.optional-dependencies]

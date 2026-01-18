@@ -43,6 +43,9 @@ def migrations_fixture_dir(test_db_url):
     if detect_db(test_db_url) == DatabaseType.SNOWFLAKE:
         return base_path / "migrations_snowflake"
 
+    if detect_db(test_db_url) == DatabaseType.MYSQL:
+        return base_path / "migrations_mysql"
+
     return base_path / "migrations"
 
 
@@ -53,6 +56,9 @@ def migrations_versions_only_fixture_dir(test_db_url):
 
     if detect_db(test_db_url) == DatabaseType.SNOWFLAKE:
         return base_path / "migrations_snowflake_versions_only"
+
+    if detect_db(test_db_url) == DatabaseType.MYSQL:
+        return base_path / "migrations_mysql_versions_only"
 
     return base_path / "migrations_versions_only"
 
@@ -118,5 +124,5 @@ def clean_db(test_db_url):
 
     cleanup()
     yield engine
-    cleanup()
+    # cleanup()
     engine.dispose()
