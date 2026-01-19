@@ -31,11 +31,11 @@ def test_upgrade_versions(
 def test_upgrade_count(runner, test_db_url, clean_db, setup_migrations_versions_only):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
-    with clean_db.begin() as connection:
-        os.chdir("jetbase")
-        result = runner.invoke(app, ["upgrade", "--count", "3"])
-        assert result.exit_code == 0
+    os.chdir("jetbase")
+    result = runner.invoke(app, ["upgrade", "--count", "3"])
+    assert result.exit_code == 0
 
+    with clean_db.connect() as connection:
         # Verify migration applied
         migrations_result = connection.execute(
             text("SELECT COUNT(*) FROM jetbase_migrations")
@@ -46,6 +46,7 @@ def test_upgrade_count(runner, test_db_url, clean_db, setup_migrations_versions_
         result = runner.invoke(app, ["upgrade", "-c", "1"])
         assert result.exit_code == 0
 
+    with clean_db.connect() as connection:
         # Verify migration applied
         migrations_result = connection.execute(
             text("SELECT COUNT(*) FROM jetbase_migrations")
@@ -236,11 +237,11 @@ def test_upgrade_skip_checksum_validation(
 ):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
-    with clean_db.begin() as connection:
-        os.chdir("jetbase")
-        result = runner.invoke(app, ["upgrade", "--count", "3"])
-        assert result.exit_code == 0
+    os.chdir("jetbase")
+    result = runner.invoke(app, ["upgrade", "--count", "3"])
+    assert result.exit_code == 0
 
+    with clean_db.connect() as connection:
         # Verify migration applied
         migrations_result = connection.execute(
             text("SELECT COUNT(*) FROM jetbase_migrations")
@@ -265,6 +266,7 @@ def test_upgrade_skip_checksum_validation(
         result = runner.invoke(app, ["upgrade", "--skip-checksum-validation"])
         assert result.exit_code == 0
 
+    with clean_db.connect() as connection:
         migrations_result = connection.execute(
             text("SELECT COUNT(*) FROM jetbase_migrations")
         )
@@ -330,11 +332,11 @@ def test_roc_with_no_changes(runner, test_db_url, clean_db, setup_migrations):
 def test_roc_with_changes(runner, test_db_url, clean_db, setup_migrations):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
-    with clean_db.begin() as connection:
-        os.chdir("jetbase")
-        result = runner.invoke(app, ["upgrade"])
-        assert result.exit_code == 0
+    os.chdir("jetbase")
+    result = runner.invoke(app, ["upgrade"])
+    assert result.exit_code == 0
 
+    with clean_db.connect() as connection:
         # Verify migration applied
         migrations_result = connection.execute(
             text("SELECT COUNT(*) FROM jetbase_migrations")
@@ -359,6 +361,7 @@ def test_roc_with_changes(runner, test_db_url, clean_db, setup_migrations):
         result = runner.invoke(app, ["upgrade"])
         assert result.exit_code == 0
 
+    with clean_db.connect() as connection:
         timestamp_result = connection.execute(
             text(
                 "SELECT applied_at FROM jetbase_migrations WHERE migration_type = 'RUNS_ON_CHANGE'"
@@ -376,11 +379,11 @@ def test_repeatable_always_multiple_upgrades(
 ):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
-    with clean_db.begin() as connection:
-        os.chdir("jetbase")
-        result = runner.invoke(app, ["upgrade"])
-        assert result.exit_code == 0
+    os.chdir("jetbase")
+    result = runner.invoke(app, ["upgrade"])
+    assert result.exit_code == 0
 
+    with clean_db.connect() as connection:
         # Verify migration applied
         migrations_result = connection.execute(
             text("SELECT COUNT(*) FROM jetbase_migrations")
@@ -399,6 +402,7 @@ def test_repeatable_always_multiple_upgrades(
         result = runner.invoke(app, ["upgrade"])
         assert result.exit_code == 0
 
+    with clean_db.connect() as connection:
         timestamp_result = connection.execute(
             text(
                 "SELECT applied_at FROM jetbase_migrations WHERE migration_type = 'RUNS_ALWAYS'"
@@ -416,11 +420,11 @@ def test_upgrade_skip_validation(
 ):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
-    with clean_db.begin() as connection:
-        os.chdir("jetbase")
-        result = runner.invoke(app, ["upgrade", "--count", "3"])
-        assert result.exit_code == 0
+    os.chdir("jetbase")
+    result = runner.invoke(app, ["upgrade", "--count", "3"])
+    assert result.exit_code == 0
 
+    with clean_db.connect() as connection:
         # Verify migration applied
         migrations_result = connection.execute(
             text("SELECT COUNT(*) FROM jetbase_migrations")
@@ -457,6 +461,7 @@ def test_upgrade_skip_validation(
         result = runner.invoke(app, ["upgrade", "--skip-validation"])
         assert result.exit_code == 0
 
+    with clean_db.connect() as connection:
         migrations_result = connection.execute(
             text("SELECT COUNT(*) FROM jetbase_migrations")
         )
@@ -469,11 +474,11 @@ def test_upgrade_skip_file_validation_lower_file(
 ):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
-    with clean_db.begin() as connection:
-        os.chdir("jetbase")
-        result = runner.invoke(app, ["upgrade", "--count", "3"])
-        assert result.exit_code == 0
+    os.chdir("jetbase")
+    result = runner.invoke(app, ["upgrade", "--count", "3"])
+    assert result.exit_code == 0
 
+    with clean_db.connect() as connection:
         # Verify migration applied
         migrations_result = connection.execute(
             text("SELECT COUNT(*) FROM jetbase_migrations")
@@ -497,6 +502,7 @@ def test_upgrade_skip_file_validation_lower_file(
         result = runner.invoke(app, ["upgrade", "--skip-validation"])
         assert result.exit_code == 0
 
+    with clean_db.connect() as connection:
         migrations_result = connection.execute(
             text("SELECT COUNT(*) FROM jetbase_migrations")
         )
@@ -509,11 +515,11 @@ def test_upgrade_skip_file_validation_deleted_migrated_file(
 ):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
-    with clean_db.begin() as connection:
-        os.chdir("jetbase")
-        result = runner.invoke(app, ["upgrade", "--count", "3"])
-        assert result.exit_code == 0
+    os.chdir("jetbase")
+    result = runner.invoke(app, ["upgrade", "--count", "3"])
+    assert result.exit_code == 0
 
+    with clean_db.connect() as connection:
         # Verify migration applied
         migrations_result = connection.execute(
             text("SELECT COUNT(*) FROM jetbase_migrations")
@@ -537,6 +543,7 @@ def test_upgrade_skip_file_validation_deleted_migrated_file(
         result = runner.invoke(app, ["upgrade", "--skip-file-validation"])
         assert result.exit_code == 0
 
+    with clean_db.connect() as connection:
         migrations_result = connection.execute(
             text("SELECT COUNT(*) FROM jetbase_migrations")
         )

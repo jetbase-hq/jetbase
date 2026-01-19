@@ -1,18 +1,12 @@
-from enum import Enum
-
 from sqlalchemy import Engine, TextClause, create_engine
 
 from jetbase.config import get_config
 from jetbase.database.queries.base import BaseQueries, QueryMethod
+from jetbase.database.queries.mysql import MySQLQueries
 from jetbase.database.queries.postgres import PostgresQueries
 from jetbase.database.queries.sqlite import SQLiteQueries
 from jetbase.database.queries.snowflake import SnowflakeQueries
-
-
-class DatabaseType(Enum):
-    POSTGRESQL = "postgresql"
-    SQLITE = "sqlite"
-    SNOWFLAKE = "snowflake"
+from jetbase.enums import DatabaseType
 
 
 def get_database_type() -> DatabaseType:
@@ -38,6 +32,8 @@ def get_database_type() -> DatabaseType:
         return DatabaseType.SQLITE
     elif dialect_name == "snowflake":
         return DatabaseType.SNOWFLAKE
+    elif dialect_name == "mysql":
+        return DatabaseType.MYSQL
     else:
         raise ValueError(f"Unsupported database type: {dialect_name}")
 
@@ -63,6 +59,8 @@ def get_queries() -> type[BaseQueries]:
         return SQLiteQueries
     elif db_type == DatabaseType.SNOWFLAKE:
         return SnowflakeQueries
+    elif db_type == DatabaseType.MYSQL:
+        return MySQLQueries
     else:
         raise ValueError(f"Unsupported database type: {db_type}")
 

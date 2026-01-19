@@ -5,12 +5,12 @@ import pytest
 from jetbase.database.queries.base import QueryMethod
 from jetbase.database.queries.postgres import PostgresQueries
 from jetbase.database.queries.query_loader import (
-    DatabaseType,
     get_database_type,
     get_queries,
     get_query,
 )
 from jetbase.database.queries.sqlite import SQLiteQueries
+from jetbase.enums import DatabaseType
 
 
 class TestGetDatabaseType:
@@ -53,10 +53,20 @@ class TestGetDatabaseType:
 
     @patch("jetbase.database.queries.query_loader.create_engine")
     @patch("jetbase.database.queries.query_loader.get_config")
+    def test_returns_mysql(self, mock_config: Mock, mock_engine: Mock) -> None:
+        """Test that MySQL dialect is detected correctly."""
+        mock_config.return_value.sqlalchemy_url = "mysql://user:pass@localhost/db"
+        mock_engine.return_value.dialect.name = "mysql"
+
+        result = get_database_type()
+        assert result == DatabaseType.MYSQL
+
+    @patch("jetbase.database.queries.query_loader.create_engine")
+    @patch("jetbase.database.queries.query_loader.get_config")
     def test_raises_for_unsupported(self, mock_config: Mock, mock_engine: Mock) -> None:
         """Test that unsupported dialects raise ValueError."""
-        mock_config.return_value.sqlalchemy_url = "mysql://localhost/db"
-        mock_engine.return_value.dialect.name = "mysql"
+        mock_config.return_value.sqlalchemy_url = "baddb://localhost/db"
+        mock_engine.return_value.dialect.name = "baddb"
 
         with pytest.raises(ValueError, match="Unsupported database type"):
             get_database_type()

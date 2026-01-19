@@ -12,13 +12,12 @@ def test_fix_checksums_success(
     runner, test_db_url, clean_db, setup_migrations_versions_only
 ):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
+    os.chdir("jetbase")
+    result = runner.invoke(app, ["upgrade", "--count", "3"])
+    assert result.exit_code == 0
 
-    with clean_db.begin() as connection:
-        os.chdir("jetbase")
-        result = runner.invoke(app, ["upgrade", "--count", "3"])
-        assert result.exit_code == 0
-
-        # Verify migration applied
+    # Verify migration applied
+    with clean_db.connect() as connection:
         migrations_result = connection.execute(
             text("SELECT COUNT(*) FROM jetbase_migrations")
         )
@@ -56,6 +55,7 @@ def test_fix_checksums_success(
         )
         assert result.exit_code == 0
 
+    with clean_db.connect() as connection:
         migrations_result = connection.execute(
             text("SELECT COUNT(*) FROM jetbase_migrations")
         )

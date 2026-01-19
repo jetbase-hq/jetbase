@@ -22,7 +22,12 @@ class TestDetectDb:
         result = detect_db("snowflake://user:pass@account/db/schema")
         assert result == DatabaseType.SNOWFLAKE
 
+    def test_detects_mysql(self) -> None:
+        """Test that MySQL URLs are detected correctly."""
+        result = detect_db("mysql://user:pass@localhost/db")
+        assert result == DatabaseType.MYSQL
+
     def test_raises_for_unsupported_database(self) -> None:
         """Test that unsupported databases raise ValueError."""
         with pytest.raises(ValueError, match="Unsupported database"):
-            detect_db("mysql://user:pass@localhost/db")
+            detect_db("baddb://user:pass@localhost/db")
