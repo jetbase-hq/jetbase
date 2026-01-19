@@ -124,5 +124,5 @@ def clean_db(test_db_url):
 
     cleanup()
     yield engine
-    # cleanup()
+    cleanup()
     engine.dispose()
