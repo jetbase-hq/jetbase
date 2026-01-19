@@ -11,11 +11,11 @@ import pytest
 def test_rollback(runner, test_db_url, clean_db, setup_migrations):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
-    with clean_db.begin() as connection:
-        os.chdir("jetbase")
-        result = runner.invoke(app, ["upgrade"])
-        assert result.exit_code == 0
+    os.chdir("jetbase")
+    result = runner.invoke(app, ["upgrade"])
+    assert result.exit_code == 0
 
+    with clean_db.connect() as connection:
         # Verify migration applied
         migrations_result = connection.execute(
             text("SELECT COUNT(*) FROM jetbase_migrations")
@@ -27,6 +27,7 @@ def test_rollback(runner, test_db_url, clean_db, setup_migrations):
         result = runner.invoke(app, ["rollback"])
         assert result.exit_code == 0
 
+    with clean_db.connect() as connection:
         # Verify migration record was removed
         migrations_result = connection.execute(
             text("SELECT COUNT(*) FROM jetbase_migrations")
@@ -56,6 +57,7 @@ def test_rollback_with_count(runner, test_db_url, clean_db, setup_migrations):
 
         # Verify table was dropped
 
+    with clean_db.begin() as connection:
         # Verify migration record was removed
         migrations_result = connection.execute(
             text("SELECT COUNT(*) FROM jetbase_migrations")
@@ -83,6 +85,7 @@ def test_rollback_to_version(runner, test_db_url, clean_db, setup_migrations):
         result = runner.invoke(app, ["rollback", "--to-version", "2"])
         assert result.exit_code == 0
 
+    with clean_db.connect() as connection:
         migrations_result = connection.execute(
             text("SELECT COUNT(*) FROM jetbase_migrations")
         )

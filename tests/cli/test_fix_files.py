@@ -37,6 +37,7 @@ def test_fix_files_success(
         result = runner.invoke(app, ["fix-files"])
         assert result.exit_code == 0
 
+    with clean_db.connect() as connection:
         result = connection.execute(
             (text("select version from jetbase_migrations where version = '2'"))
         )
