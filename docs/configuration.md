@@ -74,6 +74,24 @@ The database connection string in SQLAlchemy format.
     sqlalchemy_url = "postgresql://username:password@host:port/database"
     ```
 
+=== "MySQL"
+
+    ```python
+    sqlalchemy_url = "mysql+pymysql://username:password@host:port/database"
+    ```
+
+=== "SQLite"
+
+    ```python
+    sqlalchemy_url = "sqlite:///path/to/database.db"
+    ```
+
+=== "Snowflake"
+
+    ```python
+    sqlalchemy_url = "snowflake://username:password@account/database/schema?warehouse=WAREHOUSE"
+    ```
+
 
 ### `postgres_schema` 
 **Optional (even for PostgreSQL databases)**

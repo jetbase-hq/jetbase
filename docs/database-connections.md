@@ -4,8 +4,6 @@ Jetbase supports multiple databases. This guide covers how to connect to each su
 
 ## PostgreSQL
 
-PostgreSQL is a popular open-source relational database and is fully supported by Jetbase.
-
 ### Installing a Driver
 
 PostgreSQL requires a database driver. Examples:
@@ -109,8 +107,6 @@ export JETBASE_SNOWFLAKE_PRIVATE_KEY_PASSWORD="your-key-password"
 
 ## SQLite
 
-SQLite is a lightweight, file-based database. It's great for development, testing, or small applications.
-
 ### Connection String
 
 SQLite doesn't require any additional drivers. Just connect with the connection string.
@@ -134,3 +130,30 @@ sqlalchemy_url = "sqlite:///myapp.db"
 # jetbase/env.py
 sqlalchemy_url = "sqlite:///:memory:"
 ```
+
+---
+
+
+## MySQL
+
+### Installing a Driver
+
+MySQL requires the PyMySQL driver:
+
+```bash
+pip install pymysql
+```
+
+### Connection String
+
+```python
+sqlalchemy_url = "mysql+pymysql://username:password@host:port/database"
+```
+
+### Example
+
+```python
+# jetbase/env.py
+sqlalchemy_url = "mysql+pymysql://myuser:mypassword@localhost:3306/myapp"
+```
+

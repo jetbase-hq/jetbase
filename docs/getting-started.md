@@ -7,7 +7,7 @@ This guide will walk you through setting up Jetbase from scratch. By the end, yo
 Before you begin, make sure you have:
 
 - **Python 3.10+** installed
-- A **database** (PostgreSQL, SQLite, Snowflake)
+- A **database** (PostgreSQL, SQLite, Snowflake, MySQL)
 - **pip** or **uv** for installing packages
 
 ## Installation
@@ -68,10 +68,26 @@ Open `env.py` and update the `sqlalchemy_url` with your database connection stri
     ```python
     sqlalchemy_url = "postgresql+psycopg2://user:password@localhost:5432/mydb"
     ```
+
 === "SQLite"
     ```python
     sqlalchemy_url = "sqlite:///mydb.db"
     ```
+
+=== "MySQL"
+    ```python
+    sqlalchemy_url = "mysql+pymysql://user:password@localhost:3306/mydb"
+    ```
+
+=== "Snowflake"
+    ```python
+    sqlalchemy_url = (
+        "snowflake://<USER>:<PASSWORD>@<ACCOUNT>/<DATABASE>/<SCHEMA>?warehouse=<WAREHOUSE>"
+    )
+
+    ```
+
+
 
 ## Creating Your First Migration
 
