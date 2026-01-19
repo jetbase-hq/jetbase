@@ -44,7 +44,7 @@ This creates a `jetbase/` directory with:
 
 ### Configure Your Database
 
-Edit `jetbase/env.py` with your database connection string (currently support for postgres, sqlite, and snowflake):
+Edit `jetbase/env.py` with your database connection string:
 
 === "PostgreSQL"
 
@@ -52,10 +52,22 @@ Edit `jetbase/env.py` with your database connection string (currently support fo
     sqlalchemy_url = "postgresql+psycopg2://user:password@localhost:5432/mydb"
     ```
 
+=== "MySQL"
+
+    ```python
+    sqlalchemy_url = "mysql+pymysql://user:password@localhost:3306/mydb"
+    ```
+
 === "SQLite"
 
     ```python
     sqlalchemy_url = "sqlite:///mydb.db"
+    ```
+
+=== "Snowflake"
+
+    ```python
+    sqlalchemy_url = "snowflake://user:password@account/database/schema?warehouse=WAREHOUSE"
     ```
 
 ### Create Your First Migration
@@ -121,3 +133,4 @@ Jetbase currently supports:
 - ✅ PostgreSQL
 - ✅ SQLite
 - ✅ Snowflake
+- ✅ MySQL

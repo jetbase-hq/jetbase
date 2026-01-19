@@ -132,6 +132,7 @@ Jetbase currently supports:
 - ✅ PostgreSQL
 - ✅ SQLite
 - ✅ Snowflake
+- ✅ MySQL
 
 ## Need Help?
 
