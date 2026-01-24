@@ -13,12 +13,6 @@ class DatabricksQueries(BaseQueries):
 
     @staticmethod
     def create_migrations_table_stmt() -> TextClause:
-        """
-        Get Databricks statement to create the jetbase_migrations table.
-
-        Uses IDENTITY for auto-increment and Databricks-compatible data types.
-        Note: No DEFAULT clauses as Delta Lake requires special feature enablement.
-        """
         return text(
             """
             CREATE TABLE IF NOT EXISTS jetbase_migrations (
@@ -35,11 +29,6 @@ class DatabricksQueries(BaseQueries):
 
     @staticmethod
     def insert_version_stmt() -> TextClause:
-        """
-        Get Databricks statement to insert a new migration record.
-
-        Explicitly sets applied_at since Delta Lake doesn't support column defaults.
-        """
         return text(
             """
             INSERT INTO jetbase_migrations (version, description, filename, migration_type, checksum, applied_at) 
@@ -49,9 +38,6 @@ class DatabricksQueries(BaseQueries):
 
     @staticmethod
     def check_if_migrations_table_exists_query() -> TextClause:
-        """
-        Get Databricks query to check if the jetbase_migrations table exists.
-        """
         return text(
             """
             SELECT COUNT(*) > 0 AS table_exists
@@ -63,9 +49,6 @@ class DatabricksQueries(BaseQueries):
 
     @staticmethod
     def check_if_lock_table_exists_query() -> TextClause:
-        """
-        Get Databricks query to check if the jetbase_lock table exists.
-        """
         return text(
             """
             SELECT COUNT(*) > 0 AS table_exists
@@ -77,11 +60,6 @@ class DatabricksQueries(BaseQueries):
 
     @staticmethod
     def create_lock_table_stmt() -> TextClause:
-        """
-        Get Databricks statement to create the jetbase_lock table.
-
-        Note: No DEFAULT clauses as Delta Lake requires special feature enablement.
-        """
         return text(
             """
             CREATE TABLE IF NOT EXISTS jetbase_lock (
@@ -95,11 +73,6 @@ class DatabricksQueries(BaseQueries):
 
     @staticmethod
     def initialize_lock_record_stmt() -> TextClause:
-        """
-        Get Databricks statement to initialize the lock record.
-
-        Uses MERGE for upsert behavior.
-        """
         return text(
             """
             MERGE INTO jetbase_lock AS target
@@ -112,9 +85,6 @@ class DatabricksQueries(BaseQueries):
 
     @staticmethod
     def acquire_lock_stmt() -> TextClause:
-        """
-        Get Databricks statement to atomically acquire the migration lock.
-        """
         return text(
             """
             UPDATE jetbase_lock
@@ -127,9 +97,6 @@ class DatabricksQueries(BaseQueries):
 
     @staticmethod
     def update_repeatable_migration_stmt() -> TextClause:
-        """
-        Get Databricks statement to update a repeatable migration record.
-        """
         return text(
             """
             UPDATE jetbase_migrations
