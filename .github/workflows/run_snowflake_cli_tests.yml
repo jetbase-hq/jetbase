@@ -1,17 +1,27 @@
-name: Run Snowflake CLI Tests
+name: Run Database CLI Tests
+run-name: Run CLI Tests (${{ inputs.database }})
 
-# This workflow is designed to be run manually, as it executes the complete suite of CLI tests against a snowflake database and may take a while to complete.
+# This workflow is designed to be run manually, as it executes the complete suite of CLI tests against the selected database and may take a while to complete.
 
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      database:
+        description: "Database to test against"
+        required: true
+        default: "snowflake"
+        type: choice
+        options:
+          - snowflake
+          - databricks
 
 jobs:
-  snowflake-cli-tests:
+  database-cli-tests:
     runs-on: ubuntu-latest
 
     env:
-      JETBASE_SQLALCHEMY_URL: ${{ secrets.SNOWFLAKE_USER_PW_SQLALCHEMY_URL }}
+      JETBASE_SQLALCHEMY_URL: ${{ inputs.database == 'snowflake' && secrets.SNOWFLAKE_USER_PW_SQLALCHEMY_URL || secrets.DATABRICKS_SQLALCHEMY_URL }}
 
     steps:
       - uses: actions/checkout@v5
@@ -25,8 +35,7 @@ jobs:
         uses: astral-sh/setup-uv@v6
 
       - name: Install dependencies
-        run: uv sync --dev
+        run: uv sync --dev --extra ${{ inputs.database }}
 
       - name: Run CLI tests
         run: uv run pytest tests/cli/ -v
-
