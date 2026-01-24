@@ -7,7 +7,7 @@ This guide will walk you through setting up Jetbase from scratch. By the end, yo
 Before you begin, make sure you have:
 
 - **Python 3.10+** installed
-- A **database** (PostgreSQL, SQLite, Snowflake, MySQL)
+- A **database** (PostgreSQL, SQLite, Snowflake, MySQL, Databricks)
 - **pip** or **uv** for installing packages
 
 ## Installation
@@ -18,11 +18,12 @@ Install Jetbase using pip:
 pip install jetbase
 ```
 
-> **Note for Snowflake Users:**  
-> To use Jetbase with Snowflake, install the Snowflake extras:
+> **Note for Snowflake and Databricks Users:**  
+> To use Jetbase with Snowflake or Databricks, install the appropriate extras:
 >
 > ```shell
 > pip install "jetbase[snowflake]"
+> pip install "jetbase[databricks]"
 > ```
 
 Verify the installation:
@@ -84,7 +85,13 @@ Open `env.py` and update the `sqlalchemy_url` with your database connection stri
     sqlalchemy_url = (
         "snowflake://<USER>:<PASSWORD>@<ACCOUNT>/<DATABASE>/<SCHEMA>?warehouse=<WAREHOUSE>"
     )
+    ```
 
+=== "Databricks"
+    ```python
+    sqlalchemy_url = (
+        "databricks://token:<ACCESS_TOKEN>@<HOSTNAME>?http_path=<HTTP_PATH>&catalog=<CATALOG>&schema=<SCHEMA>"
+    )
     ```
 
 
