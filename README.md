@@ -61,7 +61,7 @@ This creates a `jetbase/` directory with:
 
 ### Configure Your Database
 
-Edit `jetbase/env.py` with your database connection string (currently support for postgres, sqlite, and snowflake):
+Edit `jetbase/env.py` with your database connection string (currently support for postgres, sqlite snowflake, databricks):
 
 **PostgreSQL example:**
 ```python
