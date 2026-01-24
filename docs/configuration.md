@@ -92,6 +92,12 @@ The database connection string in SQLAlchemy format.
     sqlalchemy_url = "snowflake://username:password@account/database/schema?warehouse=WAREHOUSE"
     ```
 
+=== "Databricks"
+
+    ```python
+    sqlalchemy_url = "databricks://token:<ACCESS_TOKEN>@hostname?http_path=<HTTP_PATH>&catalog=<CATALOG>&schema=<SCHEMA>"
+    ```
+
 
 ### `postgres_schema` 
 **Optional (even for PostgreSQL databases)**

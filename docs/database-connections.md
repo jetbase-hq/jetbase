@@ -157,3 +157,36 @@ sqlalchemy_url = "mysql+pymysql://username:password@host:port/database"
 sqlalchemy_url = "mysql+pymysql://myuser:mypassword@localhost:3306/myapp"
 ```
 
+---
+
+## Databricks
+
+### Installing the Driver
+
+Databricks requires additional dependencies. Install Jetbase with the Databricks extra:
+
+```bash
+pip install "jetbase[databricks]"
+```
+
+### Connection String Format
+
+```python
+sqlalchemy_url = "databricks://token:ACCESS_TOKEN@HOSTNAME?http_path=HTTP_PATH&catalog=CATALOG&schema=SCHEMA"
+```
+
+| Component | Description |
+|-----------|-------------|
+| `ACCESS_TOKEN` | Your Databricks personal access token |
+| `HOSTNAME` | Your Databricks workspace hostname (e.g., `adb-1234567890123456.cloud.databricks.com`) |
+| `HTTP_PATH` | The HTTP path to your SQL warehouse or cluster (e.g., `/sql/1.0/warehouses/abc`) |
+| `CATALOG` | The Unity Catalog name to use |
+| `SCHEMA` | The schema name within the catalog |
+
+
+### Example
+
+```python
+# jetbase/env.py
+sqlalchemy_url = "databricks://token:dapi1234567890abcdef@adb-1234567890123456.cloud.databricks.comt?http_path=/sql/1.0/warehouses/abc123def456&catalog=main&schema=default"
+```
