@@ -37,11 +37,12 @@ pip install jetbase
 uv add jetbase
 ```
 
-> **Note for Snowflake Users:**  
-> To use Jetbase with Snowflake, install the Snowflake extras:
+> **Note for Snowflake and Databricks Users:**  
+> To use Jetbase with Snowflake or Databricks, install the appropriate extras:
 >
 > ```shell
 > pip install "jetbase[snowflake]"
+> pip install "jetbase[databricks]"
 > ```
 
 
@@ -132,6 +133,7 @@ Jetbase currently supports:
 - ✅ PostgreSQL
 - ✅ SQLite
 - ✅ Snowflake
+- ✅ Databricks
 - ✅ MySQL
 
 ## Need Help?

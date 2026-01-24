@@ -5,8 +5,9 @@ from pathlib import Path
 import pytest
 from sqlalchemy import create_engine, text
 from typer.testing import CliRunner
-from jetbase.enums import DatabaseType
+
 from jetbase.database.queries.base import detect_db
+from jetbase.enums import DatabaseType
 
 
 @pytest.fixture
@@ -46,6 +47,9 @@ def migrations_fixture_dir(test_db_url):
     if detect_db(test_db_url) == DatabaseType.MYSQL:
         return base_path / "migrations_mysql"
 
+    if detect_db(test_db_url) == DatabaseType.DATABRICKS:
+        return base_path / "migrations_databricks"
+
     return base_path / "migrations"
 
 
@@ -59,6 +63,9 @@ def migrations_versions_only_fixture_dir(test_db_url):
 
     if detect_db(test_db_url) == DatabaseType.MYSQL:
         return base_path / "migrations_mysql_versions_only"
+
+    if detect_db(test_db_url) == DatabaseType.DATABRICKS:
+        return base_path / "migrations_databricks_versions_only"
 
     return base_path / "migrations_versions_only"
 

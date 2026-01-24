@@ -2,10 +2,11 @@ from sqlalchemy import Engine, TextClause, create_engine
 
 from jetbase.config import get_config
 from jetbase.database.queries.base import BaseQueries, QueryMethod
+from jetbase.database.queries.databricks import DatabricksQueries
 from jetbase.database.queries.mysql import MySQLQueries
 from jetbase.database.queries.postgres import PostgresQueries
-from jetbase.database.queries.sqlite import SQLiteQueries
 from jetbase.database.queries.snowflake import SnowflakeQueries
+from jetbase.database.queries.sqlite import SQLiteQueries
 from jetbase.enums import DatabaseType
 
 
@@ -34,6 +35,8 @@ def get_database_type() -> DatabaseType:
         return DatabaseType.SNOWFLAKE
     elif dialect_name == "mysql":
         return DatabaseType.MYSQL
+    elif dialect_name == "databricks":
+        return DatabaseType.DATABRICKS
     else:
         raise ValueError(f"Unsupported database type: {dialect_name}")
 
@@ -61,6 +64,8 @@ def get_queries() -> type[BaseQueries]:
         return SnowflakeQueries
     elif db_type == DatabaseType.MYSQL:
         return MySQLQueries
+    elif db_type == DatabaseType.DATABRICKS:
+        return DatabricksQueries
     else:
         raise ValueError(f"Unsupported database type: {db_type}")
 

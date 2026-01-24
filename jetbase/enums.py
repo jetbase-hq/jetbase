@@ -23,3 +23,4 @@ class DatabaseType(Enum):
     SQLITE = "sqlite"
     SNOWFLAKE = "snowflake"
     MYSQL = "mysql"
+    DATABRICKS = "databricks"
