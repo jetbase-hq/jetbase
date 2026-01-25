@@ -13,32 +13,19 @@ from jetbase.enums import DatabaseType
 @contextmanager
 def _suppress_databricks_warnings():
     """
-    Context manager to suppress databricks-sql-connector warnings during connection.
+    Temporarily sets the databricks logger to ERROR level to suppress
+    the deprecated _user_agent_entry warning coming from the databricks-sqlalchemy dependency.
 
-    Temporarily sets all databricks-related loggers to ERROR level to suppress
-    the deprecated _user_agent_entry warning.
+    Databricks-sqlalchemy is a dependency of databricks-sql-connector (which is triggering the warning), so we need to suppress the warning here until databricks-sqlalchemy is updated to fix the warning.
     """
-    databricks_loggers = [
-        "databricks",
-        "databricks.sql",
-        "databricks.sql.client",
-        "databricks.sql.thrift_backend",
-        "databricks.sql.cloudfetch",
-    ]
-
-    # Store original levels
-    original_levels: dict[str, int] = {}
-    for name in databricks_loggers:
-        logger = logging.getLogger(name)
-        original_levels[name] = logger.level
-        logger.setLevel(logging.ERROR)
+    logger = logging.getLogger("databricks")
+    original_level = logger.level
+    logger.setLevel(logging.ERROR)
 
     try:
         yield
     finally:
-        # Restore original levels
-        for name, level in original_levels.items():
-            logging.getLogger(name).setLevel(level)
+        logger.setLevel(original_level)
 
 
 @contextmanager
