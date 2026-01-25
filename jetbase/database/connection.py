@@ -1,12 +1,44 @@
+import logging
 from contextlib import contextmanager
 from typing import Any, Generator
 
 from sqlalchemy import Connection, Engine, create_engine, text
-from sqlalchemy.engine import make_url, URL
+from sqlalchemy.engine import URL, make_url
 
 from jetbase.config import get_config
 from jetbase.database.queries.base import detect_db
 from jetbase.enums import DatabaseType
+
+
+@contextmanager
+def _suppress_databricks_warnings():
+    """
+    Context manager to suppress databricks-sql-connector warnings during connection.
+
+    Temporarily sets all databricks-related loggers to ERROR level to suppress
+    the deprecated _user_agent_entry warning.
+    """
+    databricks_loggers = [
+        "databricks",
+        "databricks.sql",
+        "databricks.sql.client",
+        "databricks.sql.thrift_backend",
+        "databricks.sql.cloudfetch",
+    ]
+
+    # Store original levels
+    original_levels: dict[str, int] = {}
+    for name in databricks_loggers:
+        logger = logging.getLogger(name)
+        original_levels[name] = logger.level
+        logger.setLevel(logging.ERROR)
+
+    try:
+        yield
+    finally:
+        # Restore original levels
+        for name, level in original_levels.items():
+            logging.getLogger(name).setLevel(level)
 
 
 @contextmanager
@@ -39,15 +71,21 @@ def get_db_connection() -> Generator[Connection, None, None]:
 
     engine: Engine = create_engine(url=sqlalchemy_url, connect_args=connect_args)
 
-    with engine.begin() as connection:
-        if db_type == DatabaseType.POSTGRESQL:
-            postgres_schema: str | None = get_config().postgres_schema
-            if postgres_schema:
-                connection.execute(
-                    text("SET search_path TO :postgres_schema"),
-                    parameters={"postgres_schema": postgres_schema},
-                )
-        yield connection
+    if db_type == DatabaseType.DATABRICKS:
+        # Suppress databricks warnings during connection
+        with _suppress_databricks_warnings():
+            with engine.begin() as connection:
+                yield connection
+    else:
+        with engine.begin() as connection:
+            if db_type == DatabaseType.POSTGRESQL:
+                postgres_schema: str | None = get_config().postgres_schema
+                if postgres_schema:
+                    connection.execute(
+                        text("SET search_path TO :postgres_schema"),
+                        parameters={"postgres_schema": postgres_schema},
+                    )
+            yield connection
 
 
 def _get_snowflake_private_key_der() -> bytes:
@@ -64,9 +102,15 @@ def _get_snowflake_private_key_der() -> bytes:
         ValueError: If neither Snowflake private key nor password are set in configuration.
     """
     # Lazy import - only needed for Snowflake key pair auth
-    from cryptography.hazmat.primitives import serialization  # type: ignore[missing-import]
-    from cryptography.hazmat.backends import default_backend  # type: ignore[missing-import]
-    from cryptography.hazmat.primitives.asymmetric.types import PrivateKeyTypes  # type: ignore[missing-import]
+    from cryptography.hazmat.backends import (
+        default_backend,  # type: ignore[missing-import]
+    )
+    from cryptography.hazmat.primitives import (
+        serialization,  # type: ignore[missing-import]
+    )
+    from cryptography.hazmat.primitives.asymmetric.types import (
+        PrivateKeyTypes,  # type: ignore[missing-import]
+    )
 
     snowflake_private_key: str | None = get_config().snowflake_private_key
 
