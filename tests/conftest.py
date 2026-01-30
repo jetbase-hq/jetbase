@@ -6,6 +6,7 @@ import pytest
 from sqlalchemy import create_engine, text
 from typer.testing import CliRunner
 
+from jetbase.database.connection import _get_engine
 from jetbase.database.queries.base import detect_db
 from jetbase.enums import DatabaseType
 
@@ -121,6 +122,7 @@ def setup_migrations_versions_only(tmp_path, migrations_versions_only_fixture_di
 @pytest.fixture
 def clean_db(test_db_url):
     """Clean up database before and after tests."""
+    _get_engine.cache_clear()
     engine = create_engine(test_db_url)
 
     def cleanup():
@@ -133,3 +135,5 @@ def clean_db(test_db_url):
     yield engine
     cleanup()
     engine.dispose()
+
+    _get_engine.cache_clear()
