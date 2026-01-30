@@ -5,7 +5,7 @@ import os
 import pytest
 from sqlalchemy import text
 
-from jetbase.database.connection import get_db_connection
+from jetbase.database.connection import _get_engine, get_db_connection
 
 
 class TestSnowflakePasswordAuth:
@@ -14,11 +14,14 @@ class TestSnowflakePasswordAuth:
     @pytest.fixture(autouse=True)
     def setup(self):
         """Set up test environment for password auth."""
+        _get_engine.cache_clear()
         url = os.environ.get("TEST_SF_USER_PASS_URL")
         assert url is not None
 
         os.environ["JETBASE_SQLALCHEMY_URL"] = url
         yield
+
+        _get_engine.cache_clear()
 
     def test_get_db_connection_with_password_auth(self):
         """Test that get_db_connection works with Snowflake password authentication."""
