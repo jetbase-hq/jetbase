@@ -51,6 +51,7 @@ class TestSnowflakeKeyPairAuth:
     @pytest.fixture(autouse=True)
     def setup(self):
         """Set up test environment for key pair auth."""
+        _get_engine.cache_clear()
         url = os.environ.get("TEST_SF_KEY_AUTH_URL")
         private_key = os.environ.get("JETBASE_SNOWFLAKE_PRIVATE_KEY")
 
@@ -59,6 +60,8 @@ class TestSnowflakeKeyPairAuth:
 
         os.environ["JETBASE_SQLALCHEMY_URL"] = url
         yield
+
+        _get_engine.cache_clear()
 
     def test_get_db_connection_with_keypair_auth(self):
         """Test that get_db_connection works with Snowflake key pair authentication."""
@@ -88,6 +91,7 @@ class TestSnowflakeEncryptedKeyPairAuth:
     @pytest.fixture(autouse=True)
     def setup(self):
         """Set up test environment for encrypted key pair auth."""
+        _get_engine.cache_clear()
         url = os.environ.get("TEST_SF_KEY_AUTH_URL")
         private_key = os.environ.get("TEST_SF_ENCRYPTED_PRIVATE_KEY")
 
@@ -102,6 +106,8 @@ class TestSnowflakeEncryptedKeyPairAuth:
             del os.environ["JETBASE_SNOWFLAKE_PRIVATE_KEY_PASSWORD"]
 
         yield
+
+        _get_engine.cache_clear()
 
     def test_get_db_connection_with_encrypted_keypair_auth(self):
         """Test that get_db_connection works with encrypted private key."""
