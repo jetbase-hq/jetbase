@@ -1,5 +1,6 @@
 import logging
 from contextlib import contextmanager
+from functools import lru_cache
 from typing import Any, Generator
 
 from sqlalchemy import Connection, Engine, create_engine, text
@@ -8,24 +9,6 @@ from sqlalchemy.engine import URL, make_url
 from jetbase.config import get_config
 from jetbase.database.queries.base import detect_db
 from jetbase.enums import DatabaseType
-
-
-@contextmanager
-def _suppress_databricks_warnings():
-    """
-    Temporarily sets the databricks logger to ERROR level to suppress
-    the deprecated _user_agent_entry warning coming from the databricks-sqlalchemy dependency.
-
-    Databricks-sqlalchemy is a dependency of databricks-sql-connector (which is triggering the warning), so we need to suppress the warning here until databricks-sqlalchemy is updated to fix the warning.
-    """
-    logger = logging.getLogger("databricks")
-    original_level = logger.level
-    logger.setLevel(logging.ERROR)
-
-    try:
-        yield
-    finally:
-        logger.setLevel(original_level)
 
 
 @contextmanager
@@ -45,18 +28,9 @@ def get_db_connection() -> Generator[Connection, None, None]:
         >>> with get_db_connection() as conn:
         ...     conn.execute(query)
     """
-    sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
-    db_type: DatabaseType = detect_db(sqlalchemy_url=sqlalchemy_url)
 
-    connect_args: dict[str, Any] = {}
-
-    if db_type == DatabaseType.SNOWFLAKE:
-        snowflake_url: URL = make_url(sqlalchemy_url)
-
-        if not snowflake_url.password:
-            connect_args["private_key"] = _get_snowflake_private_key_der()
-
-    engine: Engine = create_engine(url=sqlalchemy_url, connect_args=connect_args)
+    engine: Engine = _get_engine()
+    db_type: DatabaseType = detect_db(sqlalchemy_url=str(engine.url))
 
     if db_type == DatabaseType.DATABRICKS:
         # Suppress databricks warnings during connection
@@ -73,6 +47,31 @@ def get_db_connection() -> Generator[Connection, None, None]:
                         parameters={"postgres_schema": postgres_schema},
                     )
             yield connection
+
+
+@lru_cache(maxsize=1)
+def _get_engine() -> Engine:
+    """
+    Get or create the singleton SQLAlchemy Engine.
+
+    Creates the engine on first call and caches it for subsequent calls.
+    The engine manages its own connection pool internally.
+
+    Returns:
+        Engine: A SQLAlchemy Engine instance.
+    """
+    sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
+    db_type: DatabaseType = detect_db(sqlalchemy_url=sqlalchemy_url)
+
+    connect_args: dict[str, Any] = {}
+
+    if db_type == DatabaseType.SNOWFLAKE:
+        snowflake_url: URL = make_url(sqlalchemy_url)
+
+        if not snowflake_url.password:
+            connect_args["private_key"] = _get_snowflake_private_key_der()
+
+    return create_engine(url=sqlalchemy_url, connect_args=connect_args)
 
 
 def _get_snowflake_private_key_der() -> bytes:
@@ -124,3 +123,21 @@ def _get_snowflake_private_key_der() -> bytes:
     )
 
     return private_key_bytes
+
+
+@contextmanager
+def _suppress_databricks_warnings():
+    """
+    Temporarily sets the databricks logger to ERROR level to suppress
+    the deprecated _user_agent_entry warning coming from the databricks-sqlalchemy dependency.
+
+    Databricks-sqlalchemy is a dependency of databricks-sql-connector (which is triggering the warning), so we need to suppress the warning here until databricks-sqlalchemy is updated to fix the warning.
+    """
+    logger = logging.getLogger("databricks")
+    original_level = logger.level
+    logger.setLevel(logging.ERROR)
+
+    try:
+        yield
+    finally:
+        logger.setLevel(original_level)
