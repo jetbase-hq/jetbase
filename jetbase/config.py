@@ -29,6 +29,8 @@ class JetbaseConfig:
             migration files exist. Defaults to False.
         skip_validation (bool): If True, skips all validations.
             Defaults to False.
+        model_paths (list[str] | None): Optional list of paths to SQLAlchemy
+            model files for automatic migration generation. Defaults to None.
 
     Raises:
         TypeError: If any boolean field receives a non-boolean value.
@@ -41,6 +43,7 @@ class JetbaseConfig:
     skip_validation: bool = False
     snowflake_private_key: str | None = None
     snowflake_private_key_password: str | None = None
+    model_paths: list[str] | None = None
 
     def __post_init__(self):
         # Validate skip_checksum_validation
@@ -77,6 +80,7 @@ DEFAULT_VALUES: dict[str, Any] = {
     "postgres_schema": None,
     "snowflake_private_key": None,
     "snowflake_private_key_password": None,
+    "model_paths": None,
 }
 
 REQUIRED_KEYS: set[str] = {
@@ -295,6 +299,7 @@ def _get_config_from_env_var(key: str) -> Any | None:
     Load a configuration value from a JETBASE_{KEY} environment variable.
 
     Converts "true" and "false" string values to boolean True and False.
+    For model_paths, parses comma-separated paths into a list.
 
     Args:
         key (str): The configuration key to retrieve. Will be converted
@@ -303,14 +308,22 @@ def _get_config_from_env_var(key: str) -> Any | None:
     Returns:
         Any | None: The environment variable value if set, otherwise None.
             Boolean strings are converted to Python booleans.
+            model_paths is converted to a list of strings.
     """
     env_var_name = f"JETBASE_{key.upper()}"
     config_value: str | None = os.getenv(env_var_name, None)
-    if config_value:
-        if config_value.lower() == "true":
-            return True
-        if config_value.lower() == "false":
-            return False
+
+    if config_value is None:
+        return None
+
+    if config_value.lower() == "true":
+        return True
+    if config_value.lower() == "false":
+        return False
+    if key == "model_paths":
+        paths = [p.strip() for p in config_value.split(",") if p.strip()]
+        return paths if paths else None
+
     return config_value
 
 
