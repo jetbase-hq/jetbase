@@ -6,6 +6,7 @@ from jetbase.commands.fix_files import fix_files_cmd
 from jetbase.commands.history import history_cmd
 from jetbase.commands.init import initialize_cmd
 from jetbase.commands.lock_status import lock_status_cmd
+from jetbase.commands.make_migrations import make_migrations_cmd
 from jetbase.commands.new import generate_new_migration_file_cmd
 from jetbase.commands.rollback import rollback_cmd
 from jetbase.commands.status import status_cmd
@@ -190,6 +191,64 @@ def new(
     """Create a new migration file with a timestamp-based version and the provided description."""
     validate_jetbase_directory()
     generate_new_migration_file_cmd(description=description, version=version)
+
+
+@app.command()
+def make_migrations(
+    description: str = typer.Option(
+        None, "--description", "-d", help="Description for the generated migration"
+    ),
+) -> None:
+    """Automatically generate SQL migration files from SQLAlchemy model definitions.
+
+    Reads model file paths from JETBASE_MODELS environment variable,
+    compares models against current database schema, and generates
+    migration files with upgrade and rollback SQL statements.
+    """
+    validate_jetbase_directory()
+    make_migrations_cmd(description=description)
+
+
+@app.command()
+def migrate(
+    count: int = typer.Option(
+        None, "--count", "-c", help="Number of migrations to apply"
+    ),
+    to_version: str | None = typer.Option(
+        None, "--to-version", "-t", help="Migrate to a specific version"
+    ),
+    dry_run: bool = typer.Option(
+        False, "--dry-run", "-d", help="Simulate the migration without making changes"
+    ),
+    skip_validation: bool = typer.Option(
+        False,
+        "--skip-validation",
+        help="Skip both checksum and file version validation when running migrations",
+    ),
+    skip_checksum_validation: bool = typer.Option(
+        False,
+        "--skip-checksum-validation",
+        help="Skip checksum validation when running migrations",
+    ),
+    skip_file_validation: bool = typer.Option(
+        False,
+        "--skip-file-validation",
+        help="Skip file version validation when running migrations",
+    ),
+) -> None:
+    """Apply pending migrations to the database.
+
+    This is an alias for the 'upgrade' command.
+    """
+    validate_jetbase_directory()
+    upgrade_cmd(
+        count=count,
+        to_version=to_version.replace("_", ".") if to_version else None,
+        dry_run=dry_run,
+        skip_validation=skip_validation,
+        skip_checksum_validation=skip_checksum_validation,
+        skip_file_validation=skip_file_validation,
+    )
 
 
 def main() -> None:
