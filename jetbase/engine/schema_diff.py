@@ -91,7 +91,7 @@ def get_model_table_info(model_class: type) -> TableInfo:
         table_info.indexes.append(
             {
                 "name": index.name,
-                "column_names": list(index.columns),
+                "column_names": [c.name for c in index.columns],
                 "unique": index.unique,
             }
         )

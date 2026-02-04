@@ -15,6 +15,7 @@ from jetbase.database.connection import (
     get_connection,
     is_async_enabled,
 )
+from jetbase.engine.jetbase_locator import find_jetbase_directory
 from jetbase.config import get_config
 from jetbase.engine.model_discovery import (
     ModelDiscoveryError,
@@ -258,7 +259,11 @@ def _write_migration_file(
     migration_description = description or "auto_generated"
 
     filename = _generate_new_filename(description=migration_description)
-    migrations_dir = os.path.join(os.getcwd(), MIGRATIONS_DIR)
+    jetbase_dir = find_jetbase_directory()
+    if jetbase_dir:
+        migrations_dir = os.path.join(jetbase_dir, MIGRATIONS_DIR)
+    else:
+        migrations_dir = os.path.join(os.getcwd(), MIGRATIONS_DIR)
     os.makedirs(migrations_dir, exist_ok=True)
     filepath = os.path.join(migrations_dir, filename)
 

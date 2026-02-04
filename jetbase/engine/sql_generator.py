@@ -347,15 +347,21 @@ def generate_add_foreign_key_sql(
     Returns:
         str: ALTER TABLE ADD FOREIGN KEY SQL statement.
     """
-    fk_name = fk_info["name"]
+    fk_name = fk_info.get("name")
     columns = ", ".join(fk_info["constrained_columns"])
     ref_table = fk_info["referred_table"]
     ref_columns = ", ".join(fk_info["referred_columns"])
 
-    return (
-        f"ALTER TABLE {table_name} ADD CONSTRAINT {fk_name} "
-        f"FOREIGN KEY ({columns}) REFERENCES {ref_table} ({ref_columns});"
-    )
+    if fk_name:
+        return (
+            f"ALTER TABLE {table_name} ADD CONSTRAINT {fk_name} "
+            f"FOREIGN KEY ({columns}) REFERENCES {ref_table} ({ref_columns});"
+        )
+    else:
+        return (
+            f"ALTER TABLE {table_name} ADD FOREIGN KEY ({columns}) "
+            f"REFERENCES {ref_table} ({ref_columns});"
+        )
 
 
 def generate_drop_foreign_key_sql(
