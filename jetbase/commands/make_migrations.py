@@ -1,10 +1,17 @@
+import asyncio
 import os
 
+from sqlalchemy import create_engine
 from sqlalchemy.engine import Connection
 
 from jetbase.commands.new import _generate_new_filename
 from jetbase.constants import MIGRATIONS_DIR
-from jetbase.database.connection import get_db_connection
+from jetbase.database.connection import (
+    get_db_connection,
+    get_async_db_connection,
+    get_connection,
+    is_async_url,
+)
 from jetbase.engine.model_discovery import (
     ModelDiscoveryError,
     discover_all_models,
@@ -12,13 +19,13 @@ from jetbase.engine.model_discovery import (
 from jetbase.engine.schema_diff import compare_schemas, has_changes
 from jetbase.engine.schema_introspection import introspect_database
 from jetbase.engine.sql_generator import (
-    generate_drop_table_sql,
     generate_add_column_sql,
-    generate_drop_column_sql,
-    generate_create_index_sql,
-    generate_drop_index_sql,
     generate_add_foreign_key_sql,
+    generate_create_index_sql,
+    generate_drop_column_sql,
     generate_drop_foreign_key_sql,
+    generate_drop_index_sql,
+    generate_drop_table_sql,
     get_db_type,
 )
 
@@ -35,7 +42,7 @@ class NoChangesDetectedError(MakeMigrationsError):
     pass
 
 
-def generate_create_table_from_model(model_class, connection: Connection) -> str:
+def _generate_create_table_from_model(model_class, connection: Connection) -> str:
     """
     Generate CREATE TABLE SQL from a SQLAlchemy model class.
 
@@ -67,7 +74,7 @@ def make_migrations_cmd(description: str | None = None) -> None:
     Generate migration files automatically from model definitions.
 
     This command:
-    1. Reads JETBASE_MODELS env var
+    1. Reads model paths from config/env var or auto-discovers from model/models directories
     2. Validates model paths exist
     3. Discovers SQLAlchemy models
     4. Introspects current database schema
@@ -83,13 +90,27 @@ def make_migrations_cmd(description: str | None = None) -> None:
         MakeMigrationsError: If migration generation fails.
         NoChangesDetectedError: If no schema changes are detected.
     """
+    from jetbase.config import get_config
+
     try:
         _, models = discover_all_models()
     except ModelDiscoveryError as e:
         raise MakeMigrationsError(f"Failed to discover models: {e}")
 
+    sqlalchemy_url = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
+
+    if is_async_url(sqlalchemy_url):
+        asyncio.run(_make_migrations_async(models, description))
+    else:
+        _make_migrations_sync(models, description)
+
+
+def _make_migrations_sync(models: dict, description: str | None) -> None:
+    """
+    Generate migrations using sync database connection.
+    """
     try:
-        with get_db_connection() as connection:
+        with get_connection() as connection:
             database_schema = introspect_database(connection)
     except Exception as e:
         raise MakeMigrationsError(f"Failed to introspect database: {e}")
@@ -105,10 +126,10 @@ def make_migrations_cmd(description: str | None = None) -> None:
     upgrade_statements = []
     rollback_statements = []
 
-    with get_db_connection() as connection:
+    with get_connection() as connection:
         for table_name in diff.tables_to_create:
             model_class = models[table_name]
-            sql = generate_create_table_from_model(model_class, connection)
+            sql = _generate_create_table_from_model(model_class, connection)
             upgrade_statements.append(sql)
             rollback_statements.append(generate_drop_table_sql(table_name, db_type))
 
@@ -139,6 +160,92 @@ def make_migrations_cmd(description: str | None = None) -> None:
                     generate_drop_foreign_key_sql(table_name, fk_info["name"], db_type)
                 )
 
+    _write_migration_file(upgrade_statements, rollback_statements, description)
+
+
+async def _make_migrations_async(models: dict, description: str | None) -> None:
+    """
+    Generate migrations using async database connection.
+
+    Note: Schema introspection uses a sync connection because async introspection
+    is more complex and schema reading doesn't need to be async.
+    """
+    from sqlalchemy import create_engine
+
+    from jetbase.config import get_config
+
+    try:
+        config = get_config()
+        sync_url = (
+            config.sqlalchemy_url.replace("+asyncpg", "")
+            .replace("+async", "")
+            .replace("+aiosqlite", "")
+        )
+        sync_url = sync_url.replace("postgresql+asyncpg:", "postgresql:").replace(
+            "sqlite+aiosqlite:", "sqlite:"
+        )
+        engine = create_engine(sync_url)
+        with engine.connect() as sync_conn:
+            database_schema = introspect_database(sync_conn)
+    except Exception as e:
+        raise MakeMigrationsError(f"Failed to introspect database: {e}")
+
+    diff = compare_schemas(models, database_schema, sync_conn)
+
+    if not has_changes(diff):
+        print("No changes detected.")
+        return
+
+    db_type = get_db_type()
+
+    upgrade_statements = []
+    rollback_statements = []
+
+    async with get_async_db_connection() as connection:
+        for table_name in diff.tables_to_create:
+            model_class = models[table_name]
+            sql = _generate_create_table_from_model(model_class, connection)
+            upgrade_statements.append(sql)
+            rollback_statements.append(generate_drop_table_sql(table_name, db_type))
+
+        for table_name in diff.columns_to_add:
+            for column in diff.columns_to_add[table_name]:
+                upgrade_statements.append(
+                    generate_add_column_sql(table_name, column, db_type)
+                )
+                rollback_statements.append(
+                    generate_drop_column_sql(table_name, column.name, db_type)
+                )
+
+        for table_name in diff.indexes_to_create:
+            for index_info in diff.indexes_to_create[table_name]:
+                upgrade_statements.append(
+                    generate_create_index_sql(table_name, index_info, db_type)
+                )
+                rollback_statements.append(
+                    generate_drop_index_sql(index_info["name"], table_name, db_type)
+                )
+
+        for table_name in diff.foreign_keys_to_create:
+            for fk_info in diff.foreign_keys_to_create[table_name]:
+                upgrade_statements.append(
+                    generate_add_foreign_key_sql(table_name, fk_info, db_type)
+                )
+                rollback_statements.append(
+                    generate_drop_foreign_key_sql(table_name, fk_info["name"], db_type)
+                )
+
+    _write_migration_file(upgrade_statements, rollback_statements, description)
+
+
+def _write_migration_file(
+    upgrade_statements: list[str],
+    rollback_statements: list[str],
+    description: str | None,
+) -> None:
+    """
+    Write the migration file to disk.
+    """
     upgrade_sql = "\n\n".join(upgrade_statements)
     rollback_sql = "\n\n".join(rollback_statements)
 
