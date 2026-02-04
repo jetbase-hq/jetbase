@@ -3,7 +3,7 @@ from typing import Any
 from sqlalchemy import Result, Row
 from sqlalchemy.engine import CursorResult
 
-from jetbase.database.connection import get_db_connection
+from jetbase.database.connection import get_db_connection, get_connection
 from jetbase.database.queries.base import QueryMethod
 from jetbase.database.queries.query_loader import get_query
 from jetbase.models import LockStatus
@@ -18,7 +18,7 @@ def lock_table_exists() -> bool:
     Returns:
         bool: True if the jetbase_lock table exists, False otherwise.
     """
-    with get_db_connection() as connection:
+    with get_connection() as connection:
         result: Result[tuple[bool]] = connection.execute(
             statement=get_query(QueryMethod.CHECK_IF_LOCK_TABLE_EXISTS_QUERY)
         )
@@ -37,7 +37,7 @@ def create_lock_table_if_not_exists() -> None:
     Returns:
         None: Table is created as a side effect.
     """
-    with get_db_connection() as connection:
+    with get_connection() as connection:
         connection.execute(get_query(query_name=QueryMethod.CREATE_LOCK_TABLE_STMT))
 
         # Initialize with single row if empty
@@ -57,7 +57,7 @@ def fetch_lock_status() -> LockStatus:
         LockStatus: A dataclass containing is_locked (bool) and
             locked_at (datetime | None) fields.
     """
-    with get_db_connection() as connection:
+    with get_connection() as connection:
         result: Row[Any] | None = connection.execute(
             get_query(query_name=QueryMethod.CHECK_LOCK_STATUS_STMT)
         ).first()
@@ -77,7 +77,7 @@ def unlock_database() -> None:
     Returns:
         None: Lock is released as a side effect.
     """
-    with get_db_connection() as connection:
+    with get_connection() as connection:
         connection.execute(get_query(query_name=QueryMethod.FORCE_UNLOCK_STMT))
 
 
@@ -96,7 +96,7 @@ def lock_database(process_id: str) -> CursorResult:
         CursorResult: Result object where rowcount=1 indicates success,
             rowcount=0 indicates the lock is already held.
     """
-    with get_db_connection() as connection:
+    with get_connection() as connection:
         result = connection.execute(
             get_query(query_name=QueryMethod.ACQUIRE_LOCK_STMT),
             {
@@ -122,7 +122,7 @@ def release_lock(process_id: str) -> None:
         None: Lock is released as a side effect.
     """
 
-    with get_db_connection() as connection:
+    with get_connection() as connection:
         connection.execute(
             get_query(query_name=QueryMethod.RELEASE_LOCK_STMT),
             {"process_id": process_id},
