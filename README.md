@@ -21,6 +21,9 @@ Jetbase helps you manage database migrations in a simple, version-controlled way
 - **✅ Checksum Validation** — Detects if migration files have been modified
 - **🔄 Repeatable Migrations** — Support for migrations that run on every upgrade
 - **🤖 Auto-Generation** — Automatically generate SQL migrations from SQLAlchemy models
+- **🔀 Async/Sync Support** — Works with both sync and async SQLAlchemy drivers
+- **🎯 Auto-Discovery** — Automatically finds models in `models/` or `model/` directories
+- **📁 Portable** — Run jetbase from any directory in your project
 
 [📚 Full Documentation](https://jetbase-hq.github.io/jetbase/)
 
@@ -52,13 +55,14 @@ uv add jetbase
 
 ```bash
 jetbase init
-cd jetbase
 ```
 
 This creates a `jetbase/` directory with:
 
 - A `migrations/` folder for your SQL files
 - An `env.py` configuration file
+
+> **Tip:** Run `jetbase` commands from **any directory** in your project. Jetbase automatically finds the `jetbase/` directory by searching up the directory tree.
 
 ### Configure Your Database
 
@@ -157,15 +161,43 @@ class Product(Base):
     price = Column(Integer)
 ```
 
-2. Set the `JETBASE_MODELS` environment variable to point to your model files:
+### Auto-Discovery of Models 🎯
 
-```bash
-# Single model file
-export JETBASE_MODELS="./models.py"
+Jetbase automatically discovers models in your project without needing to configure paths:
 
-# Multiple model files (comma-separated)
-export JETBASE_MODELS="./models/user.py,./models/product.py,./models/order.py"
-```
+1. **Option 1: Auto-discovery** - Jetbase looks for models in:
+   - `models/` directory
+   - `model/` directory
+   - Searches recursively through subdirectories
+
+   ```
+   your-project/
+   ├── models/
+   │   ├── user.py
+   │   ├── product/
+   │   │   └── __init__.py
+   │   └── order.py
+   └── jetbase/
+   ```
+
+2. **Option 2: Explicit configuration** - Set the `JETBASE_MODELS` environment variable:
+
+   ```bash
+   # Single model file
+   export JETBASE_MODELS="./models.py"
+
+   # Multiple model files (comma-separated)
+   export JETBASE_MODELS="./models/user.py,./models/product.py,./models/order.py"
+   ```
+
+3. **Option 3: Configure in env.py** - Add model paths in your configuration:
+
+   ```python
+   # jetbase/env.py
+   model_paths = ["./models/user.py", "./models/product.py"]
+   ```
+
+> **Note:** Jetbase automatically adds your project root to `sys.path` so models can use absolute imports.
 
 ### Generate Migrations Automatically
 
@@ -222,15 +254,19 @@ The auto-generation feature detects:
 
 ### Environment Variable Configuration
 
-| Variable | Description |
-|----------|-------------|
-| `JETBASE_MODELS` | Comma-separated paths to SQLAlchemy model files |
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `ASYNC` | Enable async mode (`true`/`false`) | `false` |
+| `JETBASE_SQLALCHEMY_URL` | Database connection URL | Required |
+| `JETBASE_MODELS` | Paths to SQLAlchemy models | Optional |
 
 You can also configure model paths in `jetbase/env.py`:
 
 ```python
 model_paths = ["./models/user.py", "./models/product.py"]
 ```
+
+> **Note:** When `ASYNC=false` (default), Jetbase automatically strips async driver suffixes (`+asyncpg`, `+aiosqlite`, `+async`) from the URL, allowing you to use async URLs in sync mode.
 
 ## Supported Databases
 
@@ -241,6 +277,86 @@ Jetbase currently supports:
 - ✅ Snowflake
 - ✅ Databricks
 - ✅ MySQL
+
+---
+
+## Async and Sync Database Support ⚡
+
+Jetbase supports both synchronous and asynchronous database connections. The mode is controlled **exclusively** by the `ASYNC` environment variable.
+
+### Configuration
+
+Set the `ASYNC` environment variable before running Jetbase commands:
+
+```bash
+export ASYNC=true   # for async mode
+export ASYNC=false  # for sync mode (default)
+jetbase status
+```
+
+You can also set it temporarily per command:
+
+```bash
+ASYNC=true jetbase status      # async mode
+ASYNC=false jetbase upgrade    # sync mode
+```
+
+### Sync Mode (Default)
+
+Use sync drivers or async drivers (async suffix is automatically stripped):
+
+```python
+# jetbase/env.py
+sqlalchemy_url = "postgresql+psycopg2://user:password@localhost:5432/mydb"
+# or
+sqlalchemy_url = "sqlite:///mydb.db"
+# or even async URLs (suffix is stripped automatically)
+sqlalchemy_url = "postgresql+asyncpg://user:password@localhost:5432/mydb"
+```
+
+Sync mode is the default. Just run:
+
+```bash
+jetbase upgrade
+```
+
+### Async Mode
+
+Use async drivers:
+
+```python
+# jetbase/env.py
+sqlalchemy_url = "postgresql+asyncpg://user:password@localhost:5432/mydb"
+# or
+sqlalchemy_url = "sqlite+aiosqlite:///mydb.db"
+```
+
+Set `ASYNC=true`:
+
+```bash
+export ASYNC=true
+jetbase upgrade
+```
+
+### Environment Variable Configuration
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `ASYNC` | Enable async mode (`true`/`false`) | `false` |
+| `JETBASE_SQLALCHEMY_URL` | Database connection URL | Required |
+| `JETBASE_MODELS` | Paths to SQLAlchemy models | Optional |
+
+### URL Format Reference
+
+| Database | Sync URL | Async URL |
+|----------|----------|-----------|
+| PostgreSQL | `postgresql+psycopg2://...` | `postgresql+asyncpg://...` |
+| SQLite | `sqlite:///path.db` | `sqlite+aiosqlite:///path.db` |
+| Snowflake | `snowflake://...` | Not supported |
+| MySQL | `mysql+pymysql://...` | Not supported |
+| Databricks | `databricks+connector://...` | Not supported |
+
+> **Note:** Only PostgreSQL and SQLite support async mode. Other databases use sync connections regardless of the `ASYNC` setting.
 
 ## Commands Reference
 
@@ -255,6 +371,18 @@ Jetbase currently supports:
 | `jetbase status` | Show migration status |
 | `jetbase history` | Show migration history |
 | `jetbase current` | Show current version |
+| `jetbase validate` | Validate migration files and checksums |
+| `jetbase lock` | Acquire migration lock |
+| `jetbase unlock` | Release migration lock |
+
+### Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `ASYNC` | Enable async mode (`true`/`false`) |
+| `JETBASE_SQLALCHEMY_URL` | Database connection URL |
+| `JETBASE_MODELS` | Paths to SQLAlchemy model files |
+| `JETBASE_POSTGRES_SCHEMA` | PostgreSQL schema search path |
 
 ## Need Help?
 
