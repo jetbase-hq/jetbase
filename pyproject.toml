@@ -8,6 +8,8 @@ authors = [
 ]
 requires-python = ">=3.10"
 dependencies = [
+    "aiosqlite>=0.22.1",
+    "asyncpg>=0.29.0,<0.32.0",
     "packaging>=25.0",
     "rich>=12.2.0",
     "sqlalchemy>=2.0.10",
@@ -44,6 +46,13 @@ snowflake = [
 ]
 databricks = [
     "databricks-sqlalchemy>=2.0.1",
+]
+sqlite-async = [
+    "aiosqlite>=0.22.1",
+]
+postgres-async = [
+    "asyncpg>=0.29.0,<0.32.0",
+    "sqlalchemy[postgresql]>=2.0.10",
 ]
 
 
