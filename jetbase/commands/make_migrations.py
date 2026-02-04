@@ -1,8 +1,11 @@
 import asyncio
 import os
 
+from typing import Union
+
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Connection
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 from jetbase.commands.new import _generate_new_filename
 from jetbase.constants import MIGRATIONS_DIR
@@ -10,8 +13,9 @@ from jetbase.database.connection import (
     get_db_connection,
     get_async_db_connection,
     get_connection,
-    is_async_url,
+    is_async_enabled,
 )
+from jetbase.config import get_config
 from jetbase.engine.model_discovery import (
     ModelDiscoveryError,
     discover_all_models,
@@ -42,13 +46,15 @@ class NoChangesDetectedError(MakeMigrationsError):
     pass
 
 
-def _generate_create_table_from_model(model_class, connection: Connection) -> str:
+def _generate_create_table_from_model(
+    model_class, connection: Union[Connection, AsyncConnection]
+) -> str:
     """
     Generate CREATE TABLE SQL from a SQLAlchemy model class.
 
     Args:
         model_class: The SQLAlchemy model class.
-        connection: Database connection.
+        connection: Database connection (sync or async).
 
     Returns:
         str: CREATE TABLE SQL statement.
@@ -91,6 +97,7 @@ def make_migrations_cmd(description: str | None = None) -> None:
         NoChangesDetectedError: If no schema changes are detected.
     """
     from jetbase.config import get_config
+    from jetbase.engine.jetbase_locator import find_jetbase_directory
 
     try:
         _, models = discover_all_models()
@@ -98,11 +105,14 @@ def make_migrations_cmd(description: str | None = None) -> None:
         raise MakeMigrationsError(f"Failed to discover models: {e}")
 
     sqlalchemy_url = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
+    jetbase_dir = find_jetbase_directory()
+    if not jetbase_dir:
+        raise MakeMigrationsError("Jetbase directory not found")
 
-    if is_async_url(sqlalchemy_url):
-        asyncio.run(_make_migrations_async(models, description))
+    if is_async_enabled():
+        asyncio.run(_make_migrations_async(models, description, jetbase_dir))
     else:
-        _make_migrations_sync(models, description)
+        _make_migrations_sync(models, description, jetbase_dir)
 
 
 def _make_migrations_sync(models: dict, description: str | None) -> None:
@@ -242,6 +252,7 @@ def _write_migration_file(
     upgrade_statements: list[str],
     rollback_statements: list[str],
     description: str | None,
+    jetbase_dir: str,
 ) -> None:
     """
     Write the migration file to disk.
@@ -252,7 +263,7 @@ def _write_migration_file(
     migration_description = description or "auto_generated"
 
     filename = _generate_new_filename(description=migration_description)
-    filepath = os.path.join(os.getcwd(), MIGRATIONS_DIR, filename)
+    filepath = os.path.join(jetbase_dir, MIGRATIONS_DIR, filename)
 
     migration_content = f"""-- upgrade
 
