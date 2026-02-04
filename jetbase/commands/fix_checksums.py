@@ -3,6 +3,7 @@ import os
 from jetbase.constants import MIGRATIONS_DIR
 from jetbase.engine.checksum import calculate_checksum
 from jetbase.engine.file_parser import parse_upgrade_statements
+from jetbase.engine.jetbase_locator import find_jetbase_directory
 from jetbase.engine.lock import migration_lock
 from jetbase.engine.validation import run_migration_validations
 from jetbase.engine.version import get_migration_filepaths_by_version
@@ -35,6 +36,11 @@ def fix_checksums_cmd(audit_only: bool = False) -> None:
         MigrationVersionMismatchError: If there is a mismatch between expected
             and actual migration versions during processing.
     """
+    jetbase_dir = find_jetbase_directory()
+    if not jetbase_dir:
+        raise RuntimeError("Jetbase directory not found")
+
+    migrations_dir = os.path.join(jetbase_dir, MIGRATIONS_DIR)
 
     migrated_versions_and_checksums: list[tuple[str, str]] = get_checksums_by_version()
     if not migrated_versions_and_checksums:
@@ -51,6 +57,7 @@ def fix_checksums_cmd(audit_only: bool = False) -> None:
     versions_and_checksums_to_repair: list[tuple[str, str]] = _find_checksum_mismatches(
         migrated_versions_and_checksums=migrated_versions_and_checksums,
         latest_migrated_version=latest_migrated_version,
+        migrations_dir=migrations_dir,
     )
 
     if not versions_and_checksums_to_repair:
@@ -116,7 +123,9 @@ def _repair_checksums(versions_and_checksums_to_repair: list[tuple[str, str]]) -
 
 
 def _find_checksum_mismatches(
-    migrated_versions_and_checksums: list[tuple[str, str]], latest_migrated_version: str
+    migrated_versions_and_checksums: list[tuple[str, str]],
+    latest_migrated_version: str,
+    migrations_dir: str | None = None,
 ) -> list[tuple[str, str]]:
     """
     Find migrations where the file checksum differs from the stored checksum.
@@ -129,6 +138,8 @@ def _find_checksum_mismatches(
             containing (version, stored_checksum) from the database.
         latest_migrated_version (str): The most recent version that has been
             migrated, used to limit the scope of files checked.
+        migrations_dir (str | None): Path to migrations directory.
+            Defaults to jetbase/migrations relative to cwd.
 
     Returns:
         list[tuple[str, str]]: List of (version, new_checksum) tuples for
@@ -142,8 +153,15 @@ def _find_checksum_mismatches(
         >>> _find_checksum_mismatches([("1.0", "abc123")], "1.0")
         [("1.0", "def456")]  # If file changed
     """
+    if migrations_dir is None:
+        jetbase_dir = find_jetbase_directory()
+        if jetbase_dir:
+            migrations_dir = os.path.join(jetbase_dir, MIGRATIONS_DIR)
+        else:
+            migrations_dir = os.path.join(os.getcwd(), MIGRATIONS_DIR)
+
     migration_filepaths_by_version: dict[str, str] = get_migration_filepaths_by_version(
-        directory=os.path.join(os.getcwd(), MIGRATIONS_DIR),
+        directory=migrations_dir,
         end_version=latest_migrated_version,
     )
 

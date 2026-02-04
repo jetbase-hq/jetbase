@@ -1,5 +1,7 @@
 import os
 
+from jetbase.constants import MIGRATIONS_DIR
+from jetbase.engine.jetbase_locator import find_jetbase_directory
 from jetbase.engine.lock import migration_lock
 from jetbase.engine.repeatable import get_repeatable_filenames
 from jetbase.engine.version import (
@@ -32,15 +34,18 @@ def fix_files_cmd(audit_only: bool = False) -> None:
     Returns:
         None: Prints audit report or removal status to stdout.
     """
+    jetbase_dir = find_jetbase_directory()
+    if not jetbase_dir:
+        raise RuntimeError("Jetbase directory not found")
+
+    migrations_dir = os.path.join(jetbase_dir, MIGRATIONS_DIR)
 
     create_lock_table_if_not_exists()
     create_migrations_table_if_not_exists()
 
     migrated_versions: list[str] = get_migrated_versions()
     current_migration_filepaths_by_version: dict[str, str] = (
-        get_migration_filepaths_by_version(
-            directory=os.path.join(os.getcwd(), "migrations")
-        )
+        get_migration_filepaths_by_version(directory=migrations_dir)
     )
     repeatable_migrations: list[MigrationRecord] = fetch_repeatable_migrations()
     all_repeatable_filenames: list[str] = get_repeatable_filenames()
