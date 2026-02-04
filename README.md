@@ -504,7 +504,6 @@ jetbase migrate
 | `jetbase new "description"` | Create a new manual migration file |
 | `jetbase make-migrations` | Auto-generate SQL from SQLAlchemy models |
 | `jetbase migrate` | Apply pending migrations |
-| `jetbase upgrade` | Apply pending migrations (alias for migrate) |
 | `jetbase rollback` | Rollback migrations |
 | `jetbase status` | Show migration status |
 | `jetbase history` | Show migration history |

@@ -12,8 +12,6 @@ jetbase migrate
 
 The `migrate` command applies all pending migrations to your database in order. It's the most commonly used command for keeping your database schema up to date.
 
-> **Note:** `jetbase upgrade` is also available as an alias for `migrate`.
-
 !!! tip "Running Jetbase"
     If you encounter errors, run Jetbase using your project's Python environment:
     ```bash

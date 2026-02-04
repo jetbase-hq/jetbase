@@ -10,7 +10,6 @@ Jetbase provides a set of intuitive commands to manage your database migrations.
 | [`new`](new.md)                               | Create a new manual migration file                                |
 | [`make-migrations`](make-migrations.md)       | Auto-generate SQL from SQLAlchemy models                          |
 | [`migrate`](upgrade.md)                       | Apply pending migrations                                          |
-| [`upgrade`](upgrade.md)                       | Apply pending migrations (alias for migrate)                      |
 | [`rollback`](rollback.md)                     | Undo migrations                                                   |
 | [`status`](status.md)                         | Show migration status of all migration files (applied vs. pending) |
 | [`history`](history.md)                       | Show migration history                                            |
@@ -38,7 +37,6 @@ Commands to create and run migrations:
 - **[`new`](new.md)** — Generate a new manual migration file
 - **[`make-migrations`](make-migrations.md)** — Auto-generate SQL from SQLAlchemy models
 - **[`migrate`](upgrade.md)** — Apply pending migrations to the database
-- **[`upgrade`](upgrade.md)** — Apply pending migrations (alias for migrate)
 - **[`rollback`](rollback.md)** — Undo one or more migrations
 
 ### 📊 Status Commands

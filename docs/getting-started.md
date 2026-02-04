@@ -314,7 +314,6 @@ Now that you've set up your first migration, explore these topics:
 | [`new`](commands/new.md)                                | Create a new manual migration file      |
 | [`make-migrations`](commands/make-migrations.md)        | Auto-generate SQL from SQLAlchemy models |
 | [`migrate`](commands/upgrade.md)                        | Apply pending migrations                |
-| [`upgrade`](commands/upgrade.md)                        | Apply pending migrations (alias)         |
 | [`rollback`](commands/rollback.md)                      | Undo migrations                         |
 | [`status`](commands/status.md)                          | Show migration status                   |
 | [`history`](commands/history.md)                        | Show migration history                  |
