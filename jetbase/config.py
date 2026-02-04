@@ -1,6 +1,7 @@
 import importlib.machinery
 import importlib.util
 import os
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
@@ -9,6 +10,7 @@ from typing import Any
 import tomli
 
 from jetbase.constants import ENV_FILE
+from jetbase.engine.jetbase_locator import find_jetbase_directory
 
 
 @dataclass
@@ -97,7 +99,7 @@ def get_config(
     Load configuration from env.py, environment variables, or TOML files.
 
     Searches for configuration values in the following priority order:
-    1. env.py file in the current directory
+    1. env.py file in the jetbase directory (or current directory)
     2. Environment variables (JETBASE_{KEY_IN_UPPERCASE})
     3. jetbase.toml file
     4. pyproject.toml [tool.jetbase] section
@@ -155,7 +157,7 @@ def _get_config_value(key: str) -> Any | None:
         Any | None: The configuration value from the first available source,
             or None if not found in any source.
     """
-    # Try env.py
+    # Try env.py (from jetbase directory or cwd)
     value = _get_config_from_env_py(key)
     if value is not None:
         return value
@@ -182,39 +184,71 @@ def _get_config_value(key: str) -> Any | None:
     return None
 
 
-def _get_config_from_env_py(key: str, filepath: str = ENV_FILE) -> Any | None:
+def _get_config_from_env_py(key: str) -> Any | None:
     """
     Load a configuration value from the env.py file.
 
     Dynamically imports the env.py file and retrieves the specified attribute.
+    Looks in the jetbase directory first, then falls back to current directory.
 
     Args:
         key (str): The configuration key to retrieve.
-        filepath (str): Path to the env.py file relative to current directory.
-            Defaults to ENV_FILE.
 
     Returns:
         Any | None: The configuration value if the attribute exists,
             otherwise None.
     """
-    config_path: str = os.path.join(os.getcwd(), filepath)
+    # First try jetbase directory
+    jetbase_dir = find_jetbase_directory()
+    if jetbase_dir:
+        config_path = os.path.join(jetbase_dir, ENV_FILE)
+        if os.path.exists(config_path):
+            return _load_config_from_path(config_path, key)
 
-    if not os.path.exists(config_path):
+    # Fall back to current directory
+    config_path = os.path.join(os.getcwd(), ENV_FILE)
+    if os.path.exists(config_path):
+        return _load_config_from_path(config_path, key)
+
+    return None
+
+
+def _load_config_from_path(config_path: str, key: str) -> Any | None:
+    """
+    Load a configuration value from a specific env.py file path.
+
+    Automatically adds the project root (parent of jetbase directory) to sys.path
+    so that imports like 'from app.core.config import ...' work correctly.
+
+    Args:
+        config_path (str): Path to the env.py file.
+        key (str): The configuration key to retrieve.
+
+    Returns:
+        Any | None: The configuration value if the attribute exists,
+            otherwise None.
+    """
+    try:
+        jetbase_dir = os.path.dirname(config_path)
+        project_root = os.path.dirname(jetbase_dir)
+
+        if project_root not in sys.path:
+            sys.path.insert(0, project_root)
+
+        spec: importlib.machinery.ModuleSpec | None = (
+            importlib.util.spec_from_file_location("config", config_path)
+        )
+
+        if spec is None or spec.loader is None:
+            return None
+
+        config: ModuleType = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module=config)
+
+        config_value: Any | None = getattr(config, key, None)
+        return config_value
+    except Exception:
         return None
-
-    spec: importlib.machinery.ModuleSpec | None = (
-        importlib.util.spec_from_file_location("config", config_path)
-    )
-
-    assert spec is not None
-    assert spec.loader is not None
-
-    config: ModuleType = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module=config)
-
-    config_value: Any | None = getattr(config, key, None)
-
-    return config_value
 
 
 def _get_config_from_jetbase_toml(
