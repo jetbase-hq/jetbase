@@ -15,6 +15,7 @@ from jetbase.database.connection import (
     get_connection,
     is_async_enabled,
 )
+from jetbase.enums import DatabaseType
 from jetbase.engine.jetbase_locator import find_jetbase_directory
 from jetbase.config import get_config
 from jetbase.engine.model_discovery import (
@@ -63,6 +64,7 @@ def _generate_create_table_from_model(
     table = model_class.__table__
 
     columns = []
+    foreign_keys = []
     for col in table.columns:
         col_def = f"{col.name} {col.type.compile(dialect=connection.engine.dialect)}"
         if not col.nullable:
@@ -70,9 +72,13 @@ def _generate_create_table_from_model(
         if col.primary_key:
             col_def += " PRIMARY KEY"
         columns.append(col_def)
+        if col.foreign_keys:
+            for fk in col.foreign_keys:
+                fk_def = f"FOREIGN KEY ({col.name}) REFERENCES {fk.column.table.name} ({fk.column.name})"
+                foreign_keys.append(fk_def)
 
     pk_cols = ", ".join([c.name for c in table.primary_key.columns])
-    cols_sql = ",\n    ".join(columns)
+    cols_sql = ",\n    ".join(columns + foreign_keys)
     return f"CREATE TABLE {table.name} (\n    {cols_sql}\n);"
 
 
@@ -159,6 +165,8 @@ def _make_migrations_sync(models: dict, description: str | None) -> None:
                 )
 
         for table_name in diff.foreign_keys_to_create:
+            if db_type == DatabaseType.SQLITE:
+                continue
             for fk_info in diff.foreign_keys_to_create[table_name]:
                 upgrade_statements.append(
                     generate_add_foreign_key_sql(table_name, fk_info, db_type)
@@ -234,6 +242,8 @@ async def _make_migrations_async(models: dict, description: str | None) -> None:
                 )
 
         for table_name in diff.foreign_keys_to_create:
+            if db_type == DatabaseType.SQLITE:
+                continue
             for fk_info in diff.foreign_keys_to_create[table_name]:
                 upgrade_statements.append(
                     generate_add_foreign_key_sql(table_name, fk_info, db_type)
