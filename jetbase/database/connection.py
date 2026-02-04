@@ -1,14 +1,34 @@
 import logging
-from contextlib import contextmanager
+import os
+from contextlib import asynccontextmanager, contextmanager
 from functools import lru_cache
-from typing import Any, Generator
+from typing import AsyncGenerator, Generator
 
-from sqlalchemy import Connection, Engine, create_engine, text
-from sqlalchemy.engine import URL, make_url
+from sqlalchemy import Connection, create_engine, text
+from sqlalchemy.engine import Engine
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_engine
 
 from jetbase.config import get_config
 from jetbase.database.queries.base import detect_db
 from jetbase.enums import DatabaseType
+
+
+def is_async_url(sqlalchemy_url: str) -> bool:
+    """
+    Check if the SQLAlchemy URL uses an async driver.
+    """
+    return (
+        "+asyncpg" in sqlalchemy_url
+        or "+aiosqlite" in sqlalchemy_url
+        or "+async" in sqlalchemy_url
+    )
+
+
+def is_async_enabled() -> bool:
+    """
+    Check if async mode is enabled via ASYNC environment variable.
+    """
+    return os.getenv("ASYNC", "").lower() in ("true", "1", "yes")
 
 
 @contextmanager
@@ -16,31 +36,37 @@ def get_db_connection() -> Generator[Connection, None, None]:
     """
     Context manager that yields a database connection with a transaction.
 
-    Creates a database connection using the configured SQLAlchemy URL,
-    opens a transaction, and yields the connection. For PostgreSQL,
-    sets the search_path if a schema is configured.
+    For async databases, use get_async_db_connection() instead.
 
-    Yields:
-        Connection: A SQLAlchemy Connection object within an active
-            transaction.
+    Raises:
+        RuntimeError: If ASYNC=true.
 
     Example:
         >>> with get_db_connection() as conn:
         ...     conn.execute(query)
     """
+    if is_async_enabled():
+        raise RuntimeError(
+            "ASYNC=true but using get_db_connection(). "
+            "Use 'async with get_async_db_connection()' for async mode."
+        )
 
-    engine: Engine = _get_engine()
-    db_type: DatabaseType = detect_db(sqlalchemy_url=str(engine.url))
+    config = get_config(required={"sqlalchemy_url"})
+    url = config.sqlalchemy_url
+
+    url = _make_sync_url(url)
+
+    engine: Engine = create_engine(url=url)
+    db_type = detect_db(sqlalchemy_url=str(engine.url))
 
     if db_type == DatabaseType.DATABRICKS:
-        # Suppress databricks warnings during connection
         with _suppress_databricks_warnings():
             with engine.begin() as connection:
                 yield connection
     else:
         with engine.begin() as connection:
             if db_type == DatabaseType.POSTGRESQL:
-                postgres_schema: str | None = get_config().postgres_schema
+                postgres_schema = config.postgres_schema
                 if postgres_schema:
                     connection.execute(
                         text("SET search_path TO :postgres_schema"),
@@ -49,89 +75,104 @@ def get_db_connection() -> Generator[Connection, None, None]:
             yield connection
 
 
-@lru_cache(maxsize=1)
-def _get_engine() -> Engine:
+def _make_sync_url(url: str) -> str:
     """
-    Get or create the singleton SQLAlchemy Engine.
-
-    Creates the engine on first call and caches it for subsequent calls.
-    The engine manages its own connection pool internally.
-
-    Returns:
-        Engine: A SQLAlchemy Engine instance.
+    Convert an async URL to sync by removing async driver suffixes.
     """
-    sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
-    db_type: DatabaseType = detect_db(sqlalchemy_url=sqlalchemy_url)
-
-    connect_args: dict[str, Any] = {}
-
-    if db_type == DatabaseType.SNOWFLAKE:
-        snowflake_url: URL = make_url(sqlalchemy_url)
-
-        if not snowflake_url.password:
-            connect_args["private_key"] = _get_snowflake_private_key_der()
-
-    return create_engine(url=sqlalchemy_url, connect_args=connect_args)
+    url = url.replace("+asyncpg", "")
+    url = url.replace("+async", "")
+    url = url.replace("+aiosqlite", "")
+    return url
 
 
-def _get_snowflake_private_key_der() -> bytes:
+@asynccontextmanager
+async def get_async_db_connection() -> AsyncGenerator[AsyncConnection, None]:
     """
-    Retrieves the Snowflake private key in DER format for key pair authentication.
-
-    Loads the private key from configuration (PEM format), optionally decrypts it with a password,
-    and returns the key encoded as DER bytes, suitable for use with Snowflake's SQLAlchemy driver.
-
-    Returns:
-        bytes | None: The DER-encoded private key bytes, or None if not set.
+    Context manager that yields an async database connection with a transaction.
 
     Raises:
-        ValueError: If neither Snowflake private key nor password are set in configuration.
+        RuntimeError: If ASYNC=false.
+
+    Example:
+        >>> async with get_async_db_connection() as conn:
+        ...     await conn.execute(query)
     """
-    # Lazy import - only needed for Snowflake key pair auth
-    from cryptography.hazmat.backends import (
-        default_backend,  # type: ignore[missing-import]
-    )
-    from cryptography.hazmat.primitives import (
-        serialization,  # type: ignore[missing-import]
-    )
-    from cryptography.hazmat.primitives.asymmetric.types import (
-        PrivateKeyTypes,  # type: ignore[missing-import]
-    )
-
-    snowflake_private_key: str | None = get_config().snowflake_private_key
-
-    if not snowflake_private_key:
-        raise ValueError(
-            "Snowflake private key is not set. "
-            "You can set it as 'JETBASE_SNOWFLAKE_PRIVATE_KEY' in an environment variable. "
-            "Alternatively, you can add the password to the SQLAlchemy URL."
+    if not is_async_enabled():
+        raise RuntimeError(
+            "ASYNC=false but using get_async_db_connection(). "
+            "Use 'with get_db_connection()' for sync mode, "
+            "or set ASYNC=true."
         )
 
-    password_str: str | None = get_config().snowflake_private_key_password
-    password: bytes | None = password_str.encode("utf-8") if password_str else None
+    config = get_config(required={"sqlalchemy_url"})
+    async_engine: AsyncEngine = create_async_engine(url=config.sqlalchemy_url)
 
-    private_key: PrivateKeyTypes = serialization.load_pem_private_key(
-        snowflake_private_key.encode("utf-8"),
-        password=password,
-        backend=default_backend(),
-    )
+    async with async_engine.begin() as connection:
+        db_type = detect_db(sqlalchemy_url=str(async_engine.url))
+        if db_type == DatabaseType.POSTGRESQL:
+            postgres_schema = config.postgres_schema
+            if postgres_schema:
+                await connection.execute(
+                    text("SET search_path TO :postgres_schema"),
+                    parameters={"postgres_schema": postgres_schema},
+                )
+        yield connection
 
-    private_key_bytes: bytes = private_key.private_bytes(
-        encoding=serialization.Encoding.DER,
-        format=serialization.PrivateFormat.PKCS8,
-        encryption_algorithm=serialization.NoEncryption(),
-    )
 
-    return private_key_bytes
+class _ConnectionWrapper:
+    """
+    Wrapper that provides both sync and async context manager protocols.
+
+    Usage:
+        ASYNC=false:  with get_connection() as conn:
+        ASYNC=true:   async with get_connection() as conn:
+    """
+
+    def __enter__(self):
+        if is_async_enabled():
+            raise RuntimeError(
+                "ASYNC=true but using 'with' instead of 'async with'.\n"
+                "Use 'async with get_connection() as conn:' for async mode."
+            )
+        cm = get_db_connection()
+        self._sync_cm = cm
+        return cm.__enter__()
+
+    def __exit__(self, *args):
+        return self._sync_cm.__exit__(*args)
+
+    async def __aenter__(self):
+        if not is_async_enabled():
+            raise RuntimeError(
+                "ASYNC=false but using 'async with'.\n"
+                "Use 'with get_connection() as conn:' for sync mode."
+            )
+        cm = get_async_db_connection()
+        self._async_cm = cm
+        return await cm.__aenter__()
+
+    async def __aexit__(self, *args):
+        return await self._async_cm.__aexit__(*args)
+
+
+def get_connection() -> "_ConnectionWrapper":
+    """
+    Context manager that works with both sync and async based on ASYNC env var.
+
+    Usage:
+        ASYNC=false:  with get_connection() as conn:
+        ASYNC=true:   async with get_connection() as conn:
+
+    Returns:
+        _ConnectionWrapper: A wrapper that supports both sync and async context manager protocols.
+    """
+    return _ConnectionWrapper()
 
 
 @contextmanager
 def _suppress_databricks_warnings():
     """
-    Temporarily sets the databricks logger to ERROR level to suppress
-    the deprecated _user_agent_entry warning coming from the databricks-sqlalchemy dependency.
-
-    Databricks-sqlalchemy is a dependency of databricks-sql-connector (which is triggering the warning), so we need to suppress the warning here until databricks-sqlalchemy is updated to fix the warning.
+    Temporarily sets the databricks logger to ERROR level to suppress warnings.
     """
     logger = logging.getLogger("databricks")
     original_level = logger.level
