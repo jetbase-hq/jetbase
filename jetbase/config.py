@@ -33,6 +33,8 @@ class JetbaseConfig:
             Defaults to False.
         model_paths (list[str] | None): Optional list of paths to SQLAlchemy
             model files for automatic migration generation. Defaults to None.
+        async_mode (bool): If True, uses async database connections.
+            Defaults to False.
 
     Raises:
         TypeError: If any boolean field receives a non-boolean value.
@@ -46,6 +48,7 @@ class JetbaseConfig:
     snowflake_private_key: str | None = None
     snowflake_private_key_password: str | None = None
     model_paths: list[str] | None = None
+    async_mode: bool = False
 
     def __post_init__(self):
         # Validate skip_checksum_validation
@@ -69,6 +72,13 @@ class JetbaseConfig:
                 f"Value: {self.skip_validation!r}"
             )
 
+        # Validate async_mode
+        if not isinstance(self.async_mode, bool):
+            raise TypeError(
+                f"async_mode must be bool, got {type(self.async_mode).__name__}. "
+                f"Value: {self.async_mode!r}"
+            )
+
 
 ALL_KEYS: list[str] = [
     field.name for field in JetbaseConfig.__dataclass_fields__.values()
@@ -83,6 +93,7 @@ DEFAULT_VALUES: dict[str, Any] = {
     "snowflake_private_key": None,
     "snowflake_private_key_password": None,
     "model_paths": None,
+    "async_mode": False,
 }
 
 REQUIRED_KEYS: set[str] = {
