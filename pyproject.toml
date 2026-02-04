@@ -30,6 +30,7 @@ dev = [
     "psycopg2-binary>=2.9.11",
     "pyrefly>=0.38.2",
     "pytest>=8.4.2",
+    "pytest-asyncio>=0.24.0",
     "ruff>=0.14.2",
     "snowflake-sqlalchemy>=1.8.2",
     "cryptography>=46.0.3",
@@ -47,9 +48,10 @@ databricks = [
 
 
 [tool.pytest.ini_options]
+asyncio_mode = "auto"
 markers = [
     "basic: tests commands with no params",
-    "count: tests --count param", 
+    "count: tests --count param",
     "to_version: tests --to-version param",
     "dry_run: tests --dry-run param",
     "snowflake: tests for snowflake database",
