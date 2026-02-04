@@ -2,13 +2,212 @@
 
 Jetbase supports multiple databases with both synchronous and asynchronous connections. This guide covers how to connect to each supported database and configure async/sync modes.
 
+## Configuration Methods
+
+Jetbase supports two ways to configure your database connection:
+
+### Method 1: Module-level Variables
+
+Define configuration variables directly at module level in `jetbase/env.py`:
+
+```python
+sqlalchemy_url = "postgresql+psycopg2://user:password@localhost:5432/mydb"
+async_mode = True
+```
+
+### Method 2: get_env_vars() Function (Recommended)
+
+For more complex configurations, define a `get_env_vars()` function that returns a dictionary:
+
+```python
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+ENVIRONMENT = os.getenv("ENVIRONMENT")
+
+if ENVIRONMENT == "DEV":
+    def get_env_vars():
+        return {
+            "sqlalchemy_url": "sqlite+aiosqlite:///./egos.db",
+            "async_mode": True,
+        }
+else:
+    def get_env_vars():
+        return {
+            "sqlalchemy_url": "postgresql+asyncpg://user:password@localhost:5432/mydb",
+            "async_mode": True,
+        }
+```
+
+**Benefits of get_env_vars():**
+- All configuration logic in one place
+- Access to full Python expressions and imports
+- Easy to maintain and understand
+- Clean separation from other code
+
+---
+
+## Complete env.py Examples
+
+### Example 1: Environment-based Configuration with dotenv
+
+```python
+# jetbase/env.py
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+ENVIRONMENT = os.getenv("ENVIRONMENT")
+POSTGRES_USER = os.getenv("POSTGRES_USER")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
+POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5432")
+POSTGRES_DB = os.getenv("POSTGRES_DB")
+
+if ENVIRONMENT == "DEV":
+    def get_env_vars():
+        return {
+            "sqlalchemy_url": "sqlite+aiosqlite:///./egos.db",
+            "async_mode": True,
+        }
+else:
+    def get_env_vars():
+        return {
+            "sqlalchemy_url": (
+                f"postgresql+asyncpg://"
+                f"{POSTGRES_USER}:{POSTGRES_PASSWORD}"
+                f"@{POSTGRES_HOST}:{POSTGRES_PORT}"
+                f"/{POSTGRES_DB}"
+            ),
+            "async_mode": True,
+        }
+```
+
+### Example 2: Simple SQLite Configuration
+
+```python
+# jetbase/env.py
+sqlalchemy_url = "sqlite:///./mydb.db"
+```
+
+### Example 3: Simple PostgreSQL Configuration
+
+```python
+# jetbase/env.py
+sqlalchemy_url = "postgresql+psycopg2://myuser:mypassword@localhost:5432/myapp"
+postgres_schema = "public"
+```
+
+### Example 4: Multi-database with get_env_vars()
+
+```python
+# jetbase/env.py
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+ENVIRONMENT = os.getenv("ENVIRONMENT", "DEV")
+
+if ENVIRONMENT == "LOCAL":
+    def get_env_vars():
+        return {
+            "sqlalchemy_url": "sqlite+aiosqlite:///./local.db",
+            "async_mode": True,
+        }
+
+elif ENVIRONMENT == "DEV":
+    def get_env_vars():
+        return {
+            "sqlalchemy_url": "sqlite+aiosqlite:///./dev.db",
+            "async_mode": True,
+        }
+
+elif ENVIRONMENT == "STAGING":
+    def get_env_vars():
+        return {
+            "sqlalchemy_url": "postgresql+psycopg2://staging_user:staging_pass@staging-db.example.com:5432/staging_db",
+            "async_mode": False,
+            "postgres_schema": "public",
+        }
+
+else:  # Production
+    def get_env_vars():
+        return {
+            "sqlalchemy_url": "postgresql+asyncpg://prod_user:prod_pass@prod-db.example.com:5432/prod_db",
+            "async_mode": True,
+            "postgres_schema": "public",
+        }
+```
+
+### Example 5: With Model Paths for Auto-migration
+
+```python
+# jetbase/env.py
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+ENVIRONMENT = os.getenv("ENVIRONMENT", "DEV")
+
+if ENVIRONMENT == "DEV":
+    def get_env_vars():
+        return {
+            "sqlalchemy_url": "sqlite+aiosqlite:///./dev.db",
+            "async_mode": True,
+            "model_paths": ["../app/models.py"],
+        }
+else:
+    def get_env_vars():
+        return {
+            "sqlalchemy_url": "postgresql+asyncpg://user:pass@db:5432/app",
+            "async_mode": True,
+            "model_paths": ["../app/models.py"],
+        }
+```
+
+### Example 6: SQLite with Checksum Validation Disabled
+
+```python
+# jetbase/env.py
+sqlalchemy_url = "sqlite:///./mydb.db"
+skip_checksum_validation = True
+skip_file_validation = False
+```
+
+---
+
+## Configuration Reference
+
+| Variable | Type | Description | Default |
+|----------|------|-------------|---------|
+| `sqlalchemy_url` | str | Database connection URL | Required |
+| `async_mode` | bool | Enable async database connections | `False` |
+| `postgres_schema` | str | PostgreSQL schema search path | `None` |
+| `model_paths` | list[str] | Paths to SQLAlchemy model files | `None` |
+| `skip_checksum_validation` | bool | Skip migration file checksum validation | `False` |
+| `skip_file_validation` | bool | Skip migration file existence validation | `False` |
+| `skip_validation` | bool | Skip all validations | `False` |
+
 ## Async and Sync Modes ⚡
 
-Jetbase supports both synchronous and asynchronous database connections. The mode is controlled **exclusively** by the `ASYNC` environment variable.
+Jetbase supports both synchronous and asynchronous database connections.
 
-### Configuration
+### Configuration Options
 
-Set the `ASYNC` environment variable before running Jetbase commands:
+**Option 1: Using async_mode in env.py:**
+
+```python
+# jetbase/env.py
+sqlalchemy_url = "sqlite+aiosqlite:///mydb.db"
+async_mode = True
+```
+
+**Option 2: Using ASYNC environment variable:**
 
 ```bash
 export ASYNC=true   # for async mode
@@ -16,11 +215,11 @@ export ASYNC=false  # for sync mode (default)
 jetbase status
 ```
 
-You can also set it temporarily per command:
+Or per command:
 
 ```bash
 ASYNC=true jetbase status      # async mode
-ASYNC=false jetbase upgrade     # sync mode
+ASYNC=false jetbase migrate    # sync mode
 ```
 
 ### Sync Mode (Default)
@@ -36,12 +235,6 @@ sqlalchemy_url = "sqlite:///mydb.db"
 sqlalchemy_url = "postgresql+asyncpg://user:password@localhost:5432/mydb"
 ```
 
-Sync mode is the default. Just run:
-
-```bash
-jetbase upgrade
-```
-
 ### Async Mode
 
 Use async drivers:
@@ -53,12 +246,7 @@ sqlalchemy_url = "postgresql+asyncpg://user:password@localhost:5432/mydb"
 sqlalchemy_url = "sqlite+aiosqlite:///mydb.db"
 ```
 
-Set `ASYNC=true`:
-
-```bash
-export ASYNC=true
-jetbase upgrade
-```
+Enable async mode with `async_mode = True` in your config.
 
 ### URL Format Reference
 
@@ -118,7 +306,7 @@ sqlalchemy_url = "postgresql+asyncpg://myuser:mypassword@localhost:5432/myapp"
 Run with async mode:
 
 ```bash
-ASYNC=true jetbase upgrade
+ASYNC=true jetbase migrate
 ```
 
 ---
@@ -227,7 +415,7 @@ sqlalchemy_url = "sqlite+aiosqlite:///myapp.db"
 Run with async mode:
 
 ```bash
-ASYNC=true jetbase upgrade
+ASYNC=true jetbase migrate
 ```
 
 ---

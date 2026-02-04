@@ -1,6 +1,6 @@
 # Validations
 
-Jetbase performs several validations before applying migrations to ensure database integrity and prevent common mistakes. These checks run automatically during `jetbase upgrade` and help catch issues before they cause problems in your database.
+Jetbase performs several validations before applying migrations to ensure database integrity and prevent common mistakes. These checks run automatically during `jetbase migrate` and help catch issues before they cause problems in your database.
 
 Jetbase's validations act as guardrails to:
 
@@ -125,13 +125,13 @@ Files have been changed since migration.
 
 ```bash
 # Skip all validations
-jetbase upgrade --skip-validation
+jetbase migrate --skip-validation
 
 # Skip only file validation
-jetbase upgrade --skip-file-validation
+jetbase migrate --skip-file-validation
 
 # Skip only checksum validation
-jetbase upgrade --skip-checksum-validation
+jetbase migrate --skip-checksum-validation
 ```
 
 ### Via Configuration

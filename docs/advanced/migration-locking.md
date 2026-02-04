@@ -1,16 +1,16 @@
 # Migration Locking
 
-Suppose two developers or AI agents both run `jetbase upgrade` at the same time.
+Suppose two developers or AI agents both run `jetbase migrate` at the same time.
 
 Without any locking, both processes could try to change the database together. This might cause errors, data corruption, or broken migrations.
 
-Jetbase solves this with **automatic migration locking**. Only one process can run migrations at a time. 
+Jetbase solves this with **automatic migration locking**. Only one process can run migrations at a time.
 
 ## What Is Migration Locking?
 
-When you run `jetbase upgrade`, Jetbase grabs a lock before touching your database. Think of it like putting a "Do Not Disturb" sign on your migrations. No other process can run migrations until the first one finishes.
+When you run `jetbase migrate`, Jetbase grabs a lock before touching your database. Think of it like putting a "Do Not Disturb" sign on your migrations. No other process can run migrations until the first one finishes.
 
-Jetbase automatically acquires a lock whenever you run any command that might modify the `jetbase_migrations` table. This includes commands like `jetbase upgrade`, `jetbase rollback`, and all `fix` operations. By doing this, Jetbase ensures that your migrations always run safely without any risk of collision.
+Jetbase automatically acquires a lock whenever you run any command that might modify the `jetbase_migrations` table. This includes commands like `jetbase migrate`, `jetbase rollback`, and all `fix` operations. By doing this, Jetbase ensures that your migrations always run safely without any risk of collision.
 
 You shouldn't need to think about locking at all! With Jetbase, it just works out of the box!
 
@@ -119,10 +119,10 @@ Unlock successful.
 
 ```bash
 # Server 1
-jetbase upgrade  # Acquires lock, runs migrations...
+jetbase migrate  # Acquires lock, runs migrations...
 
 # Server 2 (at the same time)
-jetbase upgrade  # Fails immediately with "Lock is already held"
+jetbase migrate  # Fails immediately with "Lock is already held"
 ```
 
 Server 2 gets a clear error. No corruption, no race conditions.

@@ -63,7 +63,9 @@ All Jetbase commands must be run from inside the `jetbase/` directory.
 
 ### Step 3: Configure Your Database Connection
 
-Open `env.py` and update the `sqlalchemy_url` with your database connection string:
+Open `env.py` and configure your database connection. Jetbase supports two patterns:
+
+#### Pattern 1: Simple Module-level Variables
 
 === "PostgreSQL"
     ```python
@@ -73,6 +75,12 @@ Open `env.py` and update the `sqlalchemy_url` with your database connection stri
 === "SQLite"
     ```python
     sqlalchemy_url = "sqlite:///mydb.db"
+    ```
+
+=== "SQLite Async"
+    ```python
+    sqlalchemy_url = "sqlite+aiosqlite:///mydb.db"
+    async_mode = True
     ```
 
 === "MySQL"
@@ -93,6 +101,37 @@ Open `env.py` and update the `sqlalchemy_url` with your database connection stri
         "databricks://token:<ACCESS_TOKEN>@<HOSTNAME>?http_path=<HTTP_PATH>&catalog=<CATALOG>&schema=<SCHEMA>"
     )
     ```
+
+#### Pattern 2: get_env_vars() Function (Recommended)
+
+For complex configurations (environment-based settings, etc.), use a function:
+
+```python
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+ENVIRONMENT = os.getenv("ENVIRONMENT")
+
+if ENVIRONMENT == "DEV":
+    def get_env_vars():
+        return {
+            "sqlalchemy_url": "sqlite+aiosqlite:///./egos.db",
+            "async_mode": True,
+        }
+else:
+    def get_env_vars():
+        return {
+            "sqlalchemy_url": "postgresql+asyncpg://user:password@localhost:5432/mydb",
+            "async_mode": True,
+        }
+```
+
+!!! tip "Why use get_env_vars()?"
+    - Keep all configuration logic in one place
+    - Access to full Python logic (if/else, imports, etc.)
+    - Easy to see all Jetbase configuration at a glance
 
 
 
@@ -198,10 +237,10 @@ Jetbase will:
 
 ## Apply the Migration
 
-Run the upgrade command:
+Run the migrate command:
 
 ```bash
-jetbase upgrade
+jetbase migrate
 ```
 
 Output:
@@ -234,15 +273,27 @@ You'll see a table showing:
 
 ## Async and Sync Support
 
-Jetbase supports both synchronous and asynchronous database connections:
+Jetbase supports both synchronous and asynchronous database connections.
+
+### Using async_mode in env.py
+
+```python
+sqlalchemy_url = "sqlite+aiosqlite:///mydb.db"
+async_mode = True
+```
+
+### Using ASYNC Environment Variable
 
 ```bash
 # Sync mode (default)
-jetbase upgrade
+jetbase migrate
 
 # Async mode
-ASYNC=true jetbase upgrade
+ASYNC=true jetbase migrate
 ```
+
+!!! note
+    For SQLite async support, use `sqlite+aiosqlite://` URL scheme and set `async_mode = True`
 
 ## What's Next?
 
@@ -262,7 +313,8 @@ Now that you've set up your first migration, explore these topics:
 | [`init`](commands/init.md)                              | Initialize Jetbase in current directory |
 | [`new`](commands/new.md)                                | Create a new manual migration file      |
 | [`make-migrations`](commands/make-migrations.md)        | Auto-generate SQL from SQLAlchemy models |
-| [`upgrade`](commands/upgrade.md)                        | Apply pending migrations                |
+| [`migrate`](commands/upgrade.md)                        | Apply pending migrations                |
+| [`upgrade`](commands/upgrade.md)                        | Apply pending migrations (alias)         |
 | [`rollback`](commands/rollback.md)                      | Undo migrations                         |
 | [`status`](commands/status.md)                          | Show migration status                   |
 | [`history`](commands/history.md)                        | Show migration history                  |

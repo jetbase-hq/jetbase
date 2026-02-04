@@ -56,10 +56,10 @@ This simple check helps keep your migration history clean, safe, and easy to fol
 
 If you ever need to bypass this check *(not recommended)*, you have two options:
 
-- **Command-line:**  
-  Add `--skip-file-validation` when running `jetbase upgrade`:
+- **Command-line:**
+  Add `--skip-file-validation` when running `jetbase migrate`:
   ```bash
-  jetbase upgrade --skip-file-validation
+  jetbase migrate --skip-file-validation
   ```
 
 
@@ -137,7 +137,7 @@ CREATE TABLE items (
 ### Apply It
 
 ```bash
-jetbase upgrade
+jetbase migrate
 ```
 
 ## Migration Lifecycle
@@ -145,7 +145,7 @@ jetbase upgrade
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
 │   Create    │ ──▶ │    Write    │ ──▶ │   Apply     │
-│ jetbase new │     │    SQL      │     │  upgrade    │
+│ jetbase new │     │    SQL      │     │  migrate    │
 └─────────────┘     └─────────────┘     └─────────────┘
                                               │
                                               ▼

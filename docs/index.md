@@ -7,12 +7,12 @@ Jetbase helps you manage database migrations in a simple, version-controlled way
 ### Key Features ✨
 
 - **📦 Simple Setup** — Get started with just one command
-- **⬆️ Easy Upgrades** — Apply pending migrations with confidence
+- **⬆️ Easy Migrations** — Apply pending migrations with confidence
 - **⬇️ Safe Rollbacks** — Made a mistake? No problem, roll it back!
 - **📊 Clear Status** — Always know which migrations have been applied and which are pending
 - **🔒 Migration Locking** — Prevents conflicts when multiple processes try to migrate
 - **✅ Checksum Validation** — Detects if migration files have been modified
-- **🔄 Repeatable Migrations** — Support for migrations that run on every upgrade
+- **🔄 Repeatable Migrations** — Support for migrations that run on every migrate
 - **🤖 Auto-Generation** — Automatically generate SQL migrations from SQLAlchemy models
 - **🔀 Async/Sync Support** — Works with both sync and async SQLAlchemy drivers
 - **🎯 Auto-Discovery** — Automatically finds models in `models/` or `model/` directories
@@ -107,10 +107,16 @@ DROP TABLE users;
 ### Apply the Migration
 
 ```bash
-jetbase upgrade
+jetbase migrate
 ```
 
 That's it! Your database is now up to date. 🎉
+
+!!! tip "Running Jetbase"
+    If you encounter errors, run Jetbase using your project's Python environment:
+    ```bash
+    uv run jetbase migrate
+    ```
 
 !!! note
     Jetbase uses SQLAlchemy under the hood to manage database connections.
@@ -161,10 +167,10 @@ Jetbase supports both synchronous and asynchronous database connections:
 
 ```bash
 # Sync mode (default)
-jetbase upgrade
+jetbase migrate
 
 # Async mode
-ASYNC=true jetbase upgrade
+ASYNC=true jetbase migrate
 ```
 
 [Learn more about async/sync support](database-connections.md#async-and-sync-modes)

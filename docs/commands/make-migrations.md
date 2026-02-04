@@ -197,12 +197,6 @@ DROP TABLE categories;
 ## Apply the Migration
 
 ```bash
-jetbase upgrade
-```
-
-Or use the alias:
-
-```bash
 jetbase migrate
 ```
 

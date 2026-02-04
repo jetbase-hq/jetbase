@@ -1,16 +1,24 @@
-# jetbase upgrade
+# jetbase migrate
 
 Apply pending migrations to your database.
 
 ## Usage
 
 ```bash
-jetbase upgrade
+jetbase migrate
 ```
 
 ## Description
 
-The `upgrade` command applies all pending migrations to your database in order. It's the most commonly used command for keeping your database schema up to date.
+The `migrate` command applies all pending migrations to your database in order. It's the most commonly used command for keeping your database schema up to date.
+
+> **Note:** `jetbase upgrade` is also available as an alias for `migrate`.
+
+!!! tip "Running Jetbase"
+    If you encounter errors, run Jetbase using your project's Python environment:
+    ```bash
+    uv run jetbase migrate
+    ```
 
 ## Options
 
@@ -28,7 +36,7 @@ The `upgrade` command applies all pending migrations to your database in order. 
 ### Apply All Pending Migrations
 
 ```bash
-jetbase upgrade
+jetbase migrate
 ```
 
 This applies all pending migrations in order.
@@ -37,21 +45,21 @@ This applies all pending migrations in order.
 
 ```bash
 # Apply only the next 2 migrations
-jetbase upgrade --count 2
+jetbase migrate --count 2
 ```
 
 ### Apply Up to a Specific Version
 
 ```bash
 # Apply all migrations up to and including version 5
-jetbase upgrade --to-version 5
+jetbase migrate --to-version 5
 ```
 
 
 ### Preview Changes (Dry Run)
 
 ```bash
-jetbase upgrade --dry-run
+jetbase migrate --dry-run
 ```
 
 This shows you what migrations would be applied without actually running them. Great for verifying before deployment!
@@ -78,13 +86,13 @@ ALTER TABLE users ADD COLUMN email VARCHAR(255);
 
 ```bash
 # Skip all validation (use with caution!)
-jetbase upgrade --skip-validation
+jetbase migrate --skip-validation
 
 # Skip only checksum validation
-jetbase upgrade --skip-checksum-validation
+jetbase migrate --skip-checksum-validation
 
 # Skip only file validation
-jetbase upgrade --skip-file-validation
+jetbase migrate --skip-file-validation
 ```
 
 !!! warning
@@ -94,7 +102,7 @@ jetbase upgrade --skip-file-validation
 
 ## Migration Types
 
-During upgrade, Jetbase processes three types of migrations. Most developers will only ever need to worry about the standard Versioned Migrations. 
+During migration, Jetbase processes three types of migrations. Most developers will only ever need to worry about the standard Versioned Migrations.
 
 ### Versioned Migrations (`V*`)
 
@@ -106,7 +114,7 @@ V20251225.143022__create_users_table.sql
 
 ### Runs Always (`RA__*`)
 
-Migrations that run on every upgrade.
+Migrations that run on every migrate.
 
 ```
 RA__refresh_views.sql
@@ -124,13 +132,14 @@ Learn more in [Migration Types](../advanced/migration-types.md).
 
 
 
+
 ## Error Handling
 
-Jetbase is designed to keep your database safe even when something goes wrong. If a migration fails during an upgrade:
+Jetbase is designed to keep your database safe even when something goes wrong. If a migration fails:
 
 1. **No Partial Changes:** The failed migration file will *not* be applied at all. Any statements within that file are rolled back, so your database remains unchanged by that migration.
-2. **Orderly Progress:** All prior migration files that completed successfully in during that same upgrade command remain applied. Any migration files scheduled to run *after* the failed one are skipped.
-3. **Clear Feedback:** You’ll see a descriptive error message explaining what went wrong, so you can fix the issue and try again.
+2. **Orderly Progress:** All prior migration files that completed successfully during that same migrate command remain applied. Any migration files scheduled to run *after* the failed one are skipped.
+3. **Clear Feedback:** You'll see a descriptive error message explaining what went wrong, so you can fix the issue and try again.
 
 Jetbase stops safely at the first sign of trouble, preventing partial or out-of-order migrations.
 

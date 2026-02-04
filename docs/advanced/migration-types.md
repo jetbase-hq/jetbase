@@ -211,14 +211,14 @@ ROC__order_functions.sql  # Just edit this file
 
 ## Execution Order
 
-When you run `jetbase upgrade`, migrations execute in this order:
+When you run `jetbase migrate`, migrations execute in this order:
 
 1. **Versioned migrations** — In version order (oldest first)
 2. **Repeatable On Change** — Files that have changed
 3. **Repeatable Always** — All RA files
 
 ```
-[Upgrade Start]
+[Migrate Start]
     │
     ├── V20251225.100000__create_users.sql
     ├── V20251225.110000__create_orders.sql

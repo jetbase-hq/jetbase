@@ -66,17 +66,66 @@ This creates a `jetbase/` directory with:
 
 ### Configure Your Database
 
-Edit `jetbase/env.py` with your database connection string (currently support for postgres, sqlite snowflake, databricks):
+Edit `jetbase/env.py` with your database connection string. Jetbase supports two configuration patterns:
 
-**PostgreSQL example:**
+#### Pattern 1: Module-level Variables (Simple)
+
+Define configuration variables directly at module level:
+
+```python
+sqlalchemy_url = "postgresql+psycopg2://user:password@localhost:5432/mydb"
+async_mode = True
+```
+
+**Examples:**
+
+PostgreSQL:
 ```python
 sqlalchemy_url = "postgresql+psycopg2://user:password@localhost:5432/mydb"
 ```
 
-**SQLite example:**
+SQLite:
 ```python
 sqlalchemy_url = "sqlite:///mydb.db"
 ```
+
+SQLite Async:
+```python
+sqlalchemy_url = "sqlite+aiosqlite:///mydb.db"
+async_mode = True
+```
+
+#### Pattern 2: get_env_vars() Function (Recommended)
+
+For more complex configurations, define a `get_env_vars()` function that returns a dictionary:
+
+```python
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+ENVIRONMENT = os.getenv("ENVIRONMENT")
+
+if ENVIRONMENT == "DEV":
+    def get_env_vars():
+        return {
+            "sqlalchemy_url": "sqlite+aiosqlite:///./egos.db",
+            "async_mode": True,
+        }
+else:
+    def get_env_vars():
+        return {
+            "sqlalchemy_url": "postgresql+asyncpg://user:password@localhost:5432/mydb",
+            "async_mode": True,
+        }
+```
+
+**Why use get_env_vars()?**
+- Keep all configuration logic in one place
+- Access to full Python logic (if/else, imports, etc.)
+- Easy to see all Jetbase configuration at a glance
+- Better separation of concerns
 
 ### Create Your First Migration
 
@@ -115,7 +164,7 @@ DROP TABLE users;
 ### Apply the Migration
 
 ```bash
-jetbase upgrade
+jetbase migrate
 ```
 
 That's it! Your database is now up to date. 🎉
@@ -243,11 +292,7 @@ DROP TABLE profiles;
 ### Apply the Generated Migration
 
 ```bash
-# Using the migrate command (alias for upgrade)
 jetbase migrate
-
-# Or use the traditional upgrade command
-jetbase upgrade
 ```
 
 ### Supported Operations
@@ -334,7 +379,7 @@ DROP TABLE categories;
 Apply it:
 
 ```bash
-jetbase upgrade
+jetbase migrate
 ```
 
 ### Detecting Schema Changes
@@ -389,7 +434,7 @@ You can also set it temporarily per command:
 
 ```bash
 ASYNC=true jetbase status      # async mode
-ASYNC=false jetbase upgrade    # sync mode
+ASYNC=false jetbase migrate    # sync mode
 ```
 
 ### Sync Mode (Default)
@@ -408,7 +453,7 @@ sqlalchemy_url = "postgresql+asyncpg://user:password@localhost:5432/mydb"
 Sync mode is the default. Just run:
 
 ```bash
-jetbase upgrade
+jetbase migrate
 ```
 
 ### Async Mode
@@ -426,7 +471,7 @@ Set `ASYNC=true`:
 
 ```bash
 export ASYNC=true
-jetbase upgrade
+jetbase migrate
 ```
 
 ### Environment Variable Configuration
@@ -458,8 +503,8 @@ jetbase upgrade
 | `jetbase init` | Initialize a new Jetbase project |
 | `jetbase new "description"` | Create a new manual migration file |
 | `jetbase make-migrations` | Auto-generate SQL from SQLAlchemy models |
-| `jetbase upgrade` | Apply pending migrations |
-| `jetbase migrate` | Apply migrations (alias for upgrade) |
+| `jetbase migrate` | Apply pending migrations |
+| `jetbase upgrade` | Apply pending migrations (alias for migrate) |
 | `jetbase rollback` | Rollback migrations |
 | `jetbase status` | Show migration status |
 | `jetbase history` | Show migration history |
