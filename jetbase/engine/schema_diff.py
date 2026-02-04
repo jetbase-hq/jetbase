@@ -75,10 +75,11 @@ def get_model_table_info(model_class: type) -> TableInfo:
     )
 
     for fk in table.foreign_keys:
+        constrained_columns = [c.name for c in table.c if c.foreign_keys]
         table_info.foreign_keys.append(
             {
                 "name": fk.name,
-                "constrained_columns": list(fk.constrained.columns),
+                "constrained_columns": constrained_columns,
                 "referred_table": fk.column.table.name,
                 "referred_columns": [
                     c.name for c in fk.column.table.primary_key.columns

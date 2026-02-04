@@ -6,6 +6,7 @@ from jetbase.engine.file_parser import (
     parse_upgrade_statements,
     validate_filename_format,
 )
+from jetbase.engine.jetbase_locator import find_jetbase_directory
 from jetbase.repositories.migrations_repo import (
     get_existing_on_change_filenames_to_checksums,
 )
@@ -91,14 +92,19 @@ def get_ra_filenames() -> list[str]:
     """
     Get all runs-always (RA__) migration filenames from the migrations directory.
 
-    Scans the 'migrations' subdirectory in the current working directory
+    Scans the 'migrations' subdirectory in the jetbase directory
     for files starting with the RA__ prefix.
 
     Returns:
         list[str]: List of RA__ migration filenames (not full paths).
     """
+    jetbase_dir = find_jetbase_directory()
+    if not jetbase_dir:
+        return []
+
+    migrations_dir = os.path.join(jetbase_dir, "migrations")
     ra_filenames: list[str] = []
-    for root, _, files in os.walk(os.path.join(os.getcwd(), "migrations")):
+    for root, _, files in os.walk(migrations_dir):
         for filename in files:
             if filename.startswith(RUNS_ALWAYS_FILE_PREFIX):
                 ra_filenames.append(filename)
@@ -109,14 +115,19 @@ def get_repeatable_filenames() -> list[str]:
     """
     Get all repeatable migration filenames from the migrations directory.
 
-    Scans the 'migrations' subdirectory in the current working directory
+    Scans the 'migrations' subdirectory in the jetbase directory
     for files starting with either RA__ or ROC__ prefix.
 
     Returns:
         list[str]: List of all repeatable migration filenames (not full paths).
     """
+    jetbase_dir = find_jetbase_directory()
+    if not jetbase_dir:
+        return []
+
+    migrations_dir = os.path.join(jetbase_dir, "migrations")
     repeatable_filenames: list[str] = []
-    for root, _, files in os.walk(os.path.join(os.getcwd(), "migrations")):
+    for root, _, files in os.walk(migrations_dir):
         for filename in files:
             if filename.startswith(RUNS_ALWAYS_FILE_PREFIX) or filename.startswith(
                 RUNS_ON_CHANGE_FILE_PREFIX
