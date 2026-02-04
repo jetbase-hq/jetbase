@@ -231,6 +231,16 @@ def _load_config_from_path(config_path: str, key: str) -> Any | None:
     Automatically adds the project root (parent of jetbase directory) to sys.path
     so that imports like 'from app.core.config import ...' work correctly.
 
+    Supports two configuration patterns:
+    1. Module-level variables (original): Define variables directly at module level
+       (e.g., `sqlalchemy_url = "postgresql://..."`)
+
+    2. get_env_vars() function (recommended): Define a function that returns a dict
+       with all configuration values (e.g., `def get_env_vars(): return {"sqlalchemy_url": "..."}`)
+
+    The get_env_vars() pattern allows for more complex logic and configuration
+    while keeping the configuration interface simple.
+
     Args:
         config_path (str): Path to the env.py file.
         key (str): The configuration key to retrieve.
@@ -255,6 +265,11 @@ def _load_config_from_path(config_path: str, key: str) -> Any | None:
 
         config: ModuleType = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module=config)
+
+        if hasattr(config, "get_env_vars") and callable(config.get_env_vars):
+            env_vars = config.get_env_vars()
+            if isinstance(env_vars, dict) and key in env_vars:
+                return env_vars[key]
 
         config_value: Any | None = getattr(config, key, None)
         return config_value

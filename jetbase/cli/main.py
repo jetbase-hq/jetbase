@@ -29,10 +29,10 @@ def upgrade(
         None, "--count", "-c", help="Number of migrations to apply"
     ),
     to_version: str | None = typer.Option(
-        None, "--to-version", "-t", help="Rollback to a specific version"
+        None, "--to-version", "-t", help="Migrate to a specific version"
     ),
     dry_run: bool = typer.Option(
-        False, "--dry-run", "-d", help="Simulate the upgrade without making changes"
+        False, "--dry-run", "-d", help="Simulate the migration without making changes"
     ),
     skip_validation: bool = typer.Option(
         False,
@@ -49,12 +49,14 @@ def upgrade(
         "--skip-file-validation",
         help="Skip file version validation when running migrations",
     ),
-):
-    """Execute pending migrations"""
-    validate_jetbase_directory()
-    upgrade_cmd(
+) -> None:
+    """Apply pending migrations to the database.
+
+    This is an alias for the 'migrate' command.
+    """
+    migrate(
         count=count,
-        to_version=to_version.replace("_", ".") if to_version else None,
+        to_version=to_version,
         dry_run=dry_run,
         skip_validation=skip_validation,
         skip_checksum_validation=skip_checksum_validation,
@@ -236,10 +238,7 @@ def migrate(
         help="Skip file version validation when running migrations",
     ),
 ) -> None:
-    """Apply pending migrations to the database.
-
-    This is an alias for the 'upgrade' command.
-    """
+    """Apply pending migrations to the database."""
     validate_jetbase_directory()
     upgrade_cmd(
         count=count,
