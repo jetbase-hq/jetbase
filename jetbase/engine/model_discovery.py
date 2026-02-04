@@ -1,12 +1,16 @@
 import importlib.machinery
 import importlib.util
 import os
+import sys
 from pathlib import Path
 from types import ModuleType
 from typing import Any
 
 from sqlalchemy import MetaData
 from sqlalchemy.orm import DeclarativeBase
+
+from jetbase.config import get_config
+from jetbase.engine.jetbase_locator import find_jetbase_directory
 
 
 class ModelDiscoveryError(Exception):
@@ -39,6 +43,128 @@ class NoModelsFoundError(ModelDiscoveryError):
     pass
 
 
+def _add_project_root_to_path(model_path: str) -> None:
+    """
+    Add the project root to sys.path if needed for imports to work.
+
+    Finds the project root (where pyproject.toml or jetbase/ is located)
+    and adds it to sys.path so that imports like 'from app.core.database import Base'
+    work correctly.
+
+    Args:
+        model_path: Path to the model file being imported.
+    """
+    model_file = Path(model_path).resolve()
+
+    candidates = []
+
+    jetbase_dir = find_jetbase_directory()
+    if jetbase_dir:
+        candidates.append(jetbase_dir.parent)
+
+    candidates.append(model_file.parent)
+
+    for candidate in candidates:
+        if candidate.exists():
+            str_path = str(candidate)
+            if str_path not in sys.path:
+                sys.path.insert(0, str_path)
+
+
+def discover_model_paths_auto() -> list[str]:
+    """
+    Automatically discover model paths by searching for model/models directories.
+
+    Searches the entire project tree recursively for any directory named
+    'models' or 'model' and collects all Python files from them.
+
+    Excludes common virtual environment directories (.venv, venv, node_modules, etc.)
+
+    Returns:
+        list[str]: List of paths to discovered Python model files.
+
+    Raises:
+        ModelDiscoveryError: If no model directories are found.
+    """
+    discovered_paths: list[str] = []
+    model_file_extensions = (".py",)
+
+    jetbase_dir = find_jetbase_directory()
+
+    if jetbase_dir:
+        project_root = jetbase_dir.parent
+    else:
+        project_root = Path.cwd()
+
+    current = project_root.resolve()
+    while current != current.parent:
+        if current.exists():
+            break
+        current = current.parent
+
+    seen_files: set[str] = set()
+
+    exclude_dirs = {
+        ".venv",
+        "venv",
+        "node_modules",
+        "__pycache__",
+        ".git",
+        ".tox",
+        ".nox",
+        "build",
+        "dist",
+    }
+
+    for root, dirs, files in os.walk(current):
+        dirs[:] = [d for d in dirs if d not in exclude_dirs]
+
+        dirname = os.path.basename(root)
+        if dirname == "models" or dirname == "model":
+            for file in files:
+                if file.endswith(model_file_extensions) and not file.startswith("_"):
+                    full_path = os.path.join(root, file)
+                    if full_path not in seen_files:
+                        seen_files.add(full_path)
+                        discovered_paths.append(full_path)
+
+    return discovered_paths
+
+
+def get_model_paths_from_config() -> list[str] | None:
+    """
+    Get model paths from Jetbase configuration.
+
+    Checks config.model_paths first, then falls back to JETBASE_MODELS env var.
+    Resolves paths relative to the jetbase directory.
+
+    Returns:
+        list[str] | None: List of model paths from config, or None if not set.
+    """
+    jetbase_dir = find_jetbase_directory()
+
+    try:
+        config = get_config()
+        if config.model_paths:
+            if jetbase_dir:
+                return [
+                    os.path.normpath(os.path.join(jetbase_dir, p))
+                    for p in config.model_paths
+                ]
+            return config.model_paths
+    except ValueError:
+        pass
+
+    model_paths_str = os.getenv("JETBASE_MODELS", "")
+    if model_paths_str:
+        paths = [p.strip() for p in model_paths_str.split(",") if p.strip()]
+        if jetbase_dir:
+            return [os.path.normpath(os.path.join(jetbase_dir, p)) for p in paths]
+        return paths
+
+    return None
+
+
 def get_model_paths_from_env() -> list[str]:
     """
     Get model paths from JETBASE_MODELS environment variable.
@@ -49,21 +175,24 @@ def get_model_paths_from_env() -> list[str]:
     Raises:
         ModelPathsNotSetError: If JETBASE_MODELS is not set.
     """
-    model_paths_str = os.getenv("JETBASE_MODELS", "")
-    if not model_paths_str:
-        raise ModelPathsNotSetError(
-            "JETBASE_MODELS environment variable is not set. "
-            "Please set it to the path(s) of your SQLAlchemy model files.\n"
-            "Example: export JETBASE_MODELS='./models/user.py,./models/product.py'"
-        )
+    model_paths = get_model_paths_from_config()
+    if model_paths:
+        return model_paths
 
-    paths = [p.strip() for p in model_paths_str.split(",") if p.strip()]
-    return paths
+    raise ModelPathsNotSetError(
+        "Model paths not configured. Please set one of the following:\n"
+        "1. model_paths in jetbase/env.py\n"
+        "2. JETBASE_MODELS environment variable\n"
+        "3. Place your models in a 'models/' or 'model/' directory\n"
+        "   relative to your project or jetbase directory"
+    )
 
 
 def validate_model_paths(model_paths: list[str]) -> None:
     """
     Validate that all model paths exist.
+
+    Checks paths as absolute first, then tries resolving relative to jetbase directory.
 
     Args:
         model_paths (list[str]): List of paths to model files.
@@ -73,16 +202,34 @@ def validate_model_paths(model_paths: list[str]) -> None:
     """
     for path in model_paths:
         resolved_path = Path(path)
-        if not resolved_path.exists():
+
+        if resolved_path.exists():
+            continue
+
+        if resolved_path.is_absolute():
             raise ModelFileNotFoundError(
                 f"Model file not found: {path}\n"
                 f"Please check that the path exists and is correct."
             )
 
+        jetbase_dir = find_jetbase_directory()
+        if jetbase_dir:
+            alt_path = Path(jetbase_dir) / path
+            if alt_path.exists():
+                continue
+
+        raise ModelFileNotFoundError(
+            f"Model file not found: {path}\n"
+            f"Please check that the path exists and is correct."
+        )
+
 
 def import_model_file(model_path: str) -> ModuleType:
     """
     Dynamically import a Python model file.
+
+    Automatically adds the project root to sys.path so that relative imports
+    (like 'from app.core.database import Base') work correctly.
 
     Args:
         model_path (str): Path to the Python model file.
@@ -94,6 +241,8 @@ def import_model_file(model_path: str) -> ModuleType:
         ModelImportError: If the file cannot be imported.
     """
     try:
+        _add_project_root_to_path(model_path)
+
         spec = importlib.util.spec_from_file_location(
             name=Path(model_path).stem, location=model_path
         )
@@ -174,7 +323,8 @@ def discover_all_models(
 
     Args:
         model_paths (list[str] | None): List of paths to model files.
-            If None, reads from JETBASE_MODELS environment variable.
+            If None, first tries config/env var, then auto-discovers from
+            model/models directories.
 
     Returns:
         tuple: A tuple containing:
@@ -182,13 +332,22 @@ def discover_all_models(
             - Dictionary mapping table names to model classes
 
     Raises:
-        ModelPathsNotSetError: If model_paths is None and JETBASE_MODELS is not set.
         ModelFileNotFoundError: If any model file path does not exist.
         ModelImportError: If a model file cannot be imported.
         NoModelsFoundError: If no SQLAlchemy models are found.
     """
     if model_paths is None:
-        model_paths = get_model_paths_from_env()
+        model_paths = get_model_paths_from_config()
+        if model_paths is None:
+            model_paths = discover_model_paths_auto()
+            if not model_paths:
+                raise NoModelsFoundError(
+                    "No SQLAlchemy models found.\n"
+                    "Please either:\n"
+                    "  1. Set model_paths in jetbase/env.py\n"
+                    "  2. Set JETBASE_MODELS environment variable\n"
+                    "  3. Place your models in a 'models/' or 'model/' directory"
+                )
 
     validate_model_paths(model_paths)
 
@@ -234,7 +393,7 @@ def discover_all_models(
             "a SQLAlchemy DeclarativeBase and have __tablename__ defined."
         )
 
-    return discovered_base, all_models
+    return discovered_base or type("DeclarativeBase", (), {}), all_models
 
 
 def get_model_metadata(models: dict[str, type[Any]]) -> MetaData:
