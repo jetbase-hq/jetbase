@@ -97,7 +97,6 @@ def make_migrations_cmd(description: str | None = None) -> None:
         NoChangesDetectedError: If no schema changes are detected.
     """
     from jetbase.config import get_config
-    from jetbase.engine.jetbase_locator import find_jetbase_directory
 
     try:
         _, models = discover_all_models()
@@ -105,14 +104,11 @@ def make_migrations_cmd(description: str | None = None) -> None:
         raise MakeMigrationsError(f"Failed to discover models: {e}")
 
     sqlalchemy_url = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
-    jetbase_dir = find_jetbase_directory()
-    if not jetbase_dir:
-        raise MakeMigrationsError("Jetbase directory not found")
 
     if is_async_enabled():
-        asyncio.run(_make_migrations_async(models, description, jetbase_dir))
+        asyncio.run(_make_migrations_async(models, description))
     else:
-        _make_migrations_sync(models, description, jetbase_dir)
+        _make_migrations_sync(models, description)
 
 
 def _make_migrations_sync(models: dict, description: str | None) -> None:
@@ -252,7 +248,6 @@ def _write_migration_file(
     upgrade_statements: list[str],
     rollback_statements: list[str],
     description: str | None,
-    jetbase_dir: str,
 ) -> None:
     """
     Write the migration file to disk.
@@ -263,7 +258,9 @@ def _write_migration_file(
     migration_description = description or "auto_generated"
 
     filename = _generate_new_filename(description=migration_description)
-    filepath = os.path.join(jetbase_dir, MIGRATIONS_DIR, filename)
+    migrations_dir = os.path.join(os.getcwd(), MIGRATIONS_DIR)
+    os.makedirs(migrations_dir, exist_ok=True)
+    filepath = os.path.join(migrations_dir, filename)
 
     migration_content = f"""-- upgrade
 
