@@ -68,10 +68,21 @@ class TestGetRaFilenames:
         (migrations_dir / "RA__test.sql").touch()
         (migrations_dir / "V1__other.sql").touch()
 
-        with patch("jetbase.engine.repeatable.os.getcwd", return_value=str(tmp_path)):
+        with patch(
+            "jetbase.engine.repeatable.find_jetbase_directory", return_value=tmp_path
+        ):
             result = get_ra_filenames()
 
         assert result == ["RA__test.sql"]
+
+    def test_returns_empty_when_no_jetbase(self) -> None:
+        """Test that empty list is returned when jetbase directory not found."""
+        with patch(
+            "jetbase.engine.repeatable.find_jetbase_directory", return_value=None
+        ):
+            result = get_ra_filenames()
+
+        assert result == []
 
 
 class TestGetRepeatableFilenames:
@@ -85,10 +96,21 @@ class TestGetRepeatableFilenames:
         (migrations_dir / "ROC__test.sql").touch()
         (migrations_dir / "V1__other.sql").touch()
 
-        with patch("jetbase.engine.repeatable.os.getcwd", return_value=str(tmp_path)):
+        with patch(
+            "jetbase.engine.repeatable.find_jetbase_directory", return_value=tmp_path
+        ):
             result = get_repeatable_filenames()
 
         assert len(result) == 2
         assert "RA__test.sql" in result
         assert "ROC__test.sql" in result
         assert "V1__other.sql" not in result
+
+    def test_returns_empty_when_no_jetbase(self) -> None:
+        """Test that empty list is returned when jetbase directory not found."""
+        with patch(
+            "jetbase.engine.repeatable.find_jetbase_directory", return_value=None
+        ):
+            result = get_repeatable_filenames()
+
+        assert result == []
