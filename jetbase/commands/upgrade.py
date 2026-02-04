@@ -3,6 +3,7 @@ import os
 from jetbase.constants import MIGRATIONS_DIR
 from jetbase.engine.dry_run import process_dry_run
 from jetbase.engine.file_parser import parse_upgrade_statements
+from jetbase.engine.jetbase_locator import find_jetbase_directory
 from jetbase.engine.lock import migration_lock
 from jetbase.engine.repeatable import (
     get_repeatable_always_filepaths,
@@ -47,7 +48,6 @@ def upgrade_cmd(
     Raises:
         ValueError: If both count and to_version are specified.
     """
-
     if count is not None and to_version is not None:
         raise ValueError(
             "Cannot specify both 'count' and 'to_version' for upgrade. "
@@ -57,6 +57,12 @@ def upgrade_cmd(
     if count:
         if count < 1 or not isinstance(count, int):
             raise ValueError("'count' must be a positive integer.")
+
+    jetbase_dir = find_jetbase_directory()
+    if not jetbase_dir:
+        raise RuntimeError("Jetbase directory not found")
+
+    migrations_dir = os.path.join(jetbase_dir, MIGRATIONS_DIR)
 
     create_migrations_table_if_not_exists()
     create_lock_table_if_not_exists()
@@ -75,14 +81,15 @@ def upgrade_cmd(
         latest_migration=latest_migration,
         count=count,
         to_version=to_version,
+        migrations_dir=migrations_dir,
     )
 
     repeatable_always_filepaths: list[str] = get_repeatable_always_filepaths(
-        directory=os.path.join(os.getcwd(), MIGRATIONS_DIR)
+        directory=migrations_dir
     )
 
     runs_on_change_filepaths: list[str] = get_runs_on_change_filepaths(
-        directory=os.path.join(os.getcwd(), MIGRATIONS_DIR),
+        directory=migrations_dir,
         changed_only=True,
     )
 
@@ -122,6 +129,7 @@ def _get_filepaths_by_version(
     latest_migration: MigrationRecord | None,
     count: int | None = None,
     to_version: str | None = None,
+    migrations_dir: str | None = None,
 ) -> dict[str, str]:
     """
     Get pending migration file paths filtered by count or target version.
@@ -132,6 +140,8 @@ def _get_filepaths_by_version(
         count (int | None): Limit to this many migrations. Defaults to None.
         to_version (str | None): Include migrations up to this version.
             Defaults to None.
+        migrations_dir (str | None): Path to migrations directory.
+            Defaults to jetbase/migrations relative to cwd.
 
     Returns:
         dict[str, str]: Mapping of version to file path for pending migrations.
@@ -139,8 +149,15 @@ def _get_filepaths_by_version(
     Raises:
         FileNotFoundError: If to_version is not found in pending migrations.
     """
+    if migrations_dir is None:
+        jetbase_dir = find_jetbase_directory()
+        if jetbase_dir:
+            migrations_dir = os.path.join(jetbase_dir, MIGRATIONS_DIR)
+        else:
+            migrations_dir = os.path.join(os.getcwd(), MIGRATIONS_DIR)
+
     filepaths_by_version: dict[str, str] = get_migration_filepaths_by_version(
-        directory=os.path.join(os.getcwd(), MIGRATIONS_DIR),
+        directory=migrations_dir,
         version_to_start_from=latest_migration.version if latest_migration else None,
     )
 

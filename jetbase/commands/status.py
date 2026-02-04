@@ -5,6 +5,7 @@ from rich.table import Table
 
 from jetbase.engine.file_parser import get_description_from_filename
 from jetbase.engine.formatters import get_display_version
+from jetbase.engine.jetbase_locator import find_jetbase_directory
 from jetbase.engine.repeatable import get_ra_filenames, get_runs_on_change_filepaths
 from jetbase.engine.version import get_migration_filepaths_by_version
 from jetbase.enums import MigrationType
@@ -28,6 +29,12 @@ def status_cmd() -> None:
     Returns:
         None: Prints formatted tables to stdout showing migration status.
     """
+    jetbase_dir = find_jetbase_directory()
+    if not jetbase_dir:
+        raise RuntimeError("Jetbase directory not found")
+
+    migrations_dir = os.path.join(jetbase_dir, "migrations")
+
     is_migrations_table: bool = migrations_table_exists()
     if not is_migrations_table:
         create_migrations_table_if_not_exists()
@@ -48,7 +55,7 @@ def status_cmd() -> None:
     )
 
     pending_versioned_filepaths: dict[str, str] = get_migration_filepaths_by_version(
-        directory=os.path.join(os.getcwd(), "migrations"),
+        directory=migrations_dir,
         version_to_start_from=latest_migrated_version,
     )
 
@@ -62,7 +69,7 @@ def status_cmd() -> None:
     roc_filenames_changed_only: list[str] = [
         os.path.basename(filepath)
         for filepath in get_runs_on_change_filepaths(
-            directory=os.path.join(os.getcwd(), "migrations"), changed_only=True
+            directory=migrations_dir, changed_only=True
         )
     ]
 
@@ -72,9 +79,7 @@ def status_cmd() -> None:
 
     all_roc_filenames: list[str] = [
         os.path.basename(filepath)
-        for filepath in get_runs_on_change_filepaths(
-            directory=os.path.join(os.getcwd(), "migrations")
-        )
+        for filepath in get_runs_on_change_filepaths(directory=migrations_dir)
     ]
 
     console = Console()
