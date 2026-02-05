@@ -202,7 +202,7 @@ class TestMakeMigrationsSync:
                         with patch(
                             "jetbase.commands.make_migrations._write_migration_file"
                         ) as mock_write:
-                            _make_migrations_sync(models, "test description")
+                            _make_migrations_sync(models, "test description", set())
 
                             mock_write.assert_called_once()
                             args, kwargs = mock_write.call_args
@@ -255,7 +255,7 @@ class TestMakeMigrationsSync:
                     with patch(
                         "jetbase.commands.make_migrations._write_migration_file"
                     ) as mock_write:
-                        _make_migrations_sync(models, "test description")
+                        _make_migrations_sync(models, "test description", set())
 
                         mock_write.assert_not_called()
 
@@ -462,7 +462,7 @@ class TestSQLGenerationFromModels:
                                     return_value=False
                                 )
 
-                                _make_migrations_sync(models, "create users")
+                                _make_migrations_sync(models, "create users", set())
 
                                 mock_write.assert_called_once()
                                 args, kwargs = mock_write.call_args
@@ -514,7 +514,7 @@ class TestSQLGenerationFromModels:
                                     return_value=False
                                 )
 
-                                _make_migrations_sync(models, "create orders")
+                                _make_migrations_sync(models, "create orders", set())
 
                                 mock_write.assert_called_once()
                                 args, kwargs = mock_write.call_args
@@ -567,7 +567,9 @@ class TestSQLGenerationFromModels:
                                     return_value=False
                                 )
 
-                                _make_migrations_sync(models, "create all tables")
+                                _make_migrations_sync(
+                                    models, "create all tables", set()
+                                )
 
                                 mock_write.assert_called_once()
                                 args, kwargs = mock_write.call_args

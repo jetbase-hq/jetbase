@@ -11,6 +11,7 @@ from jetbase.engine.schema_diff import (
     get_model_table_columns,
     get_model_table_info,
     get_models_schema_info,
+    get_tables_from_migration_files,
     has_changes,
 )
 from jetbase.engine.schema_introspection import (
@@ -293,3 +294,52 @@ def test_has_changes():
         }
     )
     assert has_changes(diff_with_column_changes) is True
+
+
+def test_get_tables_from_migration_files(tmp_path):
+    """Test extracting table names from migration files."""
+    from jetbase.constants import MIGRATIONS_DIR
+
+    migrations_dir = tmp_path / MIGRATIONS_DIR
+    migrations_dir.mkdir()
+
+    migration_content = """-- upgrade
+
+CREATE TABLE users (
+    id INTEGER NOT NULL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE products (
+    id INTEGER NOT NULL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL
+);
+
+-- rollback
+
+DROP TABLE users;
+
+DROP TABLE products;
+"""
+    migration_file = migrations_dir / "V1__test.sql"
+    migration_file.write_text(migration_content)
+
+    tables = get_tables_from_migration_files([str(migration_file)])
+
+    assert "users" in tables
+    assert "products" in tables
+
+
+def test_compare_schemas_with_already_migrated_tables():
+    """Test that compare_schemas excludes already migrated tables."""
+    models = {"users": UserModel, "products": ProductModel}
+    database_schema = SchemaInfo(tables={})
+
+    connection = MagicMock()
+
+    diff = compare_schemas(
+        models, database_schema, connection, already_migrated_tables={"users"}
+    )
+
+    assert "users" not in diff.tables_to_create
+    assert "products" in diff.tables_to_create

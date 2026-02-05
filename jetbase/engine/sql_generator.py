@@ -5,7 +5,7 @@ from sqlalchemy.engine import Connection
 
 from jetbase.config import get_config
 from jetbase.database.queries.base import detect_db
-from jetbase.engine.schema_diff import SchemaDiff
+from jetbase.engine.schema_diff import SchemaDiff, get_model_table_info
 from jetbase.engine.schema_introspection import ColumnInfo
 from jetbase.enums import DatabaseType
 
@@ -383,21 +383,34 @@ def generate_drop_foreign_key_sql(
     return f"ALTER TABLE {table_name} DROP CONSTRAINT {fk_name};"
 
 
-def generate_upgrade_sql(diff: SchemaDiff, db_type: DatabaseType) -> str:
+def generate_upgrade_sql(
+    diff: SchemaDiff, db_type: DatabaseType, models: dict | None = None
+) -> str:
     """
     Generate the upgrade SQL from a schema diff.
 
     Args:
         diff (SchemaDiff): The schema diff.
         db_type (DatabaseType): The database type.
+        models (dict | None): Dictionary mapping table names to model classes.
 
     Returns:
         str: Complete upgrade SQL statement.
     """
     statements = []
 
-    for table_name in diff.tables_to_create:
-        pass
+    if models:
+        for table_name in diff.tables_to_create:
+            model_class = models[table_name]
+            table_info = get_model_table_info(model_class)
+            statements.append(
+                generate_create_table_sql(
+                    table_name,
+                    table_info.columns,
+                    table_info.primary_keys,
+                    db_type,
+                )
+            )
 
     for table_name in diff.columns_to_add:
         for column in diff.columns_to_add[table_name]:

@@ -22,8 +22,13 @@ from jetbase.engine.model_discovery import (
     ModelDiscoveryError,
     discover_all_models,
 )
-from jetbase.engine.schema_diff import compare_schemas, has_changes
+from jetbase.engine.schema_diff import (
+    compare_schemas,
+    get_tables_from_migration_files,
+    has_changes,
+)
 from jetbase.engine.schema_introspection import introspect_database
+from jetbase.engine.version import get_migration_filepaths_by_version
 from jetbase.engine.sql_generator import (
     generate_add_column_sql,
     generate_add_foreign_key_sql,
@@ -112,13 +117,28 @@ def make_migrations_cmd(description: str | None = None) -> None:
 
     sqlalchemy_url = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
 
-    if is_async_enabled():
-        asyncio.run(_make_migrations_async(models, description))
+    jetbase_dir = find_jetbase_directory()
+    if jetbase_dir:
+        migrations_dir = os.path.join(jetbase_dir, MIGRATIONS_DIR)
     else:
-        _make_migrations_sync(models, description)
+        migrations_dir = os.path.join(os.getcwd(), MIGRATIONS_DIR)
+
+    existing_migration_files = list(
+        get_migration_filepaths_by_version(migrations_dir).values()
+    )
+    already_migrated_tables = get_tables_from_migration_files(existing_migration_files)
+
+    if is_async_enabled():
+        asyncio.run(
+            _make_migrations_async(models, description, already_migrated_tables)
+        )
+    else:
+        _make_migrations_sync(models, description, already_migrated_tables)
 
 
-def _make_migrations_sync(models: dict, description: str | None) -> None:
+def _make_migrations_sync(
+    models: dict, description: str | None, already_migrated_tables: set[str]
+) -> None:
     """
     Generate migrations using sync database connection.
     """
@@ -128,7 +148,7 @@ def _make_migrations_sync(models: dict, description: str | None) -> None:
     except Exception as e:
         raise MakeMigrationsError(f"Failed to introspect database: {e}")
 
-    diff = compare_schemas(models, database_schema, connection)
+    diff = compare_schemas(models, database_schema, connection, already_migrated_tables)
 
     if not has_changes(diff):
         print("No changes detected.")
@@ -178,7 +198,9 @@ def _make_migrations_sync(models: dict, description: str | None) -> None:
     _write_migration_file(upgrade_statements, rollback_statements, description)
 
 
-async def _make_migrations_async(models: dict, description: str | None) -> None:
+async def _make_migrations_async(
+    models: dict, description: str | None, already_migrated_tables: set[str]
+) -> None:
     """
     Generate migrations using async database connection.
 
@@ -205,7 +227,7 @@ async def _make_migrations_async(models: dict, description: str | None) -> None:
     except Exception as e:
         raise MakeMigrationsError(f"Failed to introspect database: {e}")
 
-    diff = compare_schemas(models, database_schema, sync_conn)
+    diff = compare_schemas(models, database_schema, sync_conn, already_migrated_tables)
 
     if not has_changes(diff):
         print("No changes detected.")

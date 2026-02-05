@@ -115,10 +115,40 @@ def get_models_schema_info(models: dict[str, type]) -> dict[str, TableInfo]:
     }
 
 
+def get_tables_from_migration_files(migration_files: list[str]) -> set[str]:
+    """
+    Extract table names from CREATE TABLE statements in migration files.
+
+    Args:
+        migration_files (list[str]): List of migration file paths to parse.
+
+    Returns:
+        set[str]: Set of table names found in CREATE TABLE statements.
+    """
+    import re
+
+    tables: set[str] = set()
+    create_table_pattern = re.compile(
+        r"CREATE\s+TABLE\s+[`\"']?(\w+)[`\"']?\s*\(", re.IGNORECASE
+    )
+
+    for file_path in migration_files:
+        try:
+            with open(file_path, "r") as f:
+                content = f.read()
+                matches = create_table_pattern.findall(content)
+                tables.update(matches)
+        except Exception:
+            continue
+
+    return tables
+
+
 def compare_schemas(
     models: dict[str, type],
     database_schema: SchemaInfo,
     connection: Connection,
+    already_migrated_tables: set[str] | None = None,
 ) -> SchemaDiff:
     """
     Compare model schema against database schema to detect differences.
@@ -127,6 +157,8 @@ def compare_schemas(
         models (dict[str, type]): Dictionary mapping table names to model classes.
         database_schema (SchemaInfo): The current database schema.
         connection (Connection): Database connection.
+        already_migrated_tables (set[str] | None): Tables already defined in
+            existing migration files. These will be excluded from tables_to_create.
 
     Returns:
         SchemaDiff: Object containing all detected differences.
@@ -137,7 +169,11 @@ def compare_schemas(
     model_table_names = set(models_schema.keys())
     db_table_names = set(database_schema.tables.keys())
 
-    diff.tables_to_create = sorted(list(model_table_names - db_table_names))
+    excluded_tables = already_migrated_tables or set()
+
+    diff.tables_to_create = sorted(
+        list(model_table_names - db_table_names - excluded_tables)
+    )
     diff.tables_to_drop = sorted(list(db_table_names - model_table_names))
 
     for table_name in model_table_names & db_table_names:
