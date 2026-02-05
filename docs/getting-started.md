@@ -117,7 +117,7 @@ ENVIRONMENT = os.getenv("ENVIRONMENT")
 if ENVIRONMENT == "DEV":
     def get_env_vars():
         return {
-            "sqlalchemy_url": "sqlite+aiosqlite:///./egos.db",
+            "sqlalchemy_url": "sqlite+aiosqlite:///./mydb.db",
             "async_mode": True,
         }
 else:
