@@ -22,15 +22,27 @@ def is_async_enabled() -> bool:
     """
     Check if async mode is enabled.
 
-    Only checks the ASYNC environment variable:
-    - "true", "1", "yes" -> async mode
-    - "false", "0", "no", or not set -> sync mode
+    Checks both the ASYNC environment variable and async_mode from config.
+    Returns True if either is enabled.
 
     Returns:
         bool: True if async mode is enabled, False otherwise.
     """
     async_env = os.getenv("ASYNC", "").lower()
-    return async_env in ("true", "1", "yes")
+    if async_env in ("true", "1", "yes"):
+        return True
+    if async_env in ("false", "0", "no"):
+        return False
+
+    try:
+        config = get_config(
+            keys=["async_mode", "sqlalchemy_url"],
+            defaults={"async_mode": False},
+            required={"sqlalchemy_url"},
+        )
+        return config.async_mode
+    except Exception:
+        return False
 
 
 def _make_sync_url(url: str) -> str:
