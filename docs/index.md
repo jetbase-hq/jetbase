@@ -7,12 +7,16 @@ Jetbase helps you manage database migrations in a simple, version-controlled way
 ### Key Features ✨
 
 - **📦 Simple Setup** — Get started with just one command
-- **⬆️ Easy Upgrades** — Apply pending migrations with confidence
+- **⬆️ Easy Migrations** — Apply pending migrations with confidence
 - **⬇️ Safe Rollbacks** — Made a mistake? No problem, roll it back!
 - **📊 Clear Status** — Always know which migrations have been applied and which are pending
 - **🔒 Migration Locking** — Prevents conflicts when multiple processes try to migrate
 - **✅ Checksum Validation** — Detects if migration files have been modified
-- **🔄 Repeatable Migrations** — Support for migrations that run on every upgrade
+- **🔄 Repeatable Migrations** — Support for migrations that run on every migrate
+- **🤖 Auto-Generation** — Automatically generate SQL migrations from SQLAlchemy models
+- **🔀 Async/Sync Support** — Works with both sync and async SQLAlchemy drivers
+- **🎯 Auto-Discovery** — Automatically finds models in `models/` or `model/` directories
+- **📁 Portable** — Run jetbase from any directory in your project
 
 ## Quick Start 🏃‍♂️
 
@@ -103,21 +107,73 @@ DROP TABLE users;
 ### Apply the Migration
 
 ```bash
-jetbase upgrade
+jetbase migrate
 ```
 
 That's it! Your database is now up to date. 🎉
 
-> **Note:**  
-> Jetbase uses SQLAlchemy under the hood to manage database connections.  
-> For any database other than SQLite, you must install the appropriate Python database driver.  
-> For example, to use Jetbase with PostgreSQL:
+!!! tip "Running Jetbase"
+    If you encounter errors, run Jetbase using your project's Python environment:
+    ```bash
+    uv run jetbase migrate
+    ```
 
-```
-pip install psycopg2
+!!! note
+    Jetbase uses SQLAlchemy under the hood to manage database connections.
+    For any database other than SQLite, you must install the appropriate Python database driver.
+    For example, to use Jetbase with PostgreSQL:
+
+    ```
+    pip install psycopg2
+    ```
+
+    You can also use another compatible driver if you prefer (such as `asyncpg`, `pg8000`, etc.).
+
+## Auto-Generation from SQLAlchemy Models 🤖
+
+Jetbase can automatically generate SQL migrations from your SQLAlchemy model definitions:
+
+```python
+# models.py
+from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy.orm import declarative_base
+
+Base = declarative_base()
+
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True)
+    email = Column(String(255), nullable=False)
+    name = Column(String(100))
 ```
 
-You can also use another compatible driver if you prefer (such as `asyncpg`, `pg8000`, etc.).
+Generate migrations automatically:
+
+```bash
+jetbase make-migrations --description "add user model"
+```
+
+Jetbase will:
+1. Discover your models from `models/` directory or configured paths
+2. Introspect your current database schema
+3. Compare models against the database
+4. Generate a migration file with upgrade and rollback SQL
+
+[Learn more about auto-generation](commands/make-migrations.md)
+
+## Async and Sync Support ⚡
+
+Jetbase supports both synchronous and asynchronous database connections:
+
+```bash
+# Sync mode (default)
+jetbase migrate
+
+# Async mode
+ASYNC=true jetbase migrate
+```
+
+[Learn more about async/sync support](database-connections.md#async-and-sync-modes)
 
 ## Next Steps
 
@@ -125,6 +181,7 @@ You can also use another compatible driver if you prefer (such as `asyncpg`, `pg
 - 🛠️ [Commands Reference](commands/index.md) — Learn all available commands
 - 📝 [Writing Migrations](migrations/index.md) — Best practices for migration files
 - ⚙️ [Configuration](configuration.md) — Customize Jetbase for your needs
+- 🔌 [Database Connections](database-connections.md) — Connect to different databases
 
 ## Supported Databases
 
@@ -134,3 +191,4 @@ Jetbase currently supports:
 - ✅ SQLite
 - ✅ Snowflake
 - ✅ MySQL
+- ✅ Databricks

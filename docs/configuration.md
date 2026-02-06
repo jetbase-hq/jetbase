@@ -173,13 +173,13 @@ Some configuration options can be overridden via command-line flags:
 
 ```bash
 # Skip all validation
-jetbase upgrade --skip-validation
+jetbase migrate --skip-validation
 
 # Skip only checksum validation
-jetbase upgrade --skip-checksum-validation
+jetbase migrate --skip-checksum-validation
 
 # Skip only file validation
-jetbase upgrade --skip-file-validation
+jetbase migrate --skip-file-validation
 ```
 
 ## Database Tables

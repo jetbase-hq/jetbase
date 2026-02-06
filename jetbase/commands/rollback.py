@@ -1,7 +1,9 @@
 import os
 
+from jetbase.constants import MIGRATIONS_DIR
 from jetbase.engine.dry_run import process_dry_run
 from jetbase.engine.file_parser import parse_rollback_statements
+from jetbase.engine.jetbase_locator import find_jetbase_directory
 from jetbase.engine.lock import (
     migration_lock,
 )
@@ -41,6 +43,12 @@ def rollback_cmd(
         ValueError: If both count and to_version are specified.
         VersionNotFoundError: If a required migration file is missing.
     """
+    jetbase_dir = find_jetbase_directory()
+    if not jetbase_dir:
+        raise RuntimeError("Jetbase directory not found")
+
+    migrations_dir = os.path.join(jetbase_dir, MIGRATIONS_DIR)
+
     create_migrations_table_if_not_exists()
     create_lock_table_if_not_exists()
 
@@ -61,7 +69,8 @@ def rollback_cmd(
         return
 
     versions_to_rollback: dict[str, str] = _get_versions_to_rollback(
-        latest_migration_versions=latest_migration_versions
+        latest_migration_versions=latest_migration_versions,
+        migrations_dir=migrations_dir,
     )
 
     _validate_rollback_files_exist(
@@ -121,7 +130,10 @@ def _get_latest_migration_versions(
         return get_latest_versions(limit=1)
 
 
-def _get_versions_to_rollback(latest_migration_versions: list[str]) -> dict[str, str]:
+def _get_versions_to_rollback(
+    latest_migration_versions: list[str],
+    migrations_dir: str | None = None,
+) -> dict[str, str]:
     """
     Get migration file paths for versions to rollback.
 
@@ -131,13 +143,22 @@ def _get_versions_to_rollback(latest_migration_versions: list[str]) -> dict[str,
     Args:
         latest_migration_versions (list[str]): List of version strings
             to rollback, ordered oldest to newest.
+        migrations_dir (str | None): Path to migrations directory.
+            Defaults to jetbase/migrations relative to cwd.
 
     Returns:
         dict[str, str]: Mapping of version to file path, reversed so
             newest versions are rolled back first.
     """
+    if migrations_dir is None:
+        jetbase_dir = find_jetbase_directory()
+        if jetbase_dir:
+            migrations_dir = os.path.join(jetbase_dir, MIGRATIONS_DIR)
+        else:
+            migrations_dir = os.path.join(os.getcwd(), MIGRATIONS_DIR)
+
     versions_to_rollback: dict[str, str] = get_migration_filepaths_by_version(
-        directory=os.path.join(os.getcwd(), "migrations"),
+        directory=migrations_dir,
         version_to_start_from=latest_migration_versions[-1],
         end_version=latest_migration_versions[0],
     )

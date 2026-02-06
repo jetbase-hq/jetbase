@@ -1,6 +1,7 @@
 import importlib.machinery
 import importlib.util
 import os
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
@@ -9,6 +10,7 @@ from typing import Any
 import tomli
 
 from jetbase.constants import ENV_FILE
+from jetbase.engine.jetbase_locator import find_jetbase_directory
 
 
 @dataclass
@@ -29,6 +31,10 @@ class JetbaseConfig:
             migration files exist. Defaults to False.
         skip_validation (bool): If True, skips all validations.
             Defaults to False.
+        model_paths (list[str] | None): Optional list of paths to SQLAlchemy
+            model files for automatic migration generation. Defaults to None.
+        async_mode (bool): If True, uses async database connections.
+            Defaults to False.
 
     Raises:
         TypeError: If any boolean field receives a non-boolean value.
@@ -41,6 +47,8 @@ class JetbaseConfig:
     skip_validation: bool = False
     snowflake_private_key: str | None = None
     snowflake_private_key_password: str | None = None
+    model_paths: list[str] | None = None
+    async_mode: bool = False
 
     def __post_init__(self):
         # Validate skip_checksum_validation
@@ -64,6 +72,13 @@ class JetbaseConfig:
                 f"Value: {self.skip_validation!r}"
             )
 
+        # Validate async_mode
+        if not isinstance(self.async_mode, bool):
+            raise TypeError(
+                f"async_mode must be bool, got {type(self.async_mode).__name__}. "
+                f"Value: {self.async_mode!r}"
+            )
+
 
 ALL_KEYS: list[str] = [
     field.name for field in JetbaseConfig.__dataclass_fields__.values()
@@ -77,6 +92,8 @@ DEFAULT_VALUES: dict[str, Any] = {
     "postgres_schema": None,
     "snowflake_private_key": None,
     "snowflake_private_key_password": None,
+    "model_paths": None,
+    "async_mode": False,
 }
 
 REQUIRED_KEYS: set[str] = {
@@ -93,7 +110,7 @@ def get_config(
     Load configuration from env.py, environment variables, or TOML files.
 
     Searches for configuration values in the following priority order:
-    1. env.py file in the current directory
+    1. env.py file in the jetbase directory (or current directory)
     2. Environment variables (JETBASE_{KEY_IN_UPPERCASE})
     3. jetbase.toml file
     4. pyproject.toml [tool.jetbase] section
@@ -151,7 +168,7 @@ def _get_config_value(key: str) -> Any | None:
         Any | None: The configuration value from the first available source,
             or None if not found in any source.
     """
-    # Try env.py
+    # Try env.py (from jetbase directory or cwd)
     value = _get_config_from_env_py(key)
     if value is not None:
         return value
@@ -178,39 +195,86 @@ def _get_config_value(key: str) -> Any | None:
     return None
 
 
-def _get_config_from_env_py(key: str, filepath: str = ENV_FILE) -> Any | None:
+def _get_config_from_env_py(key: str) -> Any | None:
     """
     Load a configuration value from the env.py file.
 
     Dynamically imports the env.py file and retrieves the specified attribute.
+    Looks in the jetbase directory first, then falls back to current directory.
 
     Args:
         key (str): The configuration key to retrieve.
-        filepath (str): Path to the env.py file relative to current directory.
-            Defaults to ENV_FILE.
 
     Returns:
         Any | None: The configuration value if the attribute exists,
             otherwise None.
     """
-    config_path: str = os.path.join(os.getcwd(), filepath)
+    # First try jetbase directory
+    jetbase_dir = find_jetbase_directory()
+    if jetbase_dir:
+        config_path = os.path.join(jetbase_dir, ENV_FILE)
+        if os.path.exists(config_path):
+            return _load_config_from_path(config_path, key)
 
-    if not os.path.exists(config_path):
+    # Fall back to current directory
+    config_path = os.path.join(os.getcwd(), ENV_FILE)
+    if os.path.exists(config_path):
+        return _load_config_from_path(config_path, key)
+
+    return None
+
+
+def _load_config_from_path(config_path: str, key: str) -> Any | None:
+    """
+    Load a configuration value from a specific env.py file path.
+
+    Automatically adds the project root (parent of jetbase directory) to sys.path
+    so that imports like 'from app.core.config import ...' work correctly.
+
+    Supports two configuration patterns:
+    1. Module-level variables (original): Define variables directly at module level
+       (e.g., `sqlalchemy_url = "postgresql://..."`)
+
+    2. get_env_vars() function (recommended): Define a function that returns a dict
+       with all configuration values (e.g., `def get_env_vars(): return {"sqlalchemy_url": "..."}`)
+
+    The get_env_vars() pattern allows for more complex logic and configuration
+    while keeping the configuration interface simple.
+
+    Args:
+        config_path (str): Path to the env.py file.
+        key (str): The configuration key to retrieve.
+
+    Returns:
+        Any | None: The configuration value if the attribute exists,
+            otherwise None.
+    """
+    try:
+        jetbase_dir = os.path.dirname(config_path)
+        project_root = os.path.dirname(jetbase_dir)
+
+        if project_root not in sys.path:
+            sys.path.insert(0, project_root)
+
+        spec: importlib.machinery.ModuleSpec | None = (
+            importlib.util.spec_from_file_location("config", config_path)
+        )
+
+        if spec is None or spec.loader is None:
+            return None
+
+        config: ModuleType = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module=config)
+
+        if hasattr(config, "get_env_vars") and callable(config.get_env_vars):
+            env_vars = config.get_env_vars()
+            if isinstance(env_vars, dict) and key in env_vars:
+                return env_vars[key]
+
+        config_value: Any | None = getattr(config, key, None)
+        return config_value
+    except Exception:
         return None
-
-    spec: importlib.machinery.ModuleSpec | None = (
-        importlib.util.spec_from_file_location("config", config_path)
-    )
-
-    assert spec is not None
-    assert spec.loader is not None
-
-    config: ModuleType = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module=config)
-
-    config_value: Any | None = getattr(config, key, None)
-
-    return config_value
 
 
 def _get_config_from_jetbase_toml(
@@ -295,6 +359,7 @@ def _get_config_from_env_var(key: str) -> Any | None:
     Load a configuration value from a JETBASE_{KEY} environment variable.
 
     Converts "true" and "false" string values to boolean True and False.
+    For model_paths, parses comma-separated paths into a list.
 
     Args:
         key (str): The configuration key to retrieve. Will be converted
@@ -303,14 +368,22 @@ def _get_config_from_env_var(key: str) -> Any | None:
     Returns:
         Any | None: The environment variable value if set, otherwise None.
             Boolean strings are converted to Python booleans.
+            model_paths is converted to a list of strings.
     """
     env_var_name = f"JETBASE_{key.upper()}"
     config_value: str | None = os.getenv(env_var_name, None)
-    if config_value:
-        if config_value.lower() == "true":
-            return True
-        if config_value.lower() == "false":
-            return False
+
+    if config_value is None:
+        return None
+
+    if config_value.lower() == "true":
+        return True
+    if config_value.lower() == "false":
+        return False
+    if key == "model_paths":
+        paths = [p.strip() for p in config_value.split(",") if p.strip()]
+        return paths if paths else None
+
     return config_value
 
 

@@ -78,7 +78,7 @@ cd jetbase
 jetbase new "create users table" -v 1
 
 # 5. Apply migrations
-jetbase upgrade
+jetbase migrate
 ```
 
 ## Notes

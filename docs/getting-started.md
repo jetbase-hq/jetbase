@@ -63,7 +63,9 @@ All Jetbase commands must be run from inside the `jetbase/` directory.
 
 ### Step 3: Configure Your Database Connection
 
-Open `env.py` and update the `sqlalchemy_url` with your database connection string:
+Open `env.py` and configure your database connection. Jetbase supports two patterns:
+
+#### Pattern 1: Simple Module-level Variables
 
 === "PostgreSQL"
     ```python
@@ -73,6 +75,12 @@ Open `env.py` and update the `sqlalchemy_url` with your database connection stri
 === "SQLite"
     ```python
     sqlalchemy_url = "sqlite:///mydb.db"
+    ```
+
+=== "SQLite Async"
+    ```python
+    sqlalchemy_url = "sqlite+aiosqlite:///mydb.db"
+    async_mode = True
     ```
 
 === "MySQL"
@@ -94,11 +102,44 @@ Open `env.py` and update the `sqlalchemy_url` with your database connection stri
     )
     ```
 
+#### Pattern 2: get_env_vars() Function (Recommended)
+
+For complex configurations (environment-based settings, etc.), use a function:
+
+```python
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+ENVIRONMENT = os.getenv("ENVIRONMENT")
+
+if ENVIRONMENT == "DEV":
+    def get_env_vars():
+        return {
+            "sqlalchemy_url": "sqlite+aiosqlite:///./mydb.db",
+            "async_mode": True,
+        }
+else:
+    def get_env_vars():
+        return {
+            "sqlalchemy_url": "postgresql+asyncpg://user:password@localhost:5432/mydb",
+            "async_mode": True,
+        }
+```
+
+!!! tip "Why use get_env_vars()?"
+    - Keep all configuration logic in one place
+    - Access to full Python logic (if/else, imports, etc.)
+    - Easy to see all Jetbase configuration at a glance
+
 
 
 ## Creating Your First Migration
 
-### Step 1: Generate a Migration File
+Jetbase offers two ways to create migrations:
+
+### Option 1: Manual Migration (Write SQL Yourself)
 
 Use the `new` command to create a migration file:
 
@@ -115,16 +156,14 @@ migrations/V1__create_users_table.sql
 The filename format is: `V{version}__{description}.sql`
 
 !!! tip "Manual Migration Files"
-You can also create migration files manually if you prefer! Simply add your migration file to the `jetbase/migrations/` folder and follow the required filename format:  
-`V{version}__{description}.sql`  
-**Example:**  
-`V2.4__create_users_table.sql`
+    You can also create migration files manually if you prefer! Simply add your migration file to the `jetbase/migrations/` folder and follow the required filename format:  
+    `V{version}__{description}.sql`  
+    **Example:**  
+    `V2.4__create_users_table.sql`
 
-Be sure your file starts with `V`, followed by a version (like `2.4`), then `__`, a short description (use underscores for spaces), and ends with `.sql`.
+    Be sure your file starts with `V`, followed by a version (like `2.4`), then `__`, a short description (use underscores for spaces), and ends with `.sql`.
 
-### Step 2: Write Your Migration SQL
-
-Open the newly created file and add your SQL statements:
+Write your migration SQL:
 
 ```sql
 -- upgrade
@@ -147,13 +186,61 @@ DROP TABLE users;
 !!! note "Migration File Structure"
     - The `-- rollback` section contains *only* SQL to undo the migration, and any rollback statements must go **after** `-- rollback`
 
+### Option 2: Auto-Generate from SQLAlchemy Models
 
-### Step 3: Apply the Migration
+Jetbase can automatically generate SQL migrations from your SQLAlchemy models.
 
-Run the upgrade command:
+**Step 1:** Create your models:
+
+```python
+# models.py
+from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy.orm import declarative_base
+
+Base = declarative_base()
+
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True)
+    email = Column(String(255), nullable=False)
+    name = Column(String(100))
+
+
+class Post(Base):
+    __tablename__ = "posts"
+    id = Column(Integer, primary_key=True)
+    title = Column(String(255), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+```
+
+**Step 2:** Configure model paths in `jetbase/env.py`:
+
+```python
+model_paths = ["../models.py"]
+```
+
+Or use auto-discovery by placing models in `models/` directory.
+
+**Step 3:** Generate migrations:
 
 ```bash
-jetbase upgrade
+jetbase make-migrations --description "add user and post models"
+```
+
+Jetbase will:
+1. Discover your models
+2. Introspect the database
+3. Compare schemas
+4. Generate SQL with upgrade and rollback
+
+[Learn more about auto-generation](commands/make-migrations.md)
+
+## Apply the Migration
+
+Run the migrate command:
+
+```bash
+jetbase migrate
 ```
 
 Output:
@@ -162,16 +249,16 @@ Output:
 Migration applied successfully: V1__create_users_table.sql
 ```
 
-> **Note:**  
-Jetbase uses SQLAlchemy under the hood to manage database connections.  
-For any database other than SQLite, you must install the appropriate Python database driver.  
-For example, to use Jetbase with PostgreSQL:
-```
-pip install psycopg2
-```
-You can also use another compatible driver if you prefer (such as `asyncpg`, `pg8000`, etc.).
+> **Note:**
+> Jetbase uses SQLAlchemy under the hood to manage database connections.
+> For any database other than SQLite, you must install the appropriate Python database driver.
+> For example, to use Jetbase with PostgreSQL:
+> ```
+> pip install psycopg2
+> ```
+> You can also use another compatible driver if you prefer (such as `asyncpg`, `pg8000`, etc.).
 
-### Step 4: Verify the Migration
+## Verify the Migration
 
 Check the migration status:
 
@@ -184,24 +271,51 @@ You'll see a table showing:
 - ✅ Applied migrations
 - 📋 Pending migrations (if any)
 
+## Async and Sync Support
+
+Jetbase supports both synchronous and asynchronous database connections.
+
+### Using async_mode in env.py
+
+```python
+sqlalchemy_url = "sqlite+aiosqlite:///mydb.db"
+async_mode = True
+```
+
+### Using ASYNC Environment Variable
+
+```bash
+# Sync mode (default)
+jetbase migrate
+
+# Async mode
+ASYNC=true jetbase migrate
+```
+
+!!! note
+    For SQLite async support, use `sqlite+aiosqlite://` URL scheme and set `async_mode = True`
+
 ## What's Next?
 
 Now that you've set up your first migration, explore these topics:
 
+- [Auto-Generation from Models](commands/make-migrations.md) — Automatically generate migrations from SQLAlchemy models
 - [Writing Migrations](migrations/writing-migrations.md) — Learn about migration file syntax and best practices
 - [Commands Reference](commands/index.md) — Discover all available commands
 - [Rollbacks](commands/rollback.md) — Learn how to safely undo migrations
 - [Configuration Options](configuration.md) — Customize Jetbase behavior
+- [Database Connections](database-connections.md) — Connect to different databases with async/sync support
 
 ## Quick Command Reference
 
 | Command                                                 | Description                             |
 | ------------------------------------------------------- | --------------------------------------- |
 | [`init`](commands/init.md)                              | Initialize Jetbase in current directory |
-| [`new`](commands/new.md)                                | Create a new migration file             |
-| [`upgrade`](commands/upgrade.md)                        | Apply pending migrations                |
+| [`new`](commands/new.md)                                | Create a new manual migration file      |
+| [`make-migrations`](commands/make-migrations.md)        | Auto-generate SQL from SQLAlchemy models |
+| [`migrate`](commands/upgrade.md)                        | Apply pending migrations                |
 | [`rollback`](commands/rollback.md)                      | Undo migrations                         |
-| [`status`](commands/status.md)                          | Show migration status of all migration files (applied vs. pending) |
+| [`status`](commands/status.md)                          | Show migration status                   |
 | [`history`](commands/history.md)                        | Show migration history                  |
 | [`current`](commands/current.md)                        | Show latest version migrated            |
 | [`lock-status`](commands/lock-status.md)                | Check if migrations are locked          |
@@ -209,6 +323,4 @@ Now that you've set up your first migration, explore these topics:
 | [`validate-checksums`](commands/validate-checksums.md)  | Verify migration file integrity         |
 | [`validate-files`](commands/validate-files.md)          | Check for missing migration files       |
 | [`fix`](commands/fix.md)                                | Fix migration issues                    |
-| [`fix-files`](commands/validate-files.md)               | Fix missing migration files (same as `validate-files --fix`) |
-| [`fix-checksums`](commands/validate-checksums.md)       | Fix migration file checksums (same as `validate-checksums --fix`) |
 

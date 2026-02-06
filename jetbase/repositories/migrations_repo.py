@@ -1,6 +1,6 @@
 from sqlalchemy import Result, Row, text
 
-from jetbase.database.connection import get_db_connection
+from jetbase.database.connection import get_db_connection, get_connection
 from jetbase.database.queries.base import QueryMethod
 from jetbase.database.queries.query_loader import get_query
 from jetbase.engine.checksum import calculate_checksum
@@ -45,7 +45,7 @@ def run_migration(
     if migration_operation == MigrationDirectionType.UPGRADE and filename is None:
         raise ValueError("Filename must be provided for upgrade migrations.")
 
-    with get_db_connection() as connection:
+    with get_connection() as connection:
         for statement in sql_statements:
             connection.execute(text(statement))
 
@@ -95,7 +95,7 @@ def run_update_repeatable_migration(
     """
     checksum: str = calculate_checksum(sql_statements=sql_statements)
 
-    with get_db_connection() as connection:
+    with get_connection() as connection:
         for statement in sql_statements:
             connection.execute(text(statement))
 
@@ -125,7 +125,7 @@ def fetch_latest_versioned_migration() -> MigrationRecord | None:
     if not table_exists:
         return None
 
-    with get_db_connection() as connection:
+    with get_connection() as connection:
         result: Result[tuple[str]] = connection.execute(
             get_query(
                 QueryMethod.MIGRATION_RECORDS_QUERY,
@@ -150,7 +150,7 @@ def create_migrations_table_if_not_exists() -> None:
         None: Table is created as a side effect.
     """
 
-    with get_db_connection() as connection:
+    with get_connection() as connection:
         connection.execute(
             statement=get_query(QueryMethod.CREATE_MIGRATIONS_TABLE_STMT)
         )
@@ -192,7 +192,7 @@ def get_latest_versions(
     latest_versions: list[str] = []
 
     if limit:
-        with get_db_connection() as connection:
+        with get_connection() as connection:
             result: Result[tuple[str]] = connection.execute(
                 statement=get_query(QueryMethod.LATEST_VERSIONS_QUERY),
                 parameters={"limit": limit},
@@ -200,7 +200,7 @@ def get_latest_versions(
             latest_versions: list[str] = [row[0] for row in result.fetchall()]
 
     if starting_version:
-        with get_db_connection() as connection:
+        with get_connection() as connection:
             version_exists_result: Result[tuple[int]] = connection.execute(
                 statement=get_query(QueryMethod.CHECK_IF_VERSION_EXISTS_QUERY),
                 parameters={"version": starting_version},
@@ -235,7 +235,7 @@ def migrations_table_exists() -> bool:
     Returns:
         bool: True if the jetbase_migrations table exists, False otherwise.
     """
-    with get_db_connection() as connection:
+    with get_connection() as connection:
         result: Result[tuple[bool]] = connection.execute(
             statement=get_query(QueryMethod.CHECK_IF_MIGRATIONS_TABLE_EXISTS_QUERY)
         )
@@ -255,7 +255,7 @@ def get_migration_records() -> list[MigrationRecord]:
         list[MigrationRecord]: List of all migration records in
             chronological order.
     """
-    with get_db_connection() as connection:
+    with get_connection() as connection:
         results: Result[tuple[str, int, str]] = connection.execute(
             statement=get_query(QueryMethod.MIGRATION_RECORDS_QUERY)
         )
@@ -286,7 +286,7 @@ def get_checksums_by_version() -> list[tuple[str, str]]:
         list[tuple[str, str]]: List of (version, checksum) tuples
             in order of application.
     """
-    with get_db_connection() as connection:
+    with get_connection() as connection:
         results: Result[tuple[str, str]] = connection.execute(
             statement=get_query(QueryMethod.GET_VERSION_CHECKSUMS_QUERY)
         )
@@ -307,7 +307,7 @@ def get_migrated_versions() -> list[str]:
     Returns:
         list[str]: List of version strings in order of application.
     """
-    with get_db_connection() as connection:
+    with get_connection() as connection:
         results: Result[tuple[str]] = connection.execute(
             statement=get_query(QueryMethod.GET_VERSION_CHECKSUMS_QUERY)
         )
@@ -330,7 +330,7 @@ def update_migration_checksums(versions_and_checksums: list[tuple[str, str]]) ->
     Returns:
         None: Checksums are updated as a side effect.
     """
-    with get_db_connection() as connection:
+    with get_connection() as connection:
         for version, checksum in versions_and_checksums:
             connection.execute(
                 statement=get_query(QueryMethod.REPAIR_MIGRATION_CHECKSUM_STMT),
@@ -349,7 +349,7 @@ def get_existing_on_change_filenames_to_checksums() -> dict[str, str]:
         dict[str, str]: Dictionary mapping filenames to their stored
             checksum values.
     """
-    with get_db_connection() as connection:
+    with get_connection() as connection:
         results: Result[tuple[str, str]] = connection.execute(
             statement=get_query(QueryMethod.GET_RUNS_ON_CHANGE_MIGRATIONS_QUERY),
         )
@@ -370,7 +370,7 @@ def get_existing_repeatable_always_migration_filenames() -> set[str]:
     Returns:
         set[str]: Set of runs-always migration filenames.
     """
-    with get_db_connection() as connection:
+    with get_connection() as connection:
         results: Result[tuple[str]] = connection.execute(
             statement=get_query(QueryMethod.GET_RUNS_ALWAYS_MIGRATIONS_QUERY),
         )
@@ -392,7 +392,7 @@ def delete_missing_versions(versions: list[str]) -> None:
     Returns:
         None: Records are deleted as a side effect.
     """
-    with get_db_connection() as connection:
+    with get_connection() as connection:
         for version in versions:
             connection.execute(
                 statement=get_query(QueryMethod.DELETE_MISSING_VERSION_STMT),
@@ -413,7 +413,7 @@ def delete_missing_repeatables(repeatable_filenames: list[str]) -> None:
     Returns:
         None: Records are deleted as a side effect.
     """
-    with get_db_connection() as connection:
+    with get_connection() as connection:
         for r_file in repeatable_filenames:
             connection.execute(
                 statement=get_query(QueryMethod.DELETE_MISSING_REPEATABLE_STMT),
@@ -431,7 +431,7 @@ def fetch_repeatable_migrations() -> list[MigrationRecord]:
     Returns:
         list[MigrationRecord]: List of all repeatable migration records.
     """
-    with get_db_connection() as connection:
+    with get_connection() as connection:
         results: Result[tuple[str]] = connection.execute(
             statement=get_query(
                 QueryMethod.MIGRATION_RECORDS_QUERY, all_repeatables=True
