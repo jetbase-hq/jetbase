@@ -91,7 +91,7 @@ def _print_audit_report(
     logger.info(
         "JETBASE - Checksum Audit Report\n"
         "----------------------------------------\n"
-        "Changes detected in the following files:\n%s",
+        "Changes detected in the following migration versions:\n%s",
         "\n".join(items),
     )
 

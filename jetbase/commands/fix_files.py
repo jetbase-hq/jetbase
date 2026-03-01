@@ -91,7 +91,7 @@ def _print_audit_report(
             f"→ {repeatable}" for repeatable in missing_repeatables
         ]
         logger.info(
-            "The following migrations are missing their corresponding files:\n%s",
+            "The following migration versions are missing their corresponding files:\n%s",
             "\n".join(items),
         )
     else:
