@@ -77,7 +77,7 @@ def status_cmd() -> None:
         )
     ]
 
-    console = Console()
+    console: Console = Console()
 
     applied_table: Table = _create_migrations_display_table(title="Migrations Applied")
 
@@ -108,10 +108,10 @@ def _create_migrations_display_table(title: str) -> Table:
     version numbers and descriptions.
 
     Args:
-        title (str): The title to display above the table.
+        title: The title to display above the table.
 
     Returns:
-        Table: A configured rich Table with Version and Description columns.
+        A configured rich Table with Version and Description columns.
     """
     display_table: Table = Table(
         title=title, show_header=True, header_style="bold magenta"
@@ -131,9 +131,9 @@ def _add_applied_rows(table: Table, migration_records: list[MigrationRecord]) ->
     migrations.
 
     Args:
-        table (Table): The rich Table to add rows to.
-        migration_records (list[MigrationRecord]): List of migration records
-            that have been applied to the database.
+        table: The rich Table to add rows to.
+        migration_records: List of migration records that have been applied
+            to the database.
 
     Returns:
         None: Modifies the table in place.
@@ -164,16 +164,15 @@ def _add_pending_rows(
     migrations that have been modified or not yet applied.
 
     Args:
-        table (Table): The rich Table to add rows to.
-        pending_versioned_filepaths (dict[str, str]): Mapping of version
-            strings to file paths for pending versioned migrations.
-        migration_records (list[MigrationRecord]): All migration records
-            from the database.
-        roc_filenames_changed_only (list[str]): Filenames of runs-on-change
-            migrations that have been modified since last applied.
-        all_roc_filenames (list[str]): All runs-on-change migration filenames.
-        roc_filenames_migrated (list[str]): Runs-on-change migrations that
-            have been previously applied.
+        table: The rich Table to add rows to.
+        pending_versioned_filepaths: Mapping of version strings to file paths
+            for pending versioned migrations.
+        migration_records: All migration records from the database.
+        roc_filenames_changed_only: Filenames of runs-on-change migrations
+            that have been modified since last applied.
+        all_roc_filenames: All runs-on-change migration filenames.
+        roc_filenames_migrated: Runs-on-change migrations that have been
+            previously applied.
 
     Returns:
         None: Modifies the table in place.

@@ -1,3 +1,4 @@
+from jetbase.logging import logger
 from jetbase.models import MigrationRecord
 from jetbase.repositories.migrations_repo import fetch_latest_versioned_migration
 
@@ -15,6 +16,6 @@ def current_cmd() -> None:
     """
     latest_migration: MigrationRecord | None = fetch_latest_versioned_migration()
     if latest_migration:
-        print(f"Latest migration version: {latest_migration.version}")
+        logger.info("Latest migration version: %s", latest_migration.version)
     else:
-        print("No migrations have been applied yet.")
+        logger.info("No migrations have been applied yet.")

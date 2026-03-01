@@ -12,6 +12,7 @@ from jetbase.commands.status import status_cmd
 from jetbase.commands.unlock import unlock_cmd
 from jetbase.commands.upgrade import upgrade_cmd
 from jetbase.commands.validators import validate_jetbase_directory
+from jetbase.logging import logger
 
 app = typer.Typer(help="Jetbase CLI")
 
@@ -128,7 +129,7 @@ def fix() -> None:
     validate_jetbase_directory()
     fix_files_cmd(audit_only=False)
     fix_checksums_cmd(audit_only=False)
-    print("Fix completed successfully.")
+    logger.info("Fix completed successfully.")
 
 
 @app.command()

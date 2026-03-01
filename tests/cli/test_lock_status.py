@@ -8,7 +8,7 @@ from jetbase.cli.main import app
 
 
 def test_lock_status_unlocked(
-    runner, test_db_url, clean_db, setup_migrations_versions_only
+    runner, test_db_url, clean_db, setup_migrations_versions_only, caplog
 ):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
@@ -16,13 +16,14 @@ def test_lock_status_unlocked(
     result = runner.invoke(app, ["upgrade"])
     assert result.exit_code == 0
 
+    caplog.clear()
     result = runner.invoke(app, ["lock-status"])
     assert result.exit_code == 0
-    assert "unlocked" in result.output.lower()
+    assert "unlocked" in caplog.text.lower()
 
 
 def test_lock_status_locked(
-    runner, test_db_url, clean_db, setup_migrations_versions_only
+    runner, test_db_url, clean_db, setup_migrations_versions_only, caplog
 ):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
@@ -32,19 +33,22 @@ def test_lock_status_locked(
         assert result.exit_code == 0
 
         connection.execute(
-            text("""
+            text(
+                """
             UPDATE jetbase_lock
             SET is_locked = TRUE,
                 locked_at = :locked_at,
                 process_id = :process_id
             WHERE id = 1 AND is_locked = FALSE
-            """),
+            """
+            ),
             {
                 "locked_at": dt.datetime.now(dt.timezone.utc),
                 "process_id": str(uuid.uuid4()),
             },
         )
 
+        caplog.clear()
         result = runner.invoke(app, ["lock-status"])
         assert result.exit_code == 0
-        assert "locked" in result.output.lower()
+        assert "locked" in caplog.text.lower()

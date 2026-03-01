@@ -8,7 +8,7 @@ from jetbase.cli.main import app
 
 
 def test_unlock_already_unlocked(
-    runner, test_db_url, clean_db, setup_migrations_versions_only
+    runner, test_db_url, clean_db, setup_migrations_versions_only, caplog
 ):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
@@ -16,13 +16,14 @@ def test_unlock_already_unlocked(
     result = runner.invoke(app, ["upgrade"])
     assert result.exit_code == 0
 
+    caplog.clear()
     result = runner.invoke(app, ["unlock"])
     assert result.exit_code == 0
-    assert "unlock" in result.output.lower()
+    assert "unlock" in caplog.text.lower()
 
 
 def test_lock_status_locked(
-    runner, test_db_url, clean_db, setup_migrations_versions_only
+    runner, test_db_url, clean_db, setup_migrations_versions_only, caplog
 ):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
@@ -45,6 +46,7 @@ def test_lock_status_locked(
             },
         )
 
+        caplog.clear()
         result = runner.invoke(app, ["lock-status"])
         assert result.exit_code == 0
-        assert "locked" in result.output.lower()
+        assert "locked" in caplog.text.lower()

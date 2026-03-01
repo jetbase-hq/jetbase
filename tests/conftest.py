@@ -11,6 +11,32 @@ from jetbase.database.queries.base import detect_db
 from jetbase.enums import DatabaseType
 
 
+@pytest.fixture(autouse=True)
+def force_interactive_mode(caplog):
+    """
+    Force interactive mode for all CLI tests and enable log capture.
+
+    CliRunner doesn't use a real TTY, so we force interactive mode
+    to get Rich-formatted output that tests can assert against.
+    Also enables caplog to capture jetbase logger output.
+    """
+    import logging
+
+    from jetbase.logging import logger as jetbase_logger
+
+    os.environ["JETBASE_FORCE_INTERACTIVE"] = "true"
+
+    # Add caplog's handler directly to jetbase logger (since propagate=False)
+    caplog.set_level(logging.INFO)
+    jetbase_logger.addHandler(caplog.handler)
+
+    yield
+
+    # Clean up
+    jetbase_logger.removeHandler(caplog.handler)
+    os.environ.pop("JETBASE_FORCE_INTERACTIVE", None)
+
+
 @pytest.fixture
 def runner():
     """Create a CLI runner for testing."""

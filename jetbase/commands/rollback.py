@@ -8,6 +8,7 @@ from jetbase.engine.lock import (
 from jetbase.engine.version import get_migration_filepaths_by_version
 from jetbase.enums import MigrationDirectionType
 from jetbase.exceptions import VersionNotFoundError
+from jetbase.logging import logger
 from jetbase.repositories.lock_repo import create_lock_table_if_not_exists
 from jetbase.repositories.migrations_repo import (
     create_migrations_table_if_not_exists,
@@ -57,7 +58,7 @@ def rollback_cmd(
     )
 
     if not latest_migration_versions:
-        print("Nothing to rollback.")
+        logger.info("Nothing to rollback.")
         return
 
     versions_to_rollback: dict[str, str] = _get_versions_to_rollback(
@@ -71,7 +72,7 @@ def rollback_cmd(
 
     if not dry_run:
         with migration_lock():
-            print("Starting rollback...")
+            logger.info("Starting rollback...")
             for version, file_path in versions_to_rollback.items():
                 sql_statements: list[str] = parse_rollback_statements(
                     file_path=file_path
@@ -85,8 +86,8 @@ def rollback_cmd(
                     filename=filename,
                 )
 
-                print(f"Rollback applied successfully: {filename}")
-            print("Rollbacks completed successfully.")
+                logger.info("Rollback applied successfully: %s", filename)
+            logger.info("Rollbacks completed successfully.")
 
     else:
         process_dry_run(

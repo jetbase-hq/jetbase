@@ -3,6 +3,7 @@ from rich.table import Table
 
 from jetbase.engine.formatters import format_applied_at, get_display_version
 from jetbase.models import MigrationRecord
+from jetbase.output import print_message
 from jetbase.repositories.migrations_repo import (
     get_migration_records,
     migrations_table_exists,
@@ -24,12 +25,12 @@ def history_cmd() -> None:
     console: Console = Console()
     table_exists: bool = migrations_table_exists()
     if not table_exists:
-        console.print("[yellow]No migrations have been applied.[/yellow]")
+        print_message("No migrations have been applied.", style="yellow")
         return None
 
     migration_records: list[MigrationRecord] = get_migration_records()
     if not migration_records:
-        console.print("[yellow]No migrations have been applied yet.[/yellow]")
+        print_message("No migrations have been applied yet.", style="yellow")
         return
 
     migration_history_table: Table = Table(

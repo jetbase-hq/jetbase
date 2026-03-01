@@ -1,3 +1,4 @@
+from jetbase.logging import logger
 from jetbase.repositories.lock_repo import (
     lock_table_exists,
     unlock_database,
@@ -18,9 +19,9 @@ def unlock_cmd() -> None:
     """
 
     if not lock_table_exists() or not migrations_table_exists():
-        print("Unlock successful.")
+        logger.info("Unlock successful.")
         return
     #
     unlock_database()
 
-    print("Unlock successful.")
+    logger.info("Unlock successful.")
