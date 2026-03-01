@@ -17,7 +17,7 @@ from jetbase.models import MigrationRecord
 @patch("jetbase.commands.current.fetch_latest_versioned_migration")
 def test_current_cmd(
     mock_fetch_latest_versioned_migration: Mock,
-    capsys: pytest.CaptureFixture,
+    caplog: pytest.LogCaptureFixture,
     version: str | None,
     expected_output: str,
 ) -> None:
@@ -37,6 +37,5 @@ def test_current_cmd(
 
     current_cmd()
 
-    captured = capsys.readouterr()
-    assert expected_output in captured.out
+    assert expected_output in caplog.text
     mock_fetch_latest_versioned_migration.assert_called_once()

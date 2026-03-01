@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
-from jetbase.commands.new import generate_new_migration_file_cmd, _generate_new_filename
+from jetbase.commands.new import _generate_new_filename, generate_new_migration_file_cmd
 from jetbase.constants import MIGRATIONS_DIR
 from jetbase.exceptions import (
     DirectoryNotFoundError,
@@ -12,7 +12,7 @@ from jetbase.exceptions import (
 )
 
 
-def test_generate_new_migration_file_cmd_success(tmp_path, capsys):
+def test_generate_new_migration_file_cmd_success(tmp_path, caplog):
     """Test successful generation of a new migration file."""
     # Create migrations directory
     migrations_dir = tmp_path / MIGRATIONS_DIR
@@ -33,12 +33,11 @@ def test_generate_new_migration_file_cmd_success(tmp_path, capsys):
             assert expected_filepath.exists()
             assert expected_filepath.is_file()
 
-            # Check console output
-            captured = capsys.readouterr()
-            assert f"Created migration file: {expected_filename}" in captured.out
+            # Check log output
+            assert f"Created migration file: {expected_filename}" in caplog.text
 
 
-def test_generate_new_migration_file_cmd_with_custom_version(tmp_path, capsys):
+def test_generate_new_migration_file_cmd_with_custom_version(tmp_path, caplog):
     """Test successful generation of a migration file with a custom version."""
     # Create migrations directory
     migrations_dir = tmp_path / MIGRATIONS_DIR
@@ -55,9 +54,8 @@ def test_generate_new_migration_file_cmd_with_custom_version(tmp_path, capsys):
         assert expected_filepath.exists()
         assert expected_filepath.is_file()
 
-        # Check console output
-        captured = capsys.readouterr()
-        assert f"Created migration file: {expected_filename}" in captured.out
+        # Check log output
+        assert f"Created migration file: {expected_filename}" in caplog.text
 
 
 def test_generate_new_migration_file_cmd_directory_not_found():
