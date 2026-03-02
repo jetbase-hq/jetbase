@@ -2,9 +2,13 @@ import datetime as dt
 import os
 
 from jetbase.constants import MIGRATIONS_DIR, NEW_MIGRATION_FILE_CONTENT
-from jetbase.exceptions import DirectoryNotFoundError
-from jetbase.engine.file_parser import is_valid_version, is_filename_length_valid
-from jetbase.exceptions import MigrationFilenameTooLongError, InvalidVersionError
+from jetbase.engine.file_parser import is_filename_length_valid, is_valid_version
+from jetbase.exceptions import (
+    DirectoryNotFoundError,
+    InvalidVersionError,
+    MigrationFilenameTooLongError,
+)
+from jetbase.logging import logger
 
 
 def generate_new_migration_file_cmd(
@@ -49,7 +53,7 @@ def generate_new_migration_file_cmd(
 
     with open(filepath, "w") as f:  # noqa: F841
         f.write(NEW_MIGRATION_FILE_CONTENT)
-    print(f"Created migration file: {filename}")
+    logger.info("Created migration file: %s", filename)
 
 
 def _generate_new_filename(description: str, version: str | None = None) -> str:

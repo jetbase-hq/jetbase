@@ -5,6 +5,7 @@ from jetbase.engine.repeatable import get_repeatable_filenames
 from jetbase.engine.version import (
     get_migration_filepaths_by_version,
 )
+from jetbase.logging import logger
 from jetbase.models import MigrationRecord
 from jetbase.repositories.lock_repo import create_lock_table_if_not_exists
 from jetbase.repositories.migrations_repo import (
@@ -86,14 +87,15 @@ def _print_audit_report(
         None: Prints the audit report to stdout.
     """
     if missing_versions or missing_repeatables:
-        print("The following migrations are missing their corresponding files:")
-        for version in missing_versions:
-            print(f"→ {version}")
-        for r_file in missing_repeatables:
-            print(f"→ {r_file}")
-
+        items: list[str] = [f"→ {version}" for version in missing_versions] + [
+            f"→ {repeatable}" for repeatable in missing_repeatables
+        ]
+        logger.info(
+            "The following migration versions are missing their corresponding files:\n%s",
+            "\n".join(items),
+        )
     else:
-        print("All migrations have corresponding files.")
+        logger.info("All migrations have corresponding files.")
 
 
 def _remove_missing_migrations(
@@ -118,16 +120,20 @@ def _remove_missing_migrations(
         with migration_lock():
             if missing_versions:
                 delete_missing_versions(versions=missing_versions)
-                print("Stopped tracking the following missing versions:")
-                for version in missing_versions:
-                    print(f"→ {version}")
+                items: list[str] = [f"→ {version}" for version in missing_versions]
+                logger.info(
+                    "Stopped tracking the following missing versions:\n%s",
+                    "\n".join(items),
+                )
 
             if missing_repeatables:
                 delete_missing_repeatables(repeatable_filenames=missing_repeatables)
-                print(
-                    "Removed the following missing repeatable migrations from the database:"
+                items: list[str] = [
+                    f"→ {repeatable}" for repeatable in missing_repeatables
+                ]
+                logger.info(
+                    "Removed the following missing repeatable migrations from the database:\n%s",
+                    "\n".join(items),
                 )
-                for r_file in missing_repeatables:
-                    print(f"→ {r_file}")
     else:
-        print("No missing migration files.")
+        logger.info("No missing migration files.")

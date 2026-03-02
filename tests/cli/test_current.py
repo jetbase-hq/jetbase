@@ -6,7 +6,7 @@ from jetbase.cli.main import app
 
 
 def test_current_success_versions_only(
-    runner, test_db_url, clean_db, setup_migrations_versions_only
+    runner, test_db_url, clean_db, setup_migrations_versions_only, caplog
 ):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
@@ -15,10 +15,11 @@ def test_current_success_versions_only(
         result = runner.invoke(app, ["upgrade"])
         assert result.exit_code == 0
 
+        caplog.clear()
         result = runner.invoke(app, ["current"])
         assert result.exit_code == 0
 
-        assert "21" in result.output
+        assert "21" in caplog.text
         result = connection.execute(
             text(
                 """SELECT version FROM jetbase_migrations WHERE migration_type = 'VERSIONED' ORDER BY applied_at DESC LIMIT 1"""
@@ -28,17 +29,20 @@ def test_current_success_versions_only(
         assert latest_version == "21"
 
 
-def test_current_success_repeatables(runner, test_db_url, clean_db, setup_migrations):
+def test_current_success_repeatables(
+    runner, test_db_url, clean_db, setup_migrations, caplog
+):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
     os.chdir("jetbase")
     result = runner.invoke(app, ["upgrade"])
     assert result.exit_code == 0
 
+    caplog.clear()
     result = runner.invoke(app, ["current"])
     assert result.exit_code == 0
 
-    assert "21" in result.output
+    assert "21" in caplog.text
 
     with clean_db.connect() as connection:
         result = connection.execute(
@@ -51,12 +55,13 @@ def test_current_success_repeatables(runner, test_db_url, clean_db, setup_migrat
 
 
 def test_current_no_migrations_or_tables(
-    runner, test_db_url, clean_db, setup_migrations_versions_only
+    runner, test_db_url, clean_db, setup_migrations_versions_only, caplog
 ):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
     os.chdir("jetbase")
 
+    caplog.clear()
     result = runner.invoke(app, ["current"])
     assert result.exit_code == 0
-    assert "no migrations" in result.output.lower()
+    assert "no migrations" in caplog.text.lower()

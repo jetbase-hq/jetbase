@@ -13,6 +13,7 @@ from jetbase.engine.version import (
     get_migration_filepaths_by_version,
 )
 from jetbase.enums import MigrationDirectionType, MigrationType
+from jetbase.logging import logger
 from jetbase.models import MigrationRecord
 from jetbase.repositories.lock_repo import create_lock_table_if_not_exists
 from jetbase.repositories.migrations_repo import (
@@ -92,11 +93,11 @@ def upgrade_cmd(
             and not repeatable_always_filepaths
             and not runs_on_change_filepaths
         ):
-            print("Migrations are up to date.")
+            logger.info("Migrations are up to date.")
             return
 
         with migration_lock():
-            print("Starting migrations...")
+            logger.info("Starting migrations...")
 
             _run_versioned_migrations(filepaths_by_version=filepaths_by_version)
 
@@ -108,7 +109,7 @@ def upgrade_cmd(
                 runs_on_change_filepaths=runs_on_change_filepaths
             )
 
-            print("Migrations completed successfully.")
+            logger.info("Migrations completed successfully.")
     else:
         process_dry_run(
             version_to_filepath=filepaths_by_version,
@@ -182,7 +183,7 @@ def _run_versioned_migrations(filepaths_by_version: dict[str, str]) -> None:
             filename=filename,
         )
 
-        print(f"Migration applied successfully: {filename}")
+        logger.info("Migration applied successfully: %s", filename)
 
 
 def _run_repeatable_always_migrations(
@@ -205,7 +206,7 @@ def _run_repeatable_always_migrations(
                     filename=filename,
                     migration_type=MigrationType.RUNS_ALWAYS,
                 )
-                print(f"Migration applied successfully: {filename}")
+                logger.info("Migration applied successfully: %s", filename)
             else:
                 run_migration(
                     sql_statements=sql_statements,
@@ -214,7 +215,7 @@ def _run_repeatable_always_migrations(
                     filename=filename,
                     migration_type=MigrationType.RUNS_ALWAYS,
                 )
-                print(f"Migration applied successfully: {filename}")
+                logger.info("Migration applied successfully: %s", filename)
 
 
 def _run_repeatable_on_change_migrations(runs_on_change_filepaths: list[str]) -> None:
@@ -236,7 +237,7 @@ def _run_repeatable_on_change_migrations(runs_on_change_filepaths: list[str]) ->
                     filename=filename,
                     migration_type=MigrationType.RUNS_ON_CHANGE,
                 )
-                print(f"Migration applied successfully: {filename}")
+                logger.info("Migration applied successfully: %s", filename)
             else:
                 run_migration(
                     sql_statements=sql_statements,
@@ -245,4 +246,4 @@ def _run_repeatable_on_change_migrations(runs_on_change_filepaths: list[str]) ->
                     filename=filename,
                     migration_type=MigrationType.RUNS_ON_CHANGE,
                 )
-                print(f"Migration applied successfully: {filename}")
+                logger.info("Migration applied successfully: %s", filename)

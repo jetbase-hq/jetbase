@@ -9,6 +9,7 @@ from jetbase.engine.version import get_migration_filepaths_by_version
 from jetbase.exceptions import (
     MigrationVersionMismatchError,
 )
+from jetbase.logging import logger
 from jetbase.repositories.migrations_repo import (
     get_checksums_by_version,
     update_migration_checksums,
@@ -38,7 +39,7 @@ def fix_checksums_cmd(audit_only: bool = False) -> None:
 
     migrated_versions_and_checksums: list[tuple[str, str]] = get_checksums_by_version()
     if not migrated_versions_and_checksums:
-        print("No migrations have been applied; nothing to repair.")
+        logger.info("No migrations have been applied; nothing to repair.")
         return
 
     latest_migrated_version: str = migrated_versions_and_checksums[-1][0]
@@ -54,8 +55,8 @@ def fix_checksums_cmd(audit_only: bool = False) -> None:
     )
 
     if not versions_and_checksums_to_repair:
-        print(
-            "All migration checksums are valid - no altered upgrade statments detected."
+        logger.info(
+            "All migration checksums are valid - no altered upgrade statements detected."
         )
         return
 
@@ -84,11 +85,15 @@ def _print_audit_report(
     Returns:
         None: Prints the audit report to stdout.
     """
-    print("\nJETBASE - Checksum Audit Report")
-    print("----------------------------------------")
-    print("Changes detected in the following files:")
-    for file_version, _ in versions_and_checksums_to_repair:
-        print(f" → {file_version}")
+    items: list[str] = [
+        f"→ {version}" for version, _ in versions_and_checksums_to_repair
+    ]
+    logger.info(
+        "JETBASE - Checksum Audit Report\n"
+        "----------------------------------------\n"
+        "Changes detected in the following migration versions:\n%s",
+        "\n".join(items),
+    )
 
 
 def _repair_checksums(versions_and_checksums_to_repair: list[tuple[str, str]]) -> None:
@@ -109,10 +114,13 @@ def _repair_checksums(versions_and_checksums_to_repair: list[tuple[str, str]]) -
         update_migration_checksums(
             versions_and_checksums=versions_and_checksums_to_repair
         )
-        for version, _ in versions_and_checksums_to_repair:
-            print(f"Repaired checksum for version: {version}")
+        items: list[str] = [
+            f"Repaired checksum for version: {version}"
+            for version, _ in versions_and_checksums_to_repair
+        ]
+        logger.info("%s", "\n".join(items))
 
-    print("Successfully repaired checksums")
+    logger.info("Successfully repaired checksums")
 
 
 def _find_checksum_mismatches(
