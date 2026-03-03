@@ -24,3 +24,4 @@ class DatabaseType(Enum):
     SNOWFLAKE = "snowflake"
     MYSQL = "mysql"
     DATABRICKS = "databricks"
+    CLICKHOUSE = "clickhouse"

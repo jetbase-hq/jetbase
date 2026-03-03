@@ -2,6 +2,7 @@ from sqlalchemy import Engine, TextClause, create_engine
 
 from jetbase.config import get_config
 from jetbase.database.queries.base import BaseQueries, QueryMethod
+from jetbase.database.queries.clickhouse import ClickHouseQueries
 from jetbase.database.queries.databricks import DatabricksQueries
 from jetbase.database.queries.mysql import MySQLQueries
 from jetbase.database.queries.postgres import PostgresQueries
@@ -37,6 +38,8 @@ def get_database_type() -> DatabaseType:
         return DatabaseType.MYSQL
     elif dialect_name == "databricks":
         return DatabaseType.DATABRICKS
+    elif dialect_name == "clickhouse":
+        return DatabaseType.CLICKHOUSE
     else:
         raise ValueError(f"Unsupported database type: {dialect_name}")
 
@@ -66,6 +69,8 @@ def get_queries() -> type[BaseQueries]:
         return MySQLQueries
     elif db_type == DatabaseType.DATABRICKS:
         return DatabricksQueries
+    elif db_type == DatabaseType.CLICKHOUSE:
+        return ClickHouseQueries
     else:
         raise ValueError(f"Unsupported database type: {db_type}")
 

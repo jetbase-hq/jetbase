@@ -3,10 +3,18 @@ from typing import Any
 from sqlalchemy import Result, Row
 from sqlalchemy.engine import CursorResult
 
+from jetbase.config import get_config
 from jetbase.database.connection import get_db_connection
-from jetbase.database.queries.base import QueryMethod
+from jetbase.database.queries.base import QueryMethod, detect_db
 from jetbase.database.queries.query_loader import get_query
+from jetbase.enums import DatabaseType
 from jetbase.models import LockStatus
+
+
+def _is_clickhouse() -> bool:
+    """Check if the current database is ClickHouse."""
+    sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
+    return detect_db(sqlalchemy_url) == DatabaseType.CLICKHOUSE
 
 
 def lock_table_exists() -> bool:
@@ -34,9 +42,16 @@ def create_lock_table_if_not_exists() -> None:
     Creates the lock table and initializes it with a single unlocked
     record. This table is used to prevent concurrent migrations.
 
+    Skipped for ClickHouse as its does not support
+    reliable database locking.
+
     Returns:
         None: Table is created as a side effect.
     """
+    # ClickHouse doesn't support reliable locking - skip lock table creation
+    if _is_clickhouse():
+        return
+
     with get_db_connection() as connection:
         connection.execute(get_query(query_name=QueryMethod.CREATE_LOCK_TABLE_STMT))
 

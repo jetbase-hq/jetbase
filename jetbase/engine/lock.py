@@ -4,7 +4,16 @@ from typing import Generator
 
 from sqlalchemy.engine import CursorResult
 
+from jetbase.config import get_config
+from jetbase.database.queries.base import detect_db
+from jetbase.enums import DatabaseType
 from jetbase.repositories.lock_repo import lock_database, release_lock
+
+
+def _is_clickhouse() -> bool:
+    """Check if the current database is ClickHouse."""
+    sqlalchemy_url: str = get_config(required={"sqlalchemy_url"}).sqlalchemy_url
+    return detect_db(sqlalchemy_url) == DatabaseType.CLICKHOUSE
 
 
 def acquire_lock() -> str:
@@ -46,6 +55,8 @@ def migration_lock() -> Generator[None, None, None]:
     even if an exception occurs. Fails immediately if the lock is
     already held by another process.
 
+    For ClickHouse, locking is not supported.
+
     Yields:
         None: Yields control to the context block.
 
@@ -56,6 +67,11 @@ def migration_lock() -> Generator[None, None, None]:
         >>> with migration_lock():
         ...     run_migration()
     """
+    # ClickHouse doesn't support reliable locking - skip entirely
+    if _is_clickhouse():
+        yield
+        return
+
     process_id: str | None = None
     try:
         process_id = acquire_lock()

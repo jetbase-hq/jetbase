@@ -2,11 +2,14 @@ import datetime as dt
 import os
 import uuid
 
+import pytest
 from sqlalchemy import text
 
 from jetbase.cli.main import app
+from tests.utils import is_clickhouse
 
 
+@pytest.mark.skipif(is_clickhouse(), reason="ClickHouse doesn't support locking")
 def test_lock_status_unlocked(
     runner, test_db_url, clean_db, setup_migrations_versions_only, caplog
 ):
@@ -22,6 +25,7 @@ def test_lock_status_unlocked(
     assert "unlocked" in caplog.text.lower()
 
 
+@pytest.mark.skipif(is_clickhouse(), reason="ClickHouse doesn't support locking")
 def test_lock_status_locked(
     runner, test_db_url, clean_db, setup_migrations_versions_only, caplog
 ):
