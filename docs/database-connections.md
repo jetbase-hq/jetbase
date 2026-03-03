@@ -190,3 +190,63 @@ sqlalchemy_url = "databricks://token:ACCESS_TOKEN@HOSTNAME?http_path=HTTP_PATH&c
 # jetbase/env.py
 sqlalchemy_url = "databricks://token:dapi1234567890abcdef@adb-1234567890123456.cloud.databricks.comt?http_path=/sql/1.0/warehouses/abc123def456&catalog=main&schema=default"
 ```
+
+---
+
+## ClickHouse
+
+ClickHouse is a high-performance column-oriented OLAP database. Jetbase supports ClickHouse for managing schema migrations.
+
+### Installing the Driver
+
+ClickHouse requires additional dependencies. Install Jetbase with the ClickHouse extra:
+
+```bash
+pip install "jetbase[clickhouse]"
+```
+
+### Connection String Format
+
+```python
+sqlalchemy_url = "clickhouse://username:password@host:port/database"
+```
+
+| Component | Description |
+|-----------|-------------|
+| `username` | Your ClickHouse username (default: `default`) |
+| `password` | Your ClickHouse password (can be empty for local development) |
+| `host` | ClickHouse server hostname |
+| `port` | HTTP port (default: `8123`) |
+| `database` | Target database name (default: `default`) |
+
+### Example
+
+```python
+# jetbase/env.py
+sqlalchemy_url = "clickhouse://user:password@localhost:8123/mydb"
+```
+
+### Important Notes
+
+!!! note "ClickHouse"
+    ClickHouse does not support migration locking.
+
+### Example Migration
+
+ClickHouse migrations use ClickHouse-specific SQL syntax:
+
+```sql
+-- upgrade
+CREATE TABLE users
+(
+    id UUID DEFAULT generateUUIDv4(),
+    name String,
+    email String,
+    created_at DateTime64(6) DEFAULT now64(6)
+)
+ENGINE = MergeTree()
+ORDER BY id;
+
+-- rollback
+DROP TABLE users;
+```

@@ -70,6 +70,12 @@ Edit `jetbase/env.py` with your database connection string:
     sqlalchemy_url = "snowflake://user:password@account/database/schema?warehouse=WAREHOUSE"
     ```
 
+=== "ClickHouse"
+
+    ```python
+    sqlalchemy_url = "clickhouse://user:password@localhost:8123/mydb"
+    ```
+
 ### Create Your First Migration
 
 ```bash
@@ -133,4 +139,6 @@ Jetbase currently supports:
 - ✅ PostgreSQL
 - ✅ SQLite
 - ✅ Snowflake
+- ✅ Databricks
 - ✅ MySQL
+- ✅ ClickHouse

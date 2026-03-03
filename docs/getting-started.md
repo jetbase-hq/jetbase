@@ -7,7 +7,7 @@ This guide will walk you through setting up Jetbase from scratch. By the end, yo
 Before you begin, make sure you have:
 
 - **Python 3.10+** installed
-- A **database** (PostgreSQL, SQLite, Snowflake, MySQL, Databricks)
+- A **database** (PostgreSQL, SQLite, Snowflake, MySQL, Databricks, ClickHouse)
 - **pip** or **uv** for installing packages
 
 ## Installation
@@ -18,12 +18,13 @@ Install Jetbase using pip:
 pip install jetbase
 ```
 
-> **Note for Snowflake and Databricks Users:**  
-> To use Jetbase with Snowflake or Databricks, install the appropriate extras:
+> **Note for Snowflake, Databricks, and ClickHouse Users:**  
+> To use Jetbase with Snowflake, Databricks, or ClickHouse, install the appropriate extras:
 >
 > ```shell
 > pip install "jetbase[snowflake]"
 > pip install "jetbase[databricks]"
+> pip install "jetbase[clickhouse]"
 > ```
 
 Verify the installation:
@@ -92,6 +93,11 @@ Open `env.py` and update the `sqlalchemy_url` with your database connection stri
     sqlalchemy_url = (
         "databricks://token:<ACCESS_TOKEN>@<HOSTNAME>?http_path=<HTTP_PATH>&catalog=<CATALOG>&schema=<SCHEMA>"
     )
+    ```
+
+=== "ClickHouse"
+    ```python
+    sqlalchemy_url = "clickhouse://user:password@localhost:8123/mydb"
     ```
 
 

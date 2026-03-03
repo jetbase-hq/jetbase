@@ -37,12 +37,13 @@ pip install jetbase
 uv add jetbase
 ```
 
-> **Note for Snowflake and Databricks Users:**  
-> To use Jetbase with Snowflake or Databricks, install the appropriate extras:
+> **Note for Snowflake, Databricks, and ClickHouse Users:**  
+> To use Jetbase with Snowflake, Databricks, or ClickHouse, install the appropriate extras:
 >
 > ```shell
 > pip install "jetbase[snowflake]"
 > pip install "jetbase[databricks]"
+> pip install "jetbase[clickhouse]"
 > ```
 
 
@@ -61,7 +62,7 @@ This creates a `jetbase/` directory with:
 
 ### Configure Your Database
 
-Edit `jetbase/env.py` with your database connection string (currently support for postgres, sqlite snowflake, databricks):
+Edit `jetbase/env.py` with your database connection string (currently support for PostgreSQL, SQLite, Snowflake, Databricks, MySQL, ClickHouse):
 
 **PostgreSQL example:**
 ```python
@@ -135,6 +136,7 @@ Jetbase currently supports:
 - ✅ Snowflake
 - ✅ Databricks
 - ✅ MySQL
+- ✅ ClickHouse
 
 ## Need Help?
 
