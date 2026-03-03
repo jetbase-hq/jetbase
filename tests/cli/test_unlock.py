@@ -2,11 +2,14 @@ import datetime as dt
 import os
 import uuid
 
+import pytest
 from sqlalchemy import text
 
 from jetbase.cli.main import app
+from tests.utils import is_clickhouse
 
 
+@pytest.mark.skipif(is_clickhouse(), reason="ClickHouse doesn't support locking")
 def test_unlock_already_unlocked(
     runner, test_db_url, clean_db, setup_migrations_versions_only, caplog
 ):
@@ -22,6 +25,7 @@ def test_unlock_already_unlocked(
     assert "unlock" in caplog.text.lower()
 
 
+@pytest.mark.skipif(is_clickhouse(), reason="ClickHouse doesn't support locking")
 def test_lock_status_locked(
     runner, test_db_url, clean_db, setup_migrations_versions_only, caplog
 ):
@@ -33,13 +37,15 @@ def test_lock_status_locked(
         assert result.exit_code == 0
 
         connection.execute(
-            text("""
+            text(
+                """
             UPDATE jetbase_lock
             SET is_locked = TRUE,
                 locked_at = :locked_at,
                 process_id = :process_id
             WHERE id = 1 AND is_locked = FALSE
-            """),
+            """
+            ),
             {
                 "locked_at": dt.datetime.now(dt.timezone.utc),
                 "process_id": str(uuid.uuid4()),

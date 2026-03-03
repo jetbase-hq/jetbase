@@ -77,6 +77,9 @@ def migrations_fixture_dir(test_db_url):
     if detect_db(test_db_url) == DatabaseType.DATABRICKS:
         return base_path / "migrations_databricks"
 
+    if detect_db(test_db_url) == DatabaseType.CLICKHOUSE:
+        return base_path / "migrations_clickhouse"
+
     return base_path / "migrations"
 
 
@@ -93,6 +96,9 @@ def migrations_versions_only_fixture_dir(test_db_url):
 
     if detect_db(test_db_url) == DatabaseType.DATABRICKS:
         return base_path / "migrations_databricks_versions_only"
+
+    if detect_db(test_db_url) == DatabaseType.CLICKHOUSE:
+        return base_path / "migrations_clickhouse_versions_only"
 
     return base_path / "migrations_versions_only"
 

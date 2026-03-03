@@ -1,10 +1,10 @@
 import os
 
+import pytest
 from sqlalchemy import text
 
 from jetbase.cli.main import app
 from jetbase.exceptions import VersionNotFoundError
-import pytest
 
 
 @pytest.mark.snowflake
@@ -32,8 +32,8 @@ def test_rollback(runner, test_db_url, clean_db, setup_migrations):
         migrations_result = connection.execute(
             text("SELECT COUNT(*) FROM jetbase_migrations")
         )
-        count = migrations_result.scalar()
-        assert count == 6
+    count = migrations_result.scalar()
+    assert count == 6
 
 
 def test_rollback_with_count(runner, test_db_url, clean_db, setup_migrations):
