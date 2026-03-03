@@ -32,26 +32,43 @@ class TestAcquireLock:
 class TestMigrationLock:
     """Tests for the migration_lock context manager."""
 
+    @pytest.mark.parametrize("is_clickhouse", [False, True])
     @patch("jetbase.engine.lock.release_lock")
     @patch("jetbase.engine.lock.acquire_lock", return_value="test-id")
     def test_acquires_and_releases_lock(
-        self, mock_acquire: Mock, mock_release: Mock
+        self, mock_acquire: Mock, mock_release: Mock, is_clickhouse: bool
     ) -> None:
-        """Test that lock is acquired on entry and released on exit."""
-        with migration_lock():
-            pass
+        """Test that lock is acquired on entry and released on exit (non-ClickHouse)
+        or skipped entirely (ClickHouse)."""
+        with patch("jetbase.engine.lock._is_clickhouse", return_value=is_clickhouse):
+            with migration_lock():
+                pass
 
-        mock_acquire.assert_called_once()
-        mock_release.assert_called_once()
+        if is_clickhouse:
+            # ClickHouse skips locking entirely
+            mock_acquire.assert_not_called()
+            mock_release.assert_not_called()
+        else:
+            # Normal databases acquire and release lock
+            mock_acquire.assert_called_once()
+            mock_release.assert_called_once()
 
+    @pytest.mark.parametrize("is_clickhouse", [False, True])
     @patch("jetbase.engine.lock.release_lock")
     @patch("jetbase.engine.lock.acquire_lock", return_value="test-id")
     def test_releases_lock_on_exception(
-        self, mock_acquire: Mock, mock_release: Mock
+        self, mock_acquire: Mock, mock_release: Mock, is_clickhouse: bool
     ) -> None:
-        """Test that lock is released even when an exception occurs."""
-        with pytest.raises(ValueError):
-            with migration_lock():
-                raise ValueError("test error")
+        """Test that lock is released even when an exception occurs (non-ClickHouse)
+        or skipped entirely (ClickHouse)."""
+        with patch("jetbase.engine.lock._is_clickhouse", return_value=is_clickhouse):
+            with pytest.raises(ValueError):
+                with migration_lock():
+                    raise ValueError("test error")
 
-        mock_release.assert_called_once()
+        if is_clickhouse:
+            # ClickHouse skips locking entirely
+            mock_release.assert_not_called()
+        else:
+            # Normal databases release lock even on exception
+            mock_release.assert_called_once()
