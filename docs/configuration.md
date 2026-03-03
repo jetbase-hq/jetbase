@@ -98,6 +98,12 @@ The database connection string in SQLAlchemy format.
     sqlalchemy_url = "databricks://token:<ACCESS_TOKEN>@hostname?http_path=<HTTP_PATH>&catalog=<CATALOG>&schema=<SCHEMA>"
     ```
 
+=== "ClickHouse"
+
+    ```python
+    sqlalchemy_url = "clickhouse://username:password@host:port/database"
+    ```
+
 
 ### `postgres_schema` 
 **Optional (even for PostgreSQL databases)**
@@ -184,7 +190,7 @@ jetbase upgrade --skip-file-validation
 
 ## Database Tables
 
-Jetbase creates two tables in your database to track migrations:
+Jetbase creates tables in your database to track migrations:
 
 | Table                | Purpose                                                         |
 | -------------------- | --------------------------------------------------------------- |

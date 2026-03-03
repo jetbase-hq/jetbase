@@ -14,6 +14,9 @@ Jetbase automatically acquires a lock whenever you run any command that might mo
 
 You shouldn't need to think about locking at all! With Jetbase, it just works out of the box!
 
+!!! note "ClickHouse"
+    ClickHouse does not support migration locking.
+
 
 ```
 ┌──────────────┐                     ┌──────────────┐
