@@ -233,8 +233,6 @@ sqlalchemy_url = "clickhouse://user:password@localhost:8123/mydb"
 
 ### Example Migration
 
-ClickHouse migrations use ClickHouse-specific SQL syntax:
-
 ```sql
 -- upgrade
 CREATE TABLE users

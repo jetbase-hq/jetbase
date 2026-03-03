@@ -198,6 +198,3 @@ Jetbase creates tables in your database to track migrations:
 | `jetbase_lock`       | Prevents concurrent migrations from running                     |
 
 These tables are created automatically when you run your first migration.
-
-!!! note "ClickHouse"
-    ClickHouse does not support migration locking.
