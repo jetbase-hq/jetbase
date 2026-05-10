@@ -3,7 +3,10 @@ from unittest.mock import patch
 
 import pytest
 
-from jetbase.commands.validators import validate_jetbase_directory
+from jetbase.commands.validators import (
+    get_migrations_directory,
+    validate_jetbase_directory,
+)
 from jetbase.engine.validation import (
     validate_current_migration_files_match_checksums,
     validate_migrated_repeatable_versions_in_migration_files,
@@ -28,7 +31,7 @@ class TestValidateJetbaseDirectory:
             validate_jetbase_directory()
 
     def test_wrong_directory_name(self, tmp_path: Path) -> None:
-        """Test validation fails when not in a directory named 'jetbase'."""
+        """Test validation fails when no jetbase directory exists in the directory tree."""
         wrong_dir = tmp_path / "wrong_name"
         wrong_dir.mkdir()
         (wrong_dir / "migrations").mkdir()
@@ -36,6 +39,46 @@ class TestValidateJetbaseDirectory:
         with patch("jetbase.commands.validators.Path.cwd", return_value=wrong_dir):
             with pytest.raises(DirectoryNotFoundError):
                 validate_jetbase_directory()
+
+
+class TestGetMigrationsDirectory:
+    def test_success(self, tmp_path: Path) -> None:
+        """Test getting migrations directory succeeds when it exists."""
+        jetbase_dir = tmp_path / "jetbase"
+        jetbase_dir.mkdir()
+        migrations_dir = jetbase_dir / "migrations"
+        migrations_dir.mkdir()
+        another_dir = jetbase_dir / "another_dir"
+        another_dir.mkdir()
+
+        with patch("jetbase.commands.validators.Path.cwd", return_value=jetbase_dir):
+            result = get_migrations_directory()
+            assert result == migrations_dir
+
+        with patch("jetbase.commands.validators.Path.cwd", return_value=another_dir):
+            result = get_migrations_directory()
+            assert result == migrations_dir
+
+        with patch("jetbase.commands.validators.Path.cwd", return_value=tmp_path):
+            result = get_migrations_directory()
+            assert result == migrations_dir
+
+    def test_missing_migrations_directory(self, tmp_path: Path) -> None:
+        """Test getting migrations directory fails when it doesn't exist."""
+        jetbase_dir = tmp_path / "jetbase"
+        jetbase_dir.mkdir()
+
+        with patch("jetbase.commands.validators.Path.cwd", return_value=jetbase_dir):
+            with pytest.raises(DirectoryNotFoundError) as exc_info:
+                get_migrations_directory()
+                assert "'migration' directory not found" in str(exc_info.value)
+
+    def test_missing_jetbase_directory(self, tmp_path: Path) -> None:
+        """Test getting migrations directory fails when jetbase directory doesn't exist."""
+        with patch("jetbase.commands.validators.Path.cwd", return_value=tmp_path):
+            with pytest.raises(DirectoryNotFoundError) as exc_info:
+                get_migrations_directory()
+                assert "'jetbase' directory not found" in str(exc_info.value)
 
 
 class TestValidateMigratedVersionsInCurrentMigrationFiles:

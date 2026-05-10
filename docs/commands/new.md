@@ -115,7 +115,6 @@ Include `-- rollback` sections. This allows you to safely undo migrations if nee
 
 ## Notes
 
-- Must be run from inside the `jetbase/` directory
 - Use `-v` to specify a custom version number (e.g., `1`, `1.5`)
 - If `-v` is not provided, a timestamp-based version is automatically generated
 - You do not have to use the `jetbase new` CLI command to create a new migration. You can create a new file manually in the `jetbase/migrations` directory and follow the `V<version>__<description>.sql` naming convention. For full details and best practices, see [Migrations Overview](../migrations/index.md).

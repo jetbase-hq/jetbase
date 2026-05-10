@@ -126,7 +126,6 @@ Checksums help catch when:
 
 ## Notes
 
-- Must be run from inside the `jetbase/` directory
 - Only validates migrations that have been applied
 - Only uses upgrade SQL statements in the migration file to calculate checksums
 

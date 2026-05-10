@@ -105,6 +105,5 @@ Example:
 
 ## Notes
 
-- Must be run from inside the `jetbase/` directory
 - Compares files in `migrations/` with database records
 
