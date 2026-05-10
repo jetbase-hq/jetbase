@@ -1,37 +1,72 @@
 from pathlib import Path
 
+from jetbase.constants import BASE_DIR, MIGRATIONS_DIR
 from jetbase.exceptions import DirectoryNotFoundError
+
+
+def get_jetbase_directory() -> Path:
+    """
+    Get the path to the jetbase directory.
+
+    Find the root project directory by looking for the 'jetbase' folder.
+
+    Returns:
+        Path: The path to the jetbase directory.
+
+    Raises:
+        DirectoryNotFoundError: If the jetbase directory cannot be found in the current path or
+            any parent directories.
+    """
+    current_dir = Path.cwd()
+
+    if current_dir.name == BASE_DIR:
+        return current_dir
+
+    if (current_dir / BASE_DIR).is_dir():
+        return current_dir / BASE_DIR
+
+    for parent in current_dir.parents:
+        if (parent / BASE_DIR).is_dir():
+            return parent / BASE_DIR
+
+    raise DirectoryNotFoundError(
+        f"'{BASE_DIR}' directory not found. Run 'jetbase init' to create a Jetbase project."
+    )
+
+
+def get_migrations_directory() -> Path:
+    """
+    Get the path to the migrations directory.
+
+    Returns:
+        Path: The path to the migrations directory.
+
+    Raises:
+        DirectoryNotFoundError: If the migrations directory does not exist in the jetbase directory.
+    """
+    jetbase_dir = get_jetbase_directory()
+    migrations_dir = jetbase_dir / MIGRATIONS_DIR
+    if not migrations_dir.exists() or not migrations_dir.is_dir():
+        raise DirectoryNotFoundError(
+            f"'{MIGRATIONS_DIR}' directory not found in {jetbase_dir}.\n"
+            "Add a migrations directory inside the 'jetbase' directory to proceed.\n"
+            "You can also run 'jetbase init' to create a Jetbase project."
+        )
+    return migrations_dir
 
 
 def validate_jetbase_directory() -> None:
     """
-    Ensure command is run from jetbase directory with migrations folder.
+    Ensure a jetbase directory exists in the current directory or parent directories.
 
-    Validates that the current working directory is named 'jetbase' and
-    contains a 'migrations' subdirectory. This validation is required
-    before running most Jetbase CLI commands.
+    Validates that a 'jetbase' directory exists in the current working directory
+    or any of its parent directories, and that it contains a 'migrations' subdirectory.
+    This validation is required before running most Jetbase CLI commands.
 
     Returns:
         None: Returns silently if validation passes.
 
     Raises:
-        DirectoryNotFoundError: If the current directory is not named
-            'jetbase' or if the 'migrations' subdirectory does not exist.
+        DirectoryNotFoundError: If the jetbase directory or migrations subdirectory does not exist.
     """
-    current_dir = Path.cwd()
-
-    # Check if current directory is named 'jetbase'
-    if current_dir.name != "jetbase":
-        raise DirectoryNotFoundError(
-            "Command must be run from the 'jetbase' directory.\n"
-            "You can run 'jetbase init' to create a Jetbase project."
-        )
-
-    # Check if migrations directory exists
-    migrations_dir = current_dir / "migrations"
-    if not migrations_dir.exists() or not migrations_dir.is_dir():
-        raise DirectoryNotFoundError(
-            f"'migrations' directory not found in {current_dir}.\n"
-            "Add a migrations directory inside the 'jetbase' directory to proceed.\n"
-            "You can also run 'jetbase init' to create a Jetbase project."
-        )
+    get_migrations_directory()

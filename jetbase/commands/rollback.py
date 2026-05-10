@@ -1,5 +1,6 @@
 import os
 
+from jetbase.commands.validators import get_migrations_directory
 from jetbase.engine.dry_run import process_dry_run
 from jetbase.engine.file_parser import parse_rollback_statements
 from jetbase.engine.lock import (
@@ -138,7 +139,7 @@ def _get_versions_to_rollback(latest_migration_versions: list[str]) -> dict[str,
             newest versions are rolled back first.
     """
     versions_to_rollback: dict[str, str] = get_migration_filepaths_by_version(
-        directory=os.path.join(os.getcwd(), "migrations"),
+        directory=str(get_migrations_directory()),
         version_to_start_from=latest_migration_versions[-1],
         end_version=latest_migration_versions[0],
     )

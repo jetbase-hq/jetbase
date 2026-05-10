@@ -3,6 +3,7 @@ import os
 from rich.console import Console
 from rich.table import Table
 
+from jetbase.commands.validators import get_migrations_directory
 from jetbase.engine.file_parser import get_description_from_filename
 from jetbase.engine.formatters import get_display_version
 from jetbase.engine.repeatable import get_ra_filenames, get_runs_on_change_filepaths
@@ -48,7 +49,7 @@ def status_cmd() -> None:
     )
 
     pending_versioned_filepaths: dict[str, str] = get_migration_filepaths_by_version(
-        directory=os.path.join(os.getcwd(), "migrations"),
+        directory=str(get_migrations_directory()),
         version_to_start_from=latest_migrated_version,
     )
 

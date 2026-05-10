@@ -1,6 +1,4 @@
-import os
-
-from jetbase.constants import MIGRATIONS_DIR
+from jetbase.commands.validators import get_migrations_directory
 from jetbase.engine.checksum import calculate_checksum
 from jetbase.engine.file_parser import parse_upgrade_statements
 from jetbase.engine.lock import migration_lock
@@ -151,7 +149,7 @@ def _find_checksum_mismatches(
         [("1.0", "def456")]  # If file changed
     """
     migration_filepaths_by_version: dict[str, str] = get_migration_filepaths_by_version(
-        directory=os.path.join(os.getcwd(), MIGRATIONS_DIR),
+        directory=str(get_migrations_directory()),
         end_version=latest_migrated_version,
     )
 

@@ -1,5 +1,6 @@
-import pytest
 import os
+
+import pytest
 from sqlalchemy import text
 
 from jetbase.cli.main import app

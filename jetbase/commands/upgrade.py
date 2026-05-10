@@ -1,5 +1,6 @@
 import os
 
+from jetbase.commands.validators import get_migrations_directory
 from jetbase.constants import MIGRATIONS_DIR
 from jetbase.engine.dry_run import process_dry_run
 from jetbase.engine.file_parser import parse_upgrade_statements
@@ -141,7 +142,7 @@ def _get_filepaths_by_version(
         FileNotFoundError: If to_version is not found in pending migrations.
     """
     filepaths_by_version: dict[str, str] = get_migration_filepaths_by_version(
-        directory=os.path.join(os.getcwd(), MIGRATIONS_DIR),
+        directory=str(get_migrations_directory()),
         version_to_start_from=latest_migration.version if latest_migration else None,
     )
 

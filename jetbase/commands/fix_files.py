@@ -1,5 +1,4 @@
-import os
-
+from jetbase.commands.validators import get_migrations_directory
 from jetbase.engine.lock import migration_lock
 from jetbase.engine.repeatable import get_repeatable_filenames
 from jetbase.engine.version import (
@@ -40,7 +39,7 @@ def fix_files_cmd(audit_only: bool = False) -> None:
     migrated_versions: list[str] = get_migrated_versions()
     current_migration_filepaths_by_version: dict[str, str] = (
         get_migration_filepaths_by_version(
-            directory=os.path.join(os.getcwd(), "migrations")
+            directory=str(get_migrations_directory()),
         )
     )
     repeatable_migrations: list[MigrationRecord] = fetch_repeatable_migrations()
