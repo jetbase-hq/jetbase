@@ -1,4 +1,4 @@
-from jetbase.commands.validators import get_migrations_directory
+from jetbase.commands.directories import get_migrations_directory
 from jetbase.engine.checksum import calculate_checksum
 from jetbase.engine.file_parser import parse_upgrade_statements
 from jetbase.engine.lock import migration_lock

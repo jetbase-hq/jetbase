@@ -1,4 +1,4 @@
-from jetbase.commands.validators import get_migrations_directory
+from jetbase.commands.directories import get_migrations_directory
 from jetbase.engine.lock import migration_lock
 from jetbase.engine.repeatable import get_repeatable_filenames
 from jetbase.engine.version import (

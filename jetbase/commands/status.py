@@ -3,7 +3,7 @@ import os
 from rich.console import Console
 from rich.table import Table
 
-from jetbase.commands.validators import get_migrations_directory
+from jetbase.commands.directories import get_migrations_directory
 from jetbase.engine.file_parser import get_description_from_filename
 from jetbase.engine.formatters import get_display_version
 from jetbase.engine.repeatable import get_ra_filenames, get_runs_on_change_filepaths

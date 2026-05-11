@@ -1,7 +1,7 @@
 import datetime as dt
 import os
 
-from jetbase.commands.validators import get_migrations_directory
+from jetbase.commands.directories import get_migrations_directory
 from jetbase.constants import NEW_MIGRATION_FILE_CONTENT
 from jetbase.engine.file_parser import is_filename_length_valid, is_valid_version
 from jetbase.exceptions import (

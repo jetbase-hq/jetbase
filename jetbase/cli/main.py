@@ -1,6 +1,7 @@
 import typer
 
 from jetbase.commands.current import current_cmd
+from jetbase.commands.directories import validate_jetbase_directory
 from jetbase.commands.fix_checksums import fix_checksums_cmd
 from jetbase.commands.fix_files import fix_files_cmd
 from jetbase.commands.history import history_cmd
@@ -11,7 +12,6 @@ from jetbase.commands.rollback import rollback_cmd
 from jetbase.commands.status import status_cmd
 from jetbase.commands.unlock import unlock_cmd
 from jetbase.commands.upgrade import upgrade_cmd
-from jetbase.commands.validators import validate_jetbase_directory
 from jetbase.logging import logger
 
 app = typer.Typer(help="Jetbase CLI")

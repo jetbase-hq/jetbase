@@ -1,6 +1,6 @@
 import os
 
-from jetbase.commands.validators import get_migrations_directory
+from jetbase.commands.directories import get_migrations_directory
 from jetbase.constants import MIGRATIONS_DIR
 from jetbase.engine.dry_run import process_dry_run
 from jetbase.engine.file_parser import parse_upgrade_statements
