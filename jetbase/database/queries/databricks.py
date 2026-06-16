@@ -22,7 +22,8 @@ class DatabricksQueries(BaseQueries):
                 filename STRING NOT NULL,
                 migration_type STRING NOT NULL,
                 applied_at TIMESTAMP NOT NULL,
-                checksum STRING NOT NULL
+                checksum STRING NOT NULL,
+                git_commit_hash STRING
             )
             """
         )
@@ -31,10 +32,14 @@ class DatabricksQueries(BaseQueries):
     def insert_version_stmt() -> TextClause:
         return text(
             """
-            INSERT INTO jetbase_migrations (version, description, filename, migration_type, checksum, applied_at) 
-            VALUES (:version, :description, :filename, :migration_type, :checksum, CURRENT_TIMESTAMP())
+            INSERT INTO jetbase_migrations (version, description, filename, migration_type, checksum, git_commit_hash, applied_at)
+            VALUES (:version, :description, :filename, :migration_type, :checksum, :git_commit_hash, CURRENT_TIMESTAMP())
             """
         )
+
+    @staticmethod
+    def add_git_commit_hash_column_stmt() -> TextClause:
+        return text("ALTER TABLE jetbase_migrations ADD COLUMN git_commit_hash STRING")
 
     @staticmethod
     def check_if_migrations_table_exists_query() -> TextClause:

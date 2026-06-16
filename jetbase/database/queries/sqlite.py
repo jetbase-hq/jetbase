@@ -31,10 +31,25 @@ class SQLiteQueries(BaseQueries):
             filename TEXT NOT NULL,
             migration_type TEXT NOT NULL,
             applied_at TEXT DEFAULT (STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW')),
-            checksum TEXT
+            checksum TEXT,
+            git_commit_hash TEXT
         );
         """
         )
+
+    @staticmethod
+    def add_git_commit_hash_column_stmt() -> TextClause:
+        """
+        Get SQLite statement to add the git_commit_hash column.
+
+        Uses TEXT for SQLite compatibility. SQLite does not support
+        ADD COLUMN IF NOT EXISTS, so callers must guard against the
+        column already existing.
+
+        Returns:
+            TextClause: SQLAlchemy text clause for the ALTER TABLE statement.
+        """
+        return text("ALTER TABLE jetbase_migrations ADD COLUMN git_commit_hash TEXT")
 
     @staticmethod
     def check_if_migrations_table_exists_query() -> TextClause:

@@ -13,6 +13,7 @@ from jetbase.engine.validation import (
 from jetbase.exceptions import (
     ChecksumMismatchError,
     DirectoryNotFoundError,
+    MissingMigrationFileError,
     OutOfOrderMigrationError,
 )
 
@@ -53,7 +54,7 @@ class TestValidateMigratedVersionsInCurrentMigrationFiles:
         migrated_versions = ["1", "2"]
         filepaths = {"1": "/path/V1__test.sql"}
 
-        with pytest.raises(FileNotFoundError):
+        with pytest.raises(MissingMigrationFileError):
             validate_migrated_versions_in_current_migration_files(
                 migrated_versions, filepaths
             )

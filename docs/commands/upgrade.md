@@ -22,6 +22,7 @@ The `upgrade` command applies all pending migrations to your database in order. 
 | `--skip-validation`          |       | Skip all validation checks                |
 | `--skip-checksum-validation` |       | Skip checksum validation only             |
 | `--skip-file-validation`     |       | Skip file validation only                 |
+| `--auto-rollback`            |       | Roll back missing migrations and re-upgrade (see below) |
 
 ## Examples
 
@@ -90,6 +91,30 @@ jetbase upgrade --skip-file-validation
 !!! warning
     Skipping validation can lead to inconsistent database state. Only use these options if you understand the implications.  
     To learn more, see [Validations](../validations/index.md).
+
+### Automatic Safe Rollback
+
+```bash
+jetbase upgrade --auto-rollback
+```
+
+Normally, if an *already-applied* migration's file is missing from your `migrations/`
+directory (for example, after checking out an older branch or release), the upgrade
+stops with an error. With `--auto-rollback`, Jetbase instead rolls the database back to
+the most recent applied migration whose file still exists, then re-runs the upgrade from
+that baseline.
+
+To do this safely, Jetbase records the git commit hash that was checked out when each
+migration was applied (in the `git_commit_hash` column of `jetbase_migrations`). When a
+file is missing, it recovers that migration's rollback SQL **read-only** from the recorded
+commit using `git show` — it never modifies your working tree or `HEAD`.
+
+!!! note
+    Automatic safe rollback requires that the repository is a git checkout and that the
+    latest applied migration has a recorded commit hash. If either is missing (for example,
+    migrations applied outside a git repository, or before this column existed), Jetbase
+    falls back to the standard behaviour and raises an error. The column is added
+    automatically to existing `jetbase_migrations` tables on the next upgrade.
 
 
 ## Migration Types

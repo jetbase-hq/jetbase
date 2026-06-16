@@ -31,7 +31,8 @@ class SnowflakeQueries(BaseQueries):
                 filename VARCHAR(512) NOT NULL,
                 migration_type VARCHAR(32) NOT NULL,
                 applied_at TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP() NOT NULL,
-                checksum VARCHAR(64) NOT NULL
+                checksum VARCHAR(64) NOT NULL,
+                git_commit_hash VARCHAR(40)
             )
             """
         )

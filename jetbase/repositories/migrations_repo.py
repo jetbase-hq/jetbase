@@ -1,4 +1,5 @@
 from sqlalchemy import Result, Row, text
+from sqlalchemy.exc import DatabaseError
 
 from jetbase.database.connection import get_db_connection
 from jetbase.database.queries.base import QueryMethod
@@ -7,9 +8,10 @@ from jetbase.engine.checksum import calculate_checksum
 from jetbase.engine.file_parser import (
     get_description_from_filename,
 )
+from jetbase.engine.git import get_current_commit_hash
 from jetbase.enums import MigrationDirectionType, MigrationType
 from jetbase.exceptions import VersionNotFoundError
-from jetbase.models import MigrationRecord
+from jetbase.models import AppliedVersionedMigration, MigrationRecord
 
 
 def run_migration(
@@ -54,6 +56,7 @@ def run_migration(
 
             description: str = get_description_from_filename(filename=filename)
             checksum: str = calculate_checksum(sql_statements=sql_statements)
+            git_commit_hash: str | None = get_current_commit_hash()
 
             connection.execute(
                 statement=get_query(QueryMethod.INSERT_VERSION_STMT),
@@ -63,6 +66,7 @@ def run_migration(
                     "filename": filename,
                     "migration_type": migration_type.value,
                     "checksum": checksum,
+                    "git_commit_hash": git_commit_hash,
                 },
             )
 
@@ -144,16 +148,52 @@ def create_migrations_table_if_not_exists() -> None:
     Create the jetbase_migrations table if it doesn't already exist.
 
     Creates the table used to track applied migrations, including
-    columns for version, description, filename, checksum, and timestamps.
+    columns for version, description, filename, checksum, timestamps, and
+    the git commit hash. Pre-existing tables created before the
+    git_commit_hash column existed are upgraded in place as part of this
+    procedure, so the rest of the codebase can assume the column is present.
 
     Returns:
-        None: Table is created as a side effect.
+        None: Table is created (and migrated) as a side effect.
     """
 
     with get_db_connection() as connection:
         connection.execute(
             statement=get_query(QueryMethod.CREATE_MIGRATIONS_TABLE_STMT)
         )
+        try:
+            connection.execute(
+                statement=get_query(QueryMethod.ADD_GIT_COMMIT_HASH_COLUMN_STMT)
+            )
+        except DatabaseError:
+            # Column already exists on a dialect without ADD COLUMN IF NOT EXISTS.
+            pass
+
+
+def get_versioned_migrations_desc() -> list[AppliedVersionedMigration]:
+    """
+    Get all applied versioned migrations ordered newest-first.
+
+    Used by the automatic safe-rollback flow to determine which applied
+    migrations are missing their files and to recover the git commit hash
+    recorded for the latest applied migration.
+
+    Returns:
+        list[AppliedVersionedMigration]: Applied versioned migrations ordered
+            by execution order descending (most recent first).
+    """
+    with get_db_connection() as connection:
+        results: Result[tuple[str, str, str | None]] = connection.execute(
+            statement=get_query(QueryMethod.GET_VERSIONED_MIGRATIONS_QUERY)
+        )
+        return [
+            AppliedVersionedMigration(
+                version=row.version,
+                filename=row.filename,
+                git_commit_hash=row.git_commit_hash,
+            )
+            for row in results.fetchall()
+        ]
 
 
 def get_latest_versions(
@@ -268,6 +308,7 @@ def get_migration_records() -> list[MigrationRecord]:
                 migration_type=row.migration_type,
                 applied_at=row.applied_at,
                 checksum=row.checksum,
+                git_commit_hash=row.git_commit_hash,
             )
             for row in results.fetchall()
         ]
@@ -446,6 +487,7 @@ def fetch_repeatable_migrations() -> list[MigrationRecord]:
                 migration_type=row.migration_type,
                 applied_at=row.applied_at,
                 checksum=row.checksum,
+                git_commit_hash=row.git_commit_hash,
             )
             for row in results.fetchall()
         ]

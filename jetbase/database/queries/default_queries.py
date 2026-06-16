@@ -22,13 +22,29 @@ CREATE TABLE IF NOT EXISTS jetbase_migrations (
     filename VARCHAR(512) NOT NULL,
     migration_type VARCHAR(32) NOT NULL,
     applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    checksum VARCHAR(64) NOT NULL
+    checksum VARCHAR(64) NOT NULL,
+    git_commit_hash VARCHAR(40)
 )
 """)
 
 INSERT_VERSION_STMT: TextClause = text("""
-INSERT INTO jetbase_migrations (version, description, filename, migration_type, checksum) 
-VALUES (:version, :description, :filename, :migration_type, :checksum)
+INSERT INTO jetbase_migrations (version, description, filename, migration_type, checksum, git_commit_hash)
+VALUES (:version, :description, :filename, :migration_type, :checksum, :git_commit_hash)
+""")
+
+ADD_GIT_COMMIT_HASH_COLUMN_STMT: TextClause = text("""
+ALTER TABLE jetbase_migrations ADD COLUMN IF NOT EXISTS git_commit_hash VARCHAR(40)
+""")
+
+GET_VERSIONED_MIGRATIONS_QUERY: TextClause = text(f"""
+    SELECT
+        version, filename, git_commit_hash
+    FROM
+        jetbase_migrations
+    WHERE
+        migration_type = '{MigrationType.VERSIONED.value}'
+    ORDER BY
+        order_executed DESC
 """)
 
 DELETE_VERSION_STMT: TextClause = text(f"""

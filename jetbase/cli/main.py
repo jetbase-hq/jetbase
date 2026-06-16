@@ -49,6 +49,15 @@ def upgrade(
         "--skip-file-validation",
         help="Skip file version validation when running migrations",
     ),
+    auto_rollback: bool = typer.Option(
+        False,
+        "--auto-rollback",
+        help=(
+            "If an already-applied migration's file is missing, roll back to "
+            "the latest applied migration whose file exists (recovering rollback "
+            "SQL from the recorded git commit) and re-run the upgrade"
+        ),
+    ),
 ):
     """Execute pending migrations"""
     validate_jetbase_directory()
@@ -59,6 +68,7 @@ def upgrade(
         skip_validation=skip_validation,
         skip_checksum_validation=skip_checksum_validation,
         skip_file_validation=skip_file_validation,
+        auto_rollback=auto_rollback,
     )
 
 
