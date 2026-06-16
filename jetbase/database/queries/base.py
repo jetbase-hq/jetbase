@@ -58,6 +58,37 @@ class BaseQueries:
         return default_queries.DELETE_VERSION_STMT
 
     @staticmethod
+    def add_git_commit_hash_column_stmt() -> TextClause:
+        """
+        Get statement to add the nullable git_commit_hash column.
+
+        Used to upgrade pre-existing jetbase_migrations tables that were
+        created before the git_commit_hash column existed. The default uses
+        ADD COLUMN IF NOT EXISTS so it is a safe no-op when the column is
+        already present; dialects that do not support that clause override
+        this with a plain ALTER and let the caller tolerate the resulting
+        duplicate-column error.
+
+        Returns:
+            TextClause: SQLAlchemy text clause for the ALTER TABLE statement.
+        """
+        return default_queries.ADD_GIT_COMMIT_HASH_COLUMN_STMT
+
+    @staticmethod
+    def get_versioned_migrations_query() -> TextClause:
+        """
+        Get query to fetch versioned migrations newest-first.
+
+        Returns the version, filename, and git_commit_hash for every
+        versioned migration, ordered by execution order descending.
+
+        Returns:
+            TextClause: SQLAlchemy text clause returning version, filename,
+                and git_commit_hash columns.
+        """
+        return default_queries.GET_VERSIONED_MIGRATIONS_QUERY
+
+    @staticmethod
     def latest_versions_query() -> TextClause:
         """
         Get query to fetch the latest N migration versions.
@@ -129,13 +160,14 @@ class BaseQueries:
         """
         query: str = f"""
             SELECT
-                order_executed, 
-                version, 
+                order_executed,
+                version,
                 description,
                 filename,
                 migration_type,
                 applied_at,
-                checksum  
+                checksum,
+                git_commit_hash
             FROM
                 jetbase_migrations
             {"WHERE migration_type = " + f"'{migration_type.value}'" if migration_type else ""}
@@ -329,6 +361,8 @@ class QueryMethod(Enum):
     CREATE_MIGRATIONS_TABLE_STMT = "create_migrations_table_stmt"
     INSERT_VERSION_STMT = "insert_version_stmt"
     DELETE_VERSION_STMT = "delete_version_stmt"
+    ADD_GIT_COMMIT_HASH_COLUMN_STMT = "add_git_commit_hash_column_stmt"
+    GET_VERSIONED_MIGRATIONS_QUERY = "get_versioned_migrations_query"
     LATEST_VERSIONS_QUERY = "latest_versions_query"
     LATEST_VERSIONS_BY_STARTING_VERSION_QUERY = (
         "latest_versions_by_starting_version_query"
