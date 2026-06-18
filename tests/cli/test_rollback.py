@@ -11,7 +11,6 @@ from jetbase.exceptions import VersionNotFoundError
 def test_rollback(runner, test_db_url, clean_db, setup_migrations):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
-    os.chdir("jetbase")
     result = runner.invoke(app, ["upgrade"])
     assert result.exit_code == 0
 
@@ -39,7 +38,6 @@ def test_rollback(runner, test_db_url, clean_db, setup_migrations):
 def test_rollback_with_count(runner, test_db_url, clean_db, setup_migrations):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
-    os.chdir("jetbase")
     result = runner.invoke(app, ["upgrade"])
     assert result.exit_code == 0
 
@@ -69,7 +67,6 @@ def test_rollback_with_count(runner, test_db_url, clean_db, setup_migrations):
 def test_rollback_to_version(runner, test_db_url, clean_db, setup_migrations):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
-    os.chdir("jetbase")
     result = runner.invoke(app, ["upgrade"])
     assert result.exit_code == 0
 
@@ -103,7 +100,6 @@ def test_rollback_to_version(runner, test_db_url, clean_db, setup_migrations):
 def test_rollback_with_dry_run(runner, test_db_url, clean_db, setup_migrations):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
-    os.chdir("jetbase")
     result = runner.invoke(app, ["upgrade"])
     assert result.exit_code == 0
 
@@ -131,7 +127,6 @@ def test_rollback_with_deleted_file(runner, test_db_url, clean_db, setup_migrati
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
     with clean_db.begin() as connection:
-        os.chdir("jetbase")
         result = runner.invoke(app, ["upgrade"])
         assert result.exit_code == 0
 

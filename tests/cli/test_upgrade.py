@@ -17,7 +17,6 @@ def test_upgrade_versions(
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
     with clean_db.begin() as connection:
-        os.chdir("jetbase")
         result = runner.invoke(app, ["upgrade"])
         assert result.exit_code == 0
 
@@ -32,7 +31,6 @@ def test_upgrade_versions(
 def test_upgrade_count(runner, test_db_url, clean_db, setup_migrations_versions_only):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
-    os.chdir("jetbase")
     result = runner.invoke(app, ["upgrade", "--count", "3"])
     assert result.exit_code == 0
 
@@ -62,7 +60,6 @@ def test_upgrade_count_greater_than_pending(
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
     with clean_db.begin() as connection:
-        os.chdir("jetbase")
         result = runner.invoke(app, ["upgrade", "--count", "20"])
         assert result.exit_code == 0
 
@@ -89,7 +86,6 @@ def test_upgrade_count_negative(
 ):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
-    os.chdir("jetbase")
     result = runner.invoke(app, ["upgrade", "--count", "-1"])
     assert result.exit_code != 0
 
@@ -104,7 +100,6 @@ def test_upgrade_to_version(
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
     with clean_db.begin() as connection:
-        os.chdir("jetbase")
         result = runner.invoke(app, ["upgrade", "--to-version", "2"])
         assert result.exit_code == 0
 
@@ -121,7 +116,6 @@ def test_upgrade_to_version_not_exists(
 ):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
-    os.chdir("jetbase")
     result = runner.invoke(app, ["upgrade", "--to-version", "1.5"])
     assert result.exit_code != 0
 
@@ -136,7 +130,6 @@ def test_upgrade_then_remove_files(
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
     with clean_db.begin() as connection:
-        os.chdir("jetbase")
         result = runner.invoke(app, ["upgrade", "--count", "3"])
         assert result.exit_code == 0
 
@@ -148,7 +141,7 @@ def test_upgrade_then_remove_files(
         assert count == 3
 
         # Remove a migration file
-        migrations_dir = os.path.join(os.getcwd(), "migrations")
+        migrations_dir = str(setup_migrations_versions_only)
         file_to_remove = os.path.join(migrations_dir, "V2__m2.sql")
         if os.path.exists(file_to_remove):
             os.remove(file_to_remove)
@@ -168,7 +161,6 @@ def test_upgrade_with_dry_run(
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
     with clean_db.begin() as connection:
-        os.chdir("jetbase")
         result = runner.invoke(app, ["upgrade", "--dry-run"])
         assert result.exit_code == 0
 
@@ -186,7 +178,6 @@ def test_upgrade_then_add_lower_version_file(
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
     with clean_db.begin() as connection:
-        os.chdir("jetbase")
         result = runner.invoke(app, ["upgrade", "--count", "3"])
         assert result.exit_code == 0
 
@@ -198,7 +189,7 @@ def test_upgrade_then_add_lower_version_file(
         assert count == 3
 
         # Add a lower version migration file
-        migrations_dir = os.path.join(os.getcwd(), "migrations")
+        migrations_dir = str(setup_migrations_versions_only)
         lower_version_file = os.path.join(migrations_dir, "V1.5__m1_5.sql")
         with open(lower_version_file, "w") as f:
             f.write("-- SQL statements for migration V1.5\n")
@@ -217,9 +208,8 @@ def test_upgrade_with_duplicate_version_files(
 ):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
-    os.chdir("jetbase")
     # Add a duplicate version migration file
-    migrations_dir = os.path.join(os.getcwd(), "migrations")
+    migrations_dir = str(setup_migrations_versions_only)
     duplicate_version_file = os.path.join(migrations_dir, "V2__duplicate_m2.sql")
     with open(duplicate_version_file, "w") as f:
         f.write("-- SQL statements for duplicate migration V2\n")
@@ -238,7 +228,6 @@ def test_upgrade_skip_checksum_validation(
 ):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
-    os.chdir("jetbase")
     result = runner.invoke(app, ["upgrade", "--count", "3"])
     assert result.exit_code == 0
 
@@ -251,7 +240,7 @@ def test_upgrade_skip_checksum_validation(
         assert count == 3
 
         # Modify the migration file
-        migrations_dir = os.path.join(os.getcwd(), "migrations")
+        migrations_dir = str(setup_migrations_versions_only)
         file_to_modify = os.path.join(migrations_dir, "V2__m2.sql")
         with open(file_to_modify, "w") as f:
             f.write("\n-- Modified content\n")
@@ -280,7 +269,6 @@ def test_upgrade_repeatables(runner, test_db_url, clean_db, setup_migrations):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
     with clean_db.begin() as connection:
-        os.chdir("jetbase")
         result = runner.invoke(app, ["upgrade"])
         assert result.exit_code == 0
 
@@ -296,7 +284,6 @@ def test_roc_with_no_changes(runner, test_db_url, clean_db, setup_migrations):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
     with clean_db.begin() as connection:
-        os.chdir("jetbase")
         result = runner.invoke(app, ["upgrade"])
         assert result.exit_code == 0
 
@@ -333,7 +320,6 @@ def test_roc_with_no_changes(runner, test_db_url, clean_db, setup_migrations):
 def test_roc_with_changes(runner, test_db_url, clean_db, setup_migrations):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
-    os.chdir("jetbase")
     result = runner.invoke(app, ["upgrade"])
     assert result.exit_code == 0
 
@@ -353,7 +339,7 @@ def test_roc_with_changes(runner, test_db_url, clean_db, setup_migrations):
         applied_at_before = timestamp_result.scalar()
 
         # Modify the ROC migration file
-        migrations_dir = os.path.join(os.getcwd(), "migrations")
+        migrations_dir = str(setup_migrations)
         roc_file = os.path.join(migrations_dir, "ROC__roc.sql")
         with open(roc_file, "w") as f:
             f.write("\n-- Modified content to trigger reapplication\n")
@@ -380,7 +366,6 @@ def test_repeatable_always_multiple_upgrades(
 ):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
-    os.chdir("jetbase")
     result = runner.invoke(app, ["upgrade"])
     assert result.exit_code == 0
 
@@ -421,7 +406,6 @@ def test_upgrade_skip_validation(
 ):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
-    os.chdir("jetbase")
     result = runner.invoke(app, ["upgrade", "--count", "3"])
     assert result.exit_code == 0
 
@@ -434,7 +418,7 @@ def test_upgrade_skip_validation(
         assert count == 3
 
         # Modify the migration file
-        migrations_dir = os.path.join(os.getcwd(), "migrations")
+        migrations_dir = str(setup_migrations_versions_only)
         file_to_modify = os.path.join(migrations_dir, "V2__m2.sql")
         with open(file_to_modify, "w") as f:
             f.write("\n-- Modified content\n")
@@ -447,7 +431,7 @@ def test_upgrade_skip_validation(
         )
 
         # Add a lower version migration file
-        migrations_dir = os.path.join(os.getcwd(), "migrations")
+        migrations_dir = str(setup_migrations_versions_only)
         lower_version_file = os.path.join(migrations_dir, "V1.5__m1_5.sql")
         with open(lower_version_file, "w") as f:
             f.write("-- SQL statements for migration V1.5\n")
@@ -475,7 +459,6 @@ def test_upgrade_skip_file_validation_lower_file(
 ):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
-    os.chdir("jetbase")
     result = runner.invoke(app, ["upgrade", "--count", "3"])
     assert result.exit_code == 0
 
@@ -488,7 +471,7 @@ def test_upgrade_skip_file_validation_lower_file(
         assert count == 3
 
         # Add a lower version migration file
-        migrations_dir = os.path.join(os.getcwd(), "migrations")
+        migrations_dir = str(setup_migrations_versions_only)
         lower_version_file = os.path.join(migrations_dir, "V1.5__m1_5.sql")
         with open(lower_version_file, "w") as f:
             f.write("-- SQL statements for migration V1.5\n")
@@ -516,7 +499,6 @@ def test_upgrade_skip_file_validation_deleted_migrated_file(
 ):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
-    os.chdir("jetbase")
     result = runner.invoke(app, ["upgrade", "--count", "3"])
     assert result.exit_code == 0
 
@@ -529,7 +511,7 @@ def test_upgrade_skip_file_validation_deleted_migrated_file(
         assert count == 3
 
         # Delete the migration file
-        migrations_dir = os.path.join(os.getcwd(), "migrations")
+        migrations_dir = str(setup_migrations_versions_only)
         file_to_delete = os.path.join(migrations_dir, "V2__m2.sql")
         os.remove(file_to_delete)
 

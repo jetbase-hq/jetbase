@@ -1,6 +1,5 @@
 import os
 
-from jetbase.constants import MIGRATIONS_DIR
 from jetbase.engine.dry_run import process_dry_run
 from jetbase.engine.file_parser import parse_upgrade_statements
 from jetbase.engine.lock import migration_lock
@@ -79,12 +78,14 @@ def upgrade_cmd(
         to_version=to_version,
     )
 
+    migrations_directory = str(get_migrations_directory())
+
     repeatable_always_filepaths: list[str] = get_repeatable_always_filepaths(
-        directory=os.path.join(os.getcwd(), MIGRATIONS_DIR)
+        directory=migrations_directory
     )
 
     runs_on_change_filepaths: list[str] = get_runs_on_change_filepaths(
-        directory=os.path.join(os.getcwd(), MIGRATIONS_DIR),
+        directory=migrations_directory,
         changed_only=True,
     )
 

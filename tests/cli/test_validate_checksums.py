@@ -21,7 +21,6 @@ def test_validate_checksums_with_fix(
 ):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
-    os.chdir("jetbase")
     result = runner.invoke(app, ["upgrade", "--count", "3"])
     assert result.exit_code == 0
 
@@ -41,7 +40,7 @@ def test_validate_checksums_with_fix(
         assert initial_checksum is not None
 
         # Modify the migration file
-        migrations_dir = os.path.join(os.getcwd(), "migrations")
+        migrations_dir = str(setup_migrations_versions_only)
         file_to_modify = os.path.join(migrations_dir, "V2__m2.sql")
         with open(file_to_modify, "w") as f:
             f.write("\n-- Modified content\n")

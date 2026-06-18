@@ -15,7 +15,6 @@ def test_lock_status_unlocked(
 ):
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
-    os.chdir("jetbase")
     result = runner.invoke(app, ["upgrade"])
     assert result.exit_code == 0
 
@@ -32,7 +31,6 @@ def test_lock_status_locked(
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
     with clean_db.begin() as connection:
-        os.chdir("jetbase")
         result = runner.invoke(app, ["upgrade"])
         assert result.exit_code == 0
 

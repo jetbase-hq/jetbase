@@ -6,6 +6,7 @@ from jetbase.engine.file_parser import (
     parse_upgrade_statements,
     validate_filename_format,
 )
+from jetbase.paths import get_migrations_directory
 from jetbase.repositories.migrations_repo import (
     get_existing_on_change_filenames_to_checksums,
 )
@@ -87,7 +88,7 @@ def get_runs_on_change_filepaths(
     return runs_on_change_filepaths
 
 
-def get_ra_filenames() -> list[str]:
+def get_ra_filenames(directory: str | None = None) -> list[str]:
     """
     Get all runs-always (RA__) migration filenames from the migrations directory.
 
@@ -97,15 +98,17 @@ def get_ra_filenames() -> list[str]:
     Returns:
         list[str]: List of RA__ migration filenames (not full paths).
     """
+    directory = directory or str(get_migrations_directory())
+
     ra_filenames: list[str] = []
-    for root, _, files in os.walk(os.path.join(os.getcwd(), "migrations")):
+    for root, _, files in os.walk(directory):
         for filename in files:
             if filename.startswith(RUNS_ALWAYS_FILE_PREFIX):
                 ra_filenames.append(filename)
     return ra_filenames
 
 
-def get_repeatable_filenames() -> list[str]:
+def get_repeatable_filenames(directory: str | None = None) -> list[str]:
     """
     Get all repeatable migration filenames from the migrations directory.
 
@@ -115,8 +118,10 @@ def get_repeatable_filenames() -> list[str]:
     Returns:
         list[str]: List of all repeatable migration filenames (not full paths).
     """
+    directory = directory or str(get_migrations_directory())
+
     repeatable_filenames: list[str] = []
-    for root, _, files in os.walk(os.path.join(os.getcwd(), "migrations")):
+    for root, _, files in os.walk(directory):
         for filename in files:
             if filename.startswith(RUNS_ALWAYS_FILE_PREFIX) or filename.startswith(
                 RUNS_ON_CHANGE_FILE_PREFIX
