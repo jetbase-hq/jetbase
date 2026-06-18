@@ -9,6 +9,7 @@ from jetbase.engine.repeatable import get_ra_filenames, get_runs_on_change_filep
 from jetbase.engine.version import get_migration_filepaths_by_version
 from jetbase.enums import MigrationType
 from jetbase.models import MigrationRecord
+from jetbase.paths import get_migrations_directory
 from jetbase.repositories.migrations_repo import (
     create_migrations_table_if_not_exists,
     get_existing_on_change_filenames_to_checksums,
@@ -47,8 +48,10 @@ def status_cmd() -> None:
         versioned_migration_records[-1].version if versioned_migration_records else None
     )
 
+    migrations_directory = str(get_migrations_directory())
+
     pending_versioned_filepaths: dict[str, str] = get_migration_filepaths_by_version(
-        directory=os.path.join(os.getcwd(), "migrations"),
+        directory=migrations_directory,
         version_to_start_from=latest_migrated_version,
     )
 
@@ -62,7 +65,7 @@ def status_cmd() -> None:
     roc_filenames_changed_only: list[str] = [
         os.path.basename(filepath)
         for filepath in get_runs_on_change_filepaths(
-            directory=os.path.join(os.getcwd(), "migrations"), changed_only=True
+            directory=migrations_directory, changed_only=True
         )
     ]
 
@@ -72,9 +75,7 @@ def status_cmd() -> None:
 
     all_roc_filenames: list[str] = [
         os.path.basename(filepath)
-        for filepath in get_runs_on_change_filepaths(
-            directory=os.path.join(os.getcwd(), "migrations")
-        )
+        for filepath in get_runs_on_change_filepaths(directory=migrations_directory)
     ]
 
     console: Console = Console()

@@ -52,7 +52,6 @@ uv add jetbase
 
 ```bash
 jetbase init
-cd jetbase
 ```
 
 This creates a `jetbase/` directory with:

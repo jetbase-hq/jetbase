@@ -9,6 +9,7 @@ from typing import Any
 import tomli
 
 from jetbase.constants import ENV_FILE
+from jetbase.paths import get_jetbase_directory
 
 
 @dataclass
@@ -193,7 +194,7 @@ def _get_config_from_env_py(key: str, filepath: str = ENV_FILE) -> Any | None:
         Any | None: The configuration value if the attribute exists,
             otherwise None.
     """
-    config_path: str = os.path.join(os.getcwd(), filepath)
+    config_path: str = str(get_jetbase_directory() / filepath)
 
     if not os.path.exists(config_path):
         return None

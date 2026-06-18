@@ -22,6 +22,6 @@ def initialize_cmd() -> None:
         f.write(ENV_FILE_CONTENT)
 
     logger.info(
-        "Initialized Jetbase project in %s\nRun 'cd jetbase' to get started!",
+        "Initialized Jetbase project in %s",
         Path(BASE_DIR).absolute(),
     )

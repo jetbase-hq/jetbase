@@ -53,16 +53,7 @@ jetbase/
 └── env.py          # Database configuration
 ```
 
-### Step 2: Navigate to the Jetbase Directory
-
-```bash
-cd jetbase
-```
-
-!!! important
-All Jetbase commands must be run from inside the `jetbase/` directory.
-
-### Step 3: Configure Your Database Connection
+### Step 2: Configure Your Database Connection
 
 Open `env.py` and update the `sqlalchemy_url` with your database connection string:
 

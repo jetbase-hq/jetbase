@@ -68,7 +68,10 @@ class TestGetRaFilenames:
         (migrations_dir / "RA__test.sql").touch()
         (migrations_dir / "V1__other.sql").touch()
 
-        with patch("jetbase.engine.repeatable.os.getcwd", return_value=str(tmp_path)):
+        with patch(
+            "jetbase.engine.repeatable.get_migrations_directory",
+            return_value=migrations_dir,
+        ):
             result = get_ra_filenames()
 
         assert result == ["RA__test.sql"]
@@ -85,7 +88,10 @@ class TestGetRepeatableFilenames:
         (migrations_dir / "ROC__test.sql").touch()
         (migrations_dir / "V1__other.sql").touch()
 
-        with patch("jetbase.engine.repeatable.os.getcwd", return_value=str(tmp_path)):
+        with patch(
+            "jetbase.engine.repeatable.get_migrations_directory",
+            return_value=migrations_dir,
+        ):
             result = get_repeatable_filenames()
 
         assert len(result) == 2

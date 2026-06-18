@@ -24,7 +24,6 @@ def test_new_command_success(tmp_path):
     """Test the 'new' command successfully creates a migration file."""
     os.chdir(tmp_path)
     result = runner.invoke(app, ["init"])
-    os.chdir("jetbase")
 
     with patch("jetbase.commands.new.dt") as mock_dt:
         mock_dt.datetime.now.return_value.strftime.return_value = "20251214.160000"
@@ -37,14 +36,13 @@ def test_new_command_success(tmp_path):
 
         # Check file was created with correct name
         expected_filename = "V20251214.160000__create_users_table.sql"
-        expected_filepath = Path("migrations") / expected_filename
+        expected_filepath = Path("jetbase") / "migrations" / expected_filename
         assert expected_filepath.exists()
 
 
 def test_new_success_file_content(tmp_path):
     os.chdir(tmp_path)
     result = runner.invoke(app, ["init"])
-    os.chdir("jetbase")
 
     with patch("jetbase.commands.new.dt") as mock_dt:
         mock_dt.datetime.now.return_value.strftime.return_value = "20251214.160000"
@@ -56,7 +54,7 @@ def test_new_success_file_content(tmp_path):
         assert result.exit_code == 0
 
         expected_filename = "V20251214.160000__create_users_table.sql"
-        expected_filepath = Path("migrations") / expected_filename
+        expected_filepath = Path("jetbase") / "migrations" / expected_filename
         assert expected_filepath.exists()
 
         with open(expected_filepath, "r") as f:
@@ -68,7 +66,6 @@ def test_new_command_with_custom_version(tmp_path):
     """Test the 'new' command successfully creates a migration file with a custom version."""
     os.chdir(tmp_path)
     result = runner.invoke(app, ["init"])
-    os.chdir("jetbase")
 
     with patch("jetbase.commands.new.dt") as mock_dt:
         mock_dt.datetime.now.return_value.strftime.return_value = "20251214.160000"
@@ -81,5 +78,5 @@ def test_new_command_with_custom_version(tmp_path):
 
         # Check file was created with correct name
         expected_filename = "V1.5__create_users_table.sql"
-        expected_filepath = Path("migrations") / expected_filename
+        expected_filepath = Path("jetbase") / "migrations" / expected_filename
         assert expected_filepath.exists()

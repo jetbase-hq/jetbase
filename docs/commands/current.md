@@ -40,5 +40,4 @@ No migrations have been applied yet.
 
 ## Notes
 
-- Must be run from inside the `jetbase/` directory
 - Shows only the version of the latest **versioned** migration

@@ -1,6 +1,5 @@
 import os
 
-from jetbase.constants import MIGRATIONS_DIR
 from jetbase.engine.dry_run import process_dry_run
 from jetbase.engine.file_parser import parse_upgrade_statements
 from jetbase.engine.lock import migration_lock
@@ -15,6 +14,7 @@ from jetbase.engine.version import (
 from jetbase.enums import MigrationDirectionType, MigrationType
 from jetbase.logging import logger
 from jetbase.models import MigrationRecord
+from jetbase.paths import get_migrations_directory
 from jetbase.repositories.lock_repo import create_lock_table_if_not_exists
 from jetbase.repositories.migrations_repo import (
     create_migrations_table_if_not_exists,
@@ -78,12 +78,14 @@ def upgrade_cmd(
         to_version=to_version,
     )
 
+    migrations_directory = str(get_migrations_directory())
+
     repeatable_always_filepaths: list[str] = get_repeatable_always_filepaths(
-        directory=os.path.join(os.getcwd(), MIGRATIONS_DIR)
+        directory=migrations_directory
     )
 
     runs_on_change_filepaths: list[str] = get_runs_on_change_filepaths(
-        directory=os.path.join(os.getcwd(), MIGRATIONS_DIR),
+        directory=migrations_directory,
         changed_only=True,
     )
 
@@ -141,7 +143,7 @@ def _get_filepaths_by_version(
         FileNotFoundError: If to_version is not found in pending migrations.
     """
     filepaths_by_version: dict[str, str] = get_migration_filepaths_by_version(
-        directory=os.path.join(os.getcwd(), MIGRATIONS_DIR),
+        directory=str(get_migrations_directory()),
         version_to_start_from=latest_migration.version if latest_migration else None,
     )
 

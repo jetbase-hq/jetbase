@@ -1,14 +1,14 @@
 import datetime as dt
 import os
 
-from jetbase.constants import MIGRATIONS_DIR, NEW_MIGRATION_FILE_CONTENT
+from jetbase.constants import NEW_MIGRATION_FILE_CONTENT
 from jetbase.engine.file_parser import is_filename_length_valid, is_valid_version
 from jetbase.exceptions import (
-    DirectoryNotFoundError,
     InvalidVersionError,
     MigrationFilenameTooLongError,
 )
 from jetbase.logging import logger
+from jetbase.paths import get_migrations_directory
 
 
 def generate_new_migration_file_cmd(
@@ -40,13 +40,7 @@ def generate_new_migration_file_cmd(
         Created migration file: V20251201.120000__create_users_table.sql
     """
 
-    migrations_dir_path: str = os.path.join(os.getcwd(), MIGRATIONS_DIR)
-
-    if not os.path.exists(migrations_dir_path):
-        raise DirectoryNotFoundError(
-            "Migrations directory not found. Run 'jetbase initialize' to set up jetbase.\n"
-            "If you have already done so, run this command from the jetbase directory."
-        )
+    migrations_dir_path = str(get_migrations_directory())
 
     filename: str = _generate_new_filename(description=description, version=version)
     filepath: str = os.path.join(migrations_dir_path, filename)

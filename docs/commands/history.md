@@ -80,8 +80,3 @@ The exact timestamp when the migration was applied. The format is:
 ```
 YYYY-MM-DD HH:MM:SS.microseconds
 ```
-
-## Notes
-
-- Must be run from inside the `jetbase/` directory
-
