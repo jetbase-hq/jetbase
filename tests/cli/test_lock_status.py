@@ -1,4 +1,3 @@
-import datetime as dt
 import os
 import uuid
 
@@ -39,13 +38,12 @@ def test_lock_status_locked(
                 """
             UPDATE jetbase_lock
             SET is_locked = TRUE,
-                locked_at = :locked_at,
+                locked_at = CURRENT_TIMESTAMP,
                 process_id = :process_id
             WHERE id = 1 AND is_locked = FALSE
             """
             ),
             {
-                "locked_at": dt.datetime.now(dt.timezone.utc),
                 "process_id": str(uuid.uuid4()),
             },
         )
