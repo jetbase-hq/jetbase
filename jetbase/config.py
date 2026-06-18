@@ -8,8 +8,8 @@ from typing import Any
 
 import tomli
 
-from jetbase.commands.directories import get_jetbase_directory
 from jetbase.constants import ENV_FILE
+from jetbase.paths import get_jetbase_directory
 
 
 @dataclass

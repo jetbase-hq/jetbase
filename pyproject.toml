@@ -59,3 +59,9 @@ markers = [
     "dry_run: tests --dry-run param",
     "snowflake: tests for snowflake database",
 ]
+
+[tool.pyrefly]
+project-includes = [
+    "**/*.py*",
+    "**/*.ipynb",
+]

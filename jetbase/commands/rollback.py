@@ -1,6 +1,5 @@
 import os
 
-from jetbase.commands.directories import get_migrations_directory
 from jetbase.engine.dry_run import process_dry_run
 from jetbase.engine.file_parser import parse_rollback_statements
 from jetbase.engine.lock import (
@@ -10,6 +9,7 @@ from jetbase.engine.version import get_migration_filepaths_by_version
 from jetbase.enums import MigrationDirectionType
 from jetbase.exceptions import VersionNotFoundError
 from jetbase.logging import logger
+from jetbase.paths import get_migrations_directory
 from jetbase.repositories.lock_repo import create_lock_table_if_not_exists
 from jetbase.repositories.migrations_repo import (
     create_migrations_table_if_not_exists,

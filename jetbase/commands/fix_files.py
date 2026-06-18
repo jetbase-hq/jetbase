@@ -1,4 +1,3 @@
-from jetbase.commands.directories import get_migrations_directory
 from jetbase.engine.lock import migration_lock
 from jetbase.engine.repeatable import get_repeatable_filenames
 from jetbase.engine.version import (
@@ -6,6 +5,7 @@ from jetbase.engine.version import (
 )
 from jetbase.logging import logger
 from jetbase.models import MigrationRecord
+from jetbase.paths import get_migrations_directory
 from jetbase.repositories.lock_repo import create_lock_table_if_not_exists
 from jetbase.repositories.migrations_repo import (
     create_migrations_table_if_not_exists,

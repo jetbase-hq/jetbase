@@ -1,7 +1,6 @@
 import datetime as dt
 import os
 
-from jetbase.commands.directories import get_migrations_directory
 from jetbase.constants import NEW_MIGRATION_FILE_CONTENT
 from jetbase.engine.file_parser import is_filename_length_valid, is_valid_version
 from jetbase.exceptions import (
@@ -9,6 +8,7 @@ from jetbase.exceptions import (
     MigrationFilenameTooLongError,
 )
 from jetbase.logging import logger
+from jetbase.paths import get_migrations_directory
 
 
 def generate_new_migration_file_cmd(

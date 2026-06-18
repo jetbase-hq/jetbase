@@ -1,4 +1,3 @@
-from jetbase.commands.directories import get_migrations_directory
 from jetbase.engine.checksum import calculate_checksum
 from jetbase.engine.file_parser import parse_upgrade_statements
 from jetbase.engine.lock import migration_lock
@@ -8,6 +7,7 @@ from jetbase.exceptions import (
     MigrationVersionMismatchError,
 )
 from jetbase.logging import logger
+from jetbase.paths import get_migrations_directory
 from jetbase.repositories.migrations_repo import (
     get_checksums_by_version,
     update_migration_checksums,

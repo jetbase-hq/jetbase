@@ -3,13 +3,13 @@ import os
 from rich.console import Console
 from rich.table import Table
 
-from jetbase.commands.directories import get_migrations_directory
 from jetbase.engine.file_parser import get_description_from_filename
 from jetbase.engine.formatters import get_display_version
 from jetbase.engine.repeatable import get_ra_filenames, get_runs_on_change_filepaths
 from jetbase.engine.version import get_migration_filepaths_by_version
 from jetbase.enums import MigrationType
 from jetbase.models import MigrationRecord
+from jetbase.paths import get_migrations_directory
 from jetbase.repositories.migrations_repo import (
     create_migrations_table_if_not_exists,
     get_existing_on_change_filenames_to_checksums,
