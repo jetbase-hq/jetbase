@@ -169,3 +169,27 @@ def clean_db(test_db_url):
     engine.dispose()
 
     _get_engine.cache_clear()
+
+
+CUSTOM_SCHEMA = "jetbase_test_schema"
+
+
+@pytest.fixture
+def custom_postgres_schema(clean_db):
+    """Run jetbase against a non-public Postgres schema."""
+
+    def drop_schema():
+        with clean_db.begin() as connection:
+            connection.execute(text(f"DROP SCHEMA IF EXISTS {CUSTOM_SCHEMA} CASCADE"))
+
+    drop_schema()
+    with clean_db.begin() as connection:
+        connection.execute(text(f"CREATE SCHEMA {CUSTOM_SCHEMA}"))
+    os.environ["JETBASE_POSTGRES_SCHEMA"] = CUSTOM_SCHEMA
+    _get_engine.cache_clear()
+
+    yield CUSTOM_SCHEMA
+
+    os.environ.pop("JETBASE_POSTGRES_SCHEMA", None)
+    _get_engine.cache_clear()
+    drop_schema()
