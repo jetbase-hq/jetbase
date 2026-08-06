@@ -78,7 +78,7 @@ CHECK_IF_MIGRATIONS_TABLE_EXISTS_QUERY: TextClause = text("""
 SELECT EXISTS (
     SELECT 1
     FROM information_schema.tables
-    WHERE table_schema = 'public'
+    WHERE table_schema = current_schema()
       AND table_name = 'jetbase_migrations'
 )
 """)
@@ -87,7 +87,7 @@ CHECK_IF_LOCK_TABLE_EXISTS_QUERY: TextClause = text("""
 SELECT EXISTS (
     SELECT 1
     FROM information_schema.tables
-    WHERE table_schema = 'public'
+    WHERE table_schema = current_schema()
       AND table_name = 'jetbase_lock'
 )
 """)
