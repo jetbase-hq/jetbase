@@ -194,7 +194,7 @@ You'll see a table showing:
 
 Now that you've set up your first migration, explore these topics:
 
-- [Writing Migrations](migrations/writing-migrations.md) — Learn about migration file syntax and best practices
+- [Writing Migrations](migrations/index.md) — Learn about migration file syntax and best practices
 - [Commands Reference](commands/index.md) — Discover all available commands
 - [Rollbacks](commands/rollback.md) — Learn how to safely undo migrations
 - [Configuration Options](configuration.md) — Customize Jetbase behavior
