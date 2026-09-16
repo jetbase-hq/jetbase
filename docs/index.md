@@ -34,7 +34,6 @@ Jetbase helps you manage database migrations in a simple, version-controlled way
 
 ```bash
 jetbase init
-cd jetbase
 ```
 
 This creates a `jetbase/` directory with:

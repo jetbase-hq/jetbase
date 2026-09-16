@@ -11,7 +11,6 @@ def test_fix_files_success(
     os.environ["JETBASE_SQLALCHEMY_URL"] = test_db_url
 
     with clean_db.begin() as connection:
-        os.chdir("jetbase")
         result = runner.invoke(app, ["upgrade", "--count", "3"])
         assert result.exit_code == 0
 
@@ -23,7 +22,7 @@ def test_fix_files_success(
         assert count == 3
 
         # Delete the migration file
-        migrations_dir = os.path.join(os.getcwd(), "migrations")
+        migrations_dir = str(setup_migrations_versions_only)
         file_to_delete = os.path.join(migrations_dir, "V2__m2.sql")
         os.remove(file_to_delete)
 

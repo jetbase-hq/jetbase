@@ -175,3 +175,5 @@ cython_debug/
 
 # Other files and folders
 .python-version
+
+.vscode/

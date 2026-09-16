@@ -54,7 +54,6 @@ If you are absolutely certain that no migration or fix command is active, you ma
 For a detailed explanation of how migration locking works, see [Migration Locking](../advanced/migration-locking.md).
 
 
-- Must be run from inside the `jetbase/` directory
 - The lock is stored in the `jetbase_lock` database table
 - Locks are automatically released whether the migration was successful or an error occurred.
 

@@ -3,7 +3,6 @@ import os
 from packaging.version import parse as parse_version
 
 from jetbase.config import get_config
-from jetbase.constants import MIGRATIONS_DIR
 from jetbase.engine.checksum import calculate_checksum
 from jetbase.engine.file_parser import parse_upgrade_statements
 from jetbase.engine.repeatable import get_repeatable_filenames
@@ -14,6 +13,7 @@ from jetbase.exceptions import (
     ChecksumMismatchError,
     OutOfOrderMigrationError,
 )
+from jetbase.paths import get_migrations_directory
 from jetbase.repositories.migrations_repo import (
     fetch_repeatable_migrations,
     get_checksums_by_version,
@@ -197,7 +197,7 @@ def run_migration_validations(
     skip_checksum_validation_config: bool = get_config().skip_checksum_validation
     skip_file_validation_config: bool = get_config().skip_file_validation
 
-    migrations_directory_path: str = os.path.join(os.getcwd(), MIGRATIONS_DIR)
+    migrations_directory_path: str = str(get_migrations_directory())
 
     migration_filepaths_by_version: dict[str, str] = get_migration_filepaths_by_version(
         directory=migrations_directory_path
@@ -222,7 +222,9 @@ def run_migration_validations(
                 migrated_repeatable_filenames=[
                     r.filename for r in fetch_repeatable_migrations()
                 ],
-                all_repeatable_filenames=get_repeatable_filenames(),
+                all_repeatable_filenames=get_repeatable_filenames(
+                    directory=migrations_directory_path
+                ),
             )
 
         migrated_filepaths_by_version: dict[str, str] = (

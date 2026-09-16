@@ -159,7 +159,6 @@ jetbase status
 
 ## Notes
 
-- Must be run from inside the `jetbase/` directory
 - Rollbacks are applied in reverse chronological order
 - Cannot use both `--count` and `--to-version` together
 

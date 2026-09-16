@@ -1,10 +1,11 @@
 import tempfile
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 
 from jetbase.commands.new import _generate_new_filename, generate_new_migration_file_cmd
-from jetbase.constants import MIGRATIONS_DIR
+from jetbase.constants import BASE_DIR, MIGRATIONS_DIR
 from jetbase.exceptions import (
     DirectoryNotFoundError,
     InvalidVersionError,
@@ -15,11 +16,11 @@ from jetbase.exceptions import (
 def test_generate_new_migration_file_cmd_success(tmp_path, caplog):
     """Test successful generation of a new migration file."""
     # Create migrations directory
-    migrations_dir = tmp_path / MIGRATIONS_DIR
+    migrations_dir = tmp_path / BASE_DIR / MIGRATIONS_DIR
     migrations_dir.mkdir(parents=True)
 
-    # Mock os.getcwd to return tmp_path
-    with patch("os.getcwd", return_value=str(tmp_path)):
+    # Mock pathlib.Path.cwd to return tmp_path
+    with patch("pathlib.Path.cwd", return_value=tmp_path):
         # Mock datetime to get predictable timestamp
         with patch("jetbase.commands.new.dt") as mock_dt:
             mock_dt.datetime.now.return_value.strftime.return_value = "20251214.153000"
@@ -40,11 +41,10 @@ def test_generate_new_migration_file_cmd_success(tmp_path, caplog):
 def test_generate_new_migration_file_cmd_with_custom_version(tmp_path, caplog):
     """Test successful generation of a migration file with a custom version."""
     # Create migrations directory
-    migrations_dir = tmp_path / MIGRATIONS_DIR
+    migrations_dir = tmp_path / BASE_DIR / MIGRATIONS_DIR
     migrations_dir.mkdir(parents=True)
 
-    # Mock os.getcwd to return tmp_path
-    with patch("os.getcwd", return_value=str(tmp_path)):
+    with patch("pathlib.Path.cwd", return_value=tmp_path):
         # Generate migration file with custom version
         generate_new_migration_file_cmd("create users table", version="1.5")
 
@@ -61,14 +61,14 @@ def test_generate_new_migration_file_cmd_with_custom_version(tmp_path, caplog):
 def test_generate_new_migration_file_cmd_directory_not_found():
     """Test that DirectoryNotFoundError is raised when migrations directory doesn't exist."""
     with tempfile.TemporaryDirectory() as tmpdir:
-        # Mock os.getcwd to return directory without migrations folder
-        with patch("os.getcwd", return_value=tmpdir):
+        # Mock pathlib.Path.cwd to return directory without migrations folder
+        with patch("pathlib.Path.cwd", return_value=Path(tmpdir)):
             with pytest.raises(DirectoryNotFoundError) as exc_info:
                 generate_new_migration_file_cmd("create users table")
 
             # Check error message
-            assert "Migrations directory not found" in str(exc_info.value)
-            assert "jetbase initialize" in str(exc_info.value)
+            assert "'jetbase' directory not found" in str(exc_info.value)
+            assert "jetbase init" in str(exc_info.value)
 
 
 def test_generate_new_filename_with_timestamp():

@@ -137,7 +137,6 @@ Jetbase stops safely at the first sign of trouble, preventing partial or out-of-
 
 ## Notes
 
-- Must be run from inside the `jetbase/` directory
 - Cannot use both `--count` and `--to-version` together
 - The automatic lock prevents concurrent migrations from causing conflicts
 

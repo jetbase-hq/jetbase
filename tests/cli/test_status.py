@@ -6,7 +6,6 @@ from jetbase.cli.main import app
 def test_status_success_all_applied_versions(
     runner, test_db_url, clean_db, setup_migrations_versions_only
 ):
-    os.chdir("jetbase")
     result = runner.invoke(app, ["upgrade"])
     assert result.exit_code == 0
 
@@ -33,7 +32,6 @@ def test_status_success_all_applied_versions(
 
 
 def test_status_success_repeatables(runner, test_db_url, clean_db, setup_migrations):
-    os.chdir("jetbase")
     result = runner.invoke(app, ["upgrade"])
     assert result.exit_code == 0
 
@@ -66,7 +64,6 @@ def test_status_success_repeatables(runner, test_db_url, clean_db, setup_migrati
 def test_status_success_partial_applied_versions(
     runner, test_db_url, clean_db, setup_migrations_versions_only
 ):
-    os.chdir("jetbase")
     result = runner.invoke(app, ["upgrade", "--count", "3"])
     assert result.exit_code == 0
 
@@ -93,12 +90,11 @@ def test_status_success_partial_applied_versions(
 
 
 def test_status_success_roc_changed(runner, test_db_url, clean_db, setup_migrations):
-    os.chdir("jetbase")
     result = runner.invoke(app, ["upgrade", "--count", "3"])
     assert result.exit_code == 0
 
     # Modify the migration file
-    migrations_dir = os.path.join(os.getcwd(), "migrations")
+    migrations_dir = str(setup_migrations)
     file_to_modify = os.path.join(migrations_dir, "ROC__roc.sql")
     with open(file_to_modify, "w") as f:
         f.write("\n-- Modified content\n")
@@ -130,8 +126,6 @@ def test_status_success_roc_changed(runner, test_db_url, clean_db, setup_migrati
 def test_status_success_roc_not_migrated(
     runner, test_db_url, clean_db, setup_migrations
 ):
-    os.chdir("jetbase")
-
     result = runner.invoke(app, ["status"])
     assert result.exit_code == 0
 

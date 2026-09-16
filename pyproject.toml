@@ -35,6 +35,7 @@ dev = [
     "cryptography>=46.0.3",
     "pymysql>=1.1.2",
     "clickhouse-sqlalchemy>=0.3.0",
+    "pre-commit>=4.6.0",
 ]
 
 [project.optional-dependencies]
@@ -57,4 +58,10 @@ markers = [
     "to_version: tests --to-version param",
     "dry_run: tests --dry-run param",
     "snowflake: tests for snowflake database",
+]
+
+[tool.pyrefly]
+project-includes = [
+    "**/*.py*",
+    "**/*.ipynb",
 ]

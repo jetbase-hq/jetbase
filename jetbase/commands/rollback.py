@@ -9,6 +9,7 @@ from jetbase.engine.version import get_migration_filepaths_by_version
 from jetbase.enums import MigrationDirectionType
 from jetbase.exceptions import VersionNotFoundError
 from jetbase.logging import logger
+from jetbase.paths import get_migrations_directory
 from jetbase.repositories.lock_repo import create_lock_table_if_not_exists
 from jetbase.repositories.migrations_repo import (
     create_migrations_table_if_not_exists,
@@ -138,7 +139,7 @@ def _get_versions_to_rollback(latest_migration_versions: list[str]) -> dict[str,
             newest versions are rolled back first.
     """
     versions_to_rollback: dict[str, str] = get_migration_filepaths_by_version(
-        directory=os.path.join(os.getcwd(), "migrations"),
+        directory=str(get_migrations_directory()),
         version_to_start_from=latest_migration_versions[-1],
         end_version=latest_migration_versions[0],
     )

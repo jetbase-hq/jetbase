@@ -47,8 +47,11 @@ class TestGetLatestMigrationVersions:
 class TestGetVersionsToRollback:
     """Tests for the _get_versions_to_rollback function."""
 
+    @patch("jetbase.commands.rollback.get_migrations_directory")
     @patch("jetbase.commands.rollback.get_migration_filepaths_by_version")
-    def test_returns_reversed_dict(self, mock_get_filepaths: Mock) -> None:
+    def test_returns_reversed_dict(
+        self, mock_get_filepaths: Mock, mock_get_migrations_directory: Mock
+    ) -> None:
         """Test that versions are returned in reverse order."""
         mock_get_filepaths.return_value = {
             "1": "/path/V1__test.sql",
