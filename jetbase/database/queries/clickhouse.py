@@ -16,7 +16,8 @@ class ClickHouseQueries(BaseQueries):
                 filename String,
                 migration_type String,
                 applied_at DateTime64(6) DEFAULT now64(6),
-                checksum String
+                checksum String,
+                git_commit_hash Nullable(String)
             ) ENGINE = MergeTree()
             ORDER BY order_executed
             """
@@ -26,16 +27,23 @@ class ClickHouseQueries(BaseQueries):
     def insert_version_stmt() -> TextClause:
         return text(
             """
-            INSERT INTO jetbase_migrations (order_executed, version, description, filename, migration_type, checksum, applied_at) 
-            SELECT 
+            INSERT INTO jetbase_migrations (order_executed, version, description, filename, migration_type, checksum, git_commit_hash, applied_at)
+            SELECT
                 (SELECT COALESCE(MAX(order_executed), 0) + 1 FROM jetbase_migrations),
-                :version, 
-                :description, 
-                :filename, 
-                :migration_type, 
+                :version,
+                :description,
+                :filename,
+                :migration_type,
                 :checksum,
+                :git_commit_hash,
                 now64(6)
             """
+        )
+
+    @staticmethod
+    def add_git_commit_hash_column_stmt() -> TextClause:
+        return text(
+            "ALTER TABLE jetbase_migrations ADD COLUMN IF NOT EXISTS git_commit_hash Nullable(String)"
         )
 
     @staticmethod
@@ -167,13 +175,14 @@ class ClickHouseQueries(BaseQueries):
     ) -> TextClause:
         query: str = f"""
             SELECT
-                order_executed, 
-                version, 
+                order_executed,
+                version,
                 description,
                 filename,
                 migration_type,
                 applied_at,
-                checksum  
+                checksum,
+                git_commit_hash
             FROM
                 jetbase_migrations
             {"WHERE migration_type = " + f"'{migration_type.value}'" if migration_type else ""}

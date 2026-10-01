@@ -12,7 +12,9 @@ from jetbase.engine.validation import run_migration_validations
 from jetbase.engine.version import (
     get_migration_filepaths_by_version,
 )
+from jetbase.commands.safe_rollback import attempt_safe_rollback
 from jetbase.enums import MigrationDirectionType, MigrationType
+from jetbase.exceptions import MissingMigrationFileError
 from jetbase.logging import logger
 from jetbase.models import MigrationRecord
 from jetbase.repositories.lock_repo import create_lock_table_if_not_exists
@@ -33,6 +35,7 @@ def upgrade_cmd(
     skip_validation: bool = False,
     skip_checksum_validation: bool = False,
     skip_file_validation: bool = False,
+    auto_rollback: bool = False,
 ) -> None:
     """
     Apply pending migrations to the database in order.
@@ -44,6 +47,11 @@ def upgrade_cmd(
         skip_validation (bool): Skip all validations.
         skip_checksum_validation (bool): Skip checksum validation only.
         skip_file_validation (bool): Skip file validation only.
+        auto_rollback (bool): If an already-applied migration's file is
+            missing, automatically roll the database back to the latest
+            applied migration whose file still exists, then re-run the
+            upgrade from that baseline. Requires a git commit hash recorded
+            on the latest applied migration. Defaults to False.
 
     Raises:
         ValueError: If both count and to_version are specified.
@@ -62,15 +70,13 @@ def upgrade_cmd(
     create_migrations_table_if_not_exists()
     create_lock_table_if_not_exists()
 
-    latest_migration: MigrationRecord | None = fetch_latest_versioned_migration()
-
-    if latest_migration:
-        run_migration_validations(
-            latest_migrated_version=latest_migration.version,
-            skip_validation=skip_validation,
-            skip_checksum_validation=skip_checksum_validation,
-            skip_file_validation=skip_file_validation,
-        )
+    latest_migration: MigrationRecord | None = _run_validations_with_auto_rollback(
+        skip_validation=skip_validation,
+        skip_checksum_validation=skip_checksum_validation,
+        skip_file_validation=skip_file_validation,
+        auto_rollback=auto_rollback,
+        dry_run=dry_run,
+    )
 
     filepaths_by_version: dict[str, str] = _get_filepaths_by_version(
         latest_migration=latest_migration,
@@ -117,6 +123,69 @@ def upgrade_cmd(
             repeatable_always_filepaths=repeatable_always_filepaths,
             runs_on_change_filepaths=runs_on_change_filepaths,
         )
+
+
+def _run_validations_with_auto_rollback(
+    skip_validation: bool,
+    skip_checksum_validation: bool,
+    skip_file_validation: bool,
+    auto_rollback: bool,
+    dry_run: bool,
+) -> MigrationRecord | None:
+    """
+    Run pre-upgrade validations, optionally recovering from missing files.
+
+    Fetches the latest applied migration and runs validations. If a migrated
+    version's file is missing and auto-rollback is enabled for a real (non
+    dry-run) upgrade, attempts a safe rollback to the latest applied migration
+    whose file still exists, then re-validates from that baseline. If the safe
+    rollback cannot be performed, the original error is re-raised, preserving
+    the previous behaviour.
+
+    Args:
+        skip_validation (bool): Skip all validations.
+        skip_checksum_validation (bool): Skip checksum validation only.
+        skip_file_validation (bool): Skip file validation only.
+        auto_rollback (bool): Whether to attempt safe rollback on a missing
+            migration file.
+        dry_run (bool): Whether this is a dry-run upgrade (no auto-rollback).
+
+    Returns:
+        MigrationRecord | None: The latest applied migration after any
+            rollback, or None if no migrations are applied.
+
+    Raises:
+        MissingMigrationFileError: If a migrated version's file is missing and
+            a safe rollback was not performed.
+    """
+    latest_migration: MigrationRecord | None = fetch_latest_versioned_migration()
+
+    if not latest_migration:
+        return None
+
+    try:
+        run_migration_validations(
+            latest_migrated_version=latest_migration.version,
+            skip_validation=skip_validation,
+            skip_checksum_validation=skip_checksum_validation,
+            skip_file_validation=skip_file_validation,
+        )
+    except MissingMigrationFileError:
+        if dry_run or not auto_rollback:
+            raise
+        if not attempt_safe_rollback():
+            raise
+
+        latest_migration = fetch_latest_versioned_migration()
+        if latest_migration:
+            run_migration_validations(
+                latest_migrated_version=latest_migration.version,
+                skip_validation=skip_validation,
+                skip_checksum_validation=skip_checksum_validation,
+                skip_file_validation=skip_file_validation,
+            )
+
+    return latest_migration
 
 
 def _get_filepaths_by_version(

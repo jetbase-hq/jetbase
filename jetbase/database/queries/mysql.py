@@ -22,9 +22,16 @@ class MySQLQueries(BaseQueries):
                 filename VARCHAR(512) NOT NULL,
                 migration_type VARCHAR(32) NOT NULL,
                 applied_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6) NOT NULL,
-                checksum VARCHAR(64) NOT NULL
+                checksum VARCHAR(64) NOT NULL,
+                git_commit_hash VARCHAR(40)
             )
             """
+        )
+
+    @staticmethod
+    def add_git_commit_hash_column_stmt() -> TextClause:
+        return text(
+            "ALTER TABLE jetbase_migrations ADD COLUMN git_commit_hash VARCHAR(40)"
         )
 
     @staticmethod

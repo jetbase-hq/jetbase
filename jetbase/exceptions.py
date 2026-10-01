@@ -76,6 +76,22 @@ class VersionNotFoundError(Exception):
     pass
 
 
+class MissingMigrationFileError(FileNotFoundError):
+    """
+    Raised when an already-applied migration's file is missing locally.
+
+    This occurs during an upgrade when a version recorded in the
+    jetbase_migrations table has no corresponding file in the migrations
+    directory (for example, after checking out an older branch or release).
+
+    Subclasses FileNotFoundError so existing callers that handle the missing
+    file generically keep working, while the automatic safe-rollback flow can
+    catch this more specific condition.
+    """
+
+    pass
+
+
 class DirectoryNotFoundError(Exception):
     """
     Raised when the required Jetbase directories do not exist.

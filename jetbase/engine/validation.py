@@ -12,6 +12,7 @@ from jetbase.engine.version import (
 )
 from jetbase.exceptions import (
     ChecksumMismatchError,
+    MissingMigrationFileError,
     OutOfOrderMigrationError,
 )
 from jetbase.repositories.migrations_repo import (
@@ -82,11 +83,11 @@ def validate_migrated_versions_in_current_migration_files(
         None: Returns silently if all files are present.
 
     Raises:
-        FileNotFoundError: If any migrated version is missing its file.
+        MissingMigrationFileError: If any migrated version is missing its file.
     """
     for migrated_version in migrated_versions:
         if migrated_version not in current_migration_filepaths_by_version:
-            raise FileNotFoundError(
+            raise MissingMigrationFileError(
                 f"Version {migrated_version} has been migrated but is missing from the current migration files."
             )
 
@@ -188,7 +189,8 @@ def run_migration_validations(
 
     Raises:
         DuplicateMigrationVersionError: If duplicate versions are found.
-        FileNotFoundError: If migration files are missing.
+        MissingMigrationFileError: If a migrated version's file is missing.
+        FileNotFoundError: If repeatable migration files are missing.
         OutOfOrderMigrationError: If out-of-order migrations are detected.
         ChecksumMismatchError: If file checksums don't match stored values.
     """
